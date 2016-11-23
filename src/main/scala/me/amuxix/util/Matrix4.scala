@@ -7,15 +7,15 @@ import scala.math._
   * @param data a 16-item array containing the matrix in row-major
   *             order, i.e. indices 0-3 are the first row, 4-7 the second row, etc.
   */
-class Matrix4(val data: Array[Float] = Array.ofDim[Float](16)) {
+class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
 
   if (data.length != 16)
     throw new IllegalArgumentException("Dim of matrix array != 16")
 
   private def idx(row: Int, col: Int) = row * 4 + col
 
-  private def mult(arr1: Array[Float], arr2: Array[Float]) = {
-    val newData = Array.ofDim[Float](16)
+  private def mult(arr1: Array[Int], arr2: Array[Int]) = {
+    val newData = Array.ofDim[Int](16)
 
     for (i <- 0 until 4) { // i = row
       for (j <- 0 until 4) { // j = col
@@ -55,7 +55,7 @@ class Matrix4(val data: Array[Float] = Array.ofDim[Float](16)) {
     * @return the inverse matrix
     */
   def invert: Matrix4 = {
-    val newData = Array.ofDim[Float](16)
+    val newData = Array.ofDim[Int](16)
 
     newData(0) = data(5)  * data(10) * data(15) -
       data(5)  * data(11) * data(14) -
@@ -187,7 +187,7 @@ class Matrix4(val data: Array[Float] = Array.ofDim[Float](16)) {
     * @return the transpose matrix
     */
   def transpose: Matrix4 = {
-    val newData = Array.ofDim[Float](16)
+    val newData = Array.ofDim[Int](16)
     for (i <- 0 until 4) {
       for (j <- 0 until 4) {
         newData(idx(i, j)) = data(idx(j, i))
@@ -295,19 +295,19 @@ object Matrix4 {
     * The identity matrix. When any matrix M is right- or left-multiplied
     * by the identity, M is returned.
     */
-  val IDENTITY = new Matrix4(Array(1.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 1.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 1.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 1.0f))
+  val IDENTITY = new Matrix4(Array(1, 0, 0, 0,
+    0, 1, 0, 0,
+    0, 0, 1, 0,
+    0, 0, 0, 1))
 
   /**
     * The matrix composed of all zero values. When any matrix M is right- or
     * left-multiplied by the zero matrix, the zero matrix is returned.
     */
-  val ZERO = new Matrix4(Array(0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 0.0f,
-    0.0f, 0.0f, 0.0f, 0.0f))
+  val ZERO = new Matrix4(Array(0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0,
+    0, 0, 0, 0))
 
   /**
     * Performs a counter-clockwise rotation on the positive x-axis,
@@ -318,13 +318,13 @@ object Matrix4 {
     * @return the rotation matrix
     */
   def rotateX(rads: Float) = {
-    val c = cos(rads).toFloat
-    val s = sin(rads).toFloat
+    val c: Int = cos(rads).toInt
+    val s: Int = sin(rads).toInt
 
-    new Matrix4(Array(1.0f, 0.0f, 0.0f, 0.0f,
-      0.0f, c,    -s,   0.0f,
-      0.0f, s,    c,    0.0f,
-      0.0f, 0.0f, 0.0f, 1.0f))
+    new Matrix4(Array(1, 0, 0, 0,
+      0, c,    -s,   0,
+      0, s,    c,    0,
+      0, 0, 0, 1))
   }
 
   /**
@@ -336,13 +336,13 @@ object Matrix4 {
     * @return the rotation matrix
     */
   def rotateY(rads: Float) = {
-    val c = cos(rads).toFloat
-    val s = sin(rads).toFloat
+    val c: Int = cos(rads).toInt
+    val s: Int = sin(rads).toInt
 
-    new Matrix4(Array(c,    0.0f, s,  0.0f,
-      0.0f, 1.0f, 0.0f, 0.0f,
-      -s,   0.0f, c,  0.0f,
-      0.0f, 0.0f, 0.0f, 1.0f))
+    new Matrix4(Array(c,    0, s,  0,
+      0, 1, 0, 0,
+      -s,   0, c,  0,
+      0, 0, 0, 1))
   }
 
   /**
@@ -354,13 +354,13 @@ object Matrix4 {
     * @return the rotation matrix
     */
   def rotateZ(rads: Float) = {
-    val c = cos(rads).toFloat
-    val s = sin(rads).toFloat
+    val c: Int = cos(rads).toInt
+    val s: Int = sin(rads).toInt
 
-    new Matrix4(Array(c,    -s,   0.0f, 0.0f,
-      s,    c,    0.0f, 0.0f,
-      0.0f, 0.0f, 1.0f, 0.0f,
-      0.0f, 0.0f, 0.0f, 1.0f))
+    new Matrix4(Array(c,    -s,   0, 0,
+      s,    c,    0, 0,
+      0, 0, 1, 0,
+      0, 0, 0, 1))
   }
 
   /**
@@ -379,10 +379,10 @@ object Matrix4 {
     * @return the translation matrix
     */
   def translate(amount: Vector3) = {
-    new Matrix4(Array(1.0f, 0.0f, 0.0f, amount.x,
-      0.0f, 1.0f, 0.0f, amount.y,
-      0.0f, 0.0f, 1.0f, amount.z,
-      0.0f, 0.0f, 0.0f, 1.0f))
+    new Matrix4(Array(1, 0, 0, amount.x,
+      0, 1, 0, amount.y,
+      0, 0, 1, amount.z,
+      0, 0, 0, 1))
   }
 
   /**
@@ -391,10 +391,10 @@ object Matrix4 {
     * @return the scaling matrix
     */
   def scale(factor: Vector3) = {
-    new Matrix4(Array(factor.x, 0.0f,     0.0f,     0.0f,
-      0.0f,     factor.y, 0.0f,     0.0f,
-      0.0f,     0.0f,     factor.z, 0.0f,
-      0.0f,     0.0f,     0.0f,     1.0f))
+    new Matrix4(Array(factor.x, 0,     0,     0,
+      0,     factor.y, 0,     0,
+      0,     0,     factor.z, 0,
+      0,     0,     0,     1))
   }
 
 }

@@ -1,11 +1,10 @@
 package me.amuxix.pattern.matching
 
 import me.amuxix.pattern.Pattern
+import me.amuxix.util.{Axis, Location, Vector3}
 import org.bukkit.World
-import me.amuxix.util.{Axis, Block, Location, Vector3, Y}
 
 import scala.collection.immutable.SortedSet
-import scala.runtime.Tuple2Zipped
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -26,16 +25,7 @@ class BoundingCube(world: World, possiblePatterns: SortedSet[Pattern], center: L
 	}
 
 	def rotateCW(axis: Axis) = {
-		for {
-			layer <- 0 to blocks.length
-			line <- 0 to blocks(0).length
-			block <- 0 to blocks(0)(0).length
-		} {
-			axis match {
-				case Y =>
-
-			}
-		}
+    
 	}
 
 	def rotateCCW(axis: Axis) = {

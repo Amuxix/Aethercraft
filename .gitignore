@@ -22,6 +22,3 @@ project/plugins/project/
 .scala_dependencies
 .worksheet
 .idea/
-build.sbt
-project/
-src/

@@ -1,11 +1,10 @@
 package me.amuxix.util
 
 import org.bukkit.Material
+import org.bukkit.block.{Block => BukkitBlock}
 
 object Block {
-  implicit def BukkitBlock2Block(bukkitBlock: org.bukkit.block.Block): Unit = {
-    Block(bukkitBlock.getLocation())
-  }
+  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitBlock.getLocation())
 }
 
 /**

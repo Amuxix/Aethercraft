@@ -32,7 +32,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
 
   def *(right: Matrix4) = new Matrix4(mult(data, right.data))
 
-  def *(u: Vector3): Vector3 = {
+  def *(u: Vector3[Int]): Vector3[Int] = {
     Vector3(u.x * this(0, 0) + u.y * this(0, 1) + u.z * this(0, 2) + this(0, 3),
       u.x * this(1, 0) + u.y * this(1, 1) + u.z * this(1, 2) + this(1, 3),
       u.x * this(2, 0) + u.y * this(2, 1) + u.z * this(2, 2) + this(2, 3))
@@ -203,7 +203,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param degrees the Euler angles of the rotation; rotation is performed in XYZ order
     * @return the new transformation matrix
     */
-  def rotate(degrees: Vector3) = new Matrix4(mult(Matrix4.rotate(degrees).data, data))
+  def rotate(degrees: Vector3[Int]) = new Matrix4(mult(Matrix4.rotate(degrees).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
@@ -239,7 +239,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param t the direction to translate in
     * @return the new transformation matrix
     */
-  def translate(t: Vector3) = new Matrix4(mult(Matrix4.translate(t).data, data))
+  def translate(t: Vector3[Int]) = new Matrix4(mult(Matrix4.translate(t).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
@@ -248,7 +248,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param s the amount to scale along each axis
     * @return the new transformation matrix
     */
-  def scale(s: Vector3) = new Matrix4(mult(Matrix4.scale(s).data, data))
+  def scale(s: Vector3[Int]) = new Matrix4(mult(Matrix4.scale(s).data, data))
 
   /**
     * Gets the value of the matrix at the specified translation.
@@ -369,8 +369,8 @@ object Matrix4 {
     * @param degrees a vector containing the rotation orders
     * @return the rotation matrix
     */
-  def rotate(degrees: Vector3) = {
-    rotateZ(degrees.z.toInt) * rotateY(degrees.y.toInt) * rotateX(degrees.x.toInt)
+  def rotate(degrees: Vector3[Int]) = {
+    rotateZ(degrees.z) * rotateY(degrees.y) * rotateX(degrees.x)
   }
 
   /**
@@ -378,10 +378,11 @@ object Matrix4 {
     * @param amount the amount to translate along each axis
     * @return the translation matrix
     */
-  def translate(amount: Vector3) = {
-    new Matrix4(Array(1, 0, 0, amount.x.toInt,
-      0, 1, 0, amount.y.toInt,
-      0, 0, 1, amount.z.toInt,
+  def translate(amount: Vector3[Int]) = {
+    new Matrix4(Array(
+      1, 0, 0, amount.x,
+      0, 1, 0, amount.y,
+      0, 0, 1, amount.z,
       0, 0, 0, 1))
   }
 
@@ -390,11 +391,12 @@ object Matrix4 {
     * @param factor the factor to scale by along each axis
     * @return the scaling matrix
     */
-  def scale(factor: Vector3) = {
-    new Matrix4(Array(factor.x.toInt, 0,     0,     0,
-      0,     factor.y.toInt, 0,     0,
-      0,     0,     factor.z.toInt, 0,
-      0,     0,     0,     1))
+  def scale(factor: Vector3[Int]) = {
+    new Matrix4(Array(
+      factor.x, 0,        0,        0,
+      0,        factor.y, 0,        0,
+      0,        0,        factor.z, 0,
+      0,        0,        0,        1))
   }
 
 }

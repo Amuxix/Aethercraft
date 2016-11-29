@@ -1,11 +1,17 @@
 package me.amuxix.runes
 
 import me.amuxix.pattern.Pattern
-import me.amuxix.util.{Block, Location, Player}
+import me.amuxix.util.{Block, Location, Matrix4, Player}
 
 /**
   * Created by Amuxix on 22/11/2016.
   */
-abstract case class Rune(center: Location, activator: Player, blocks: Array[Array[Array[Block]]])(pattern: Pattern) {
+trait Rune {
+  val location: Location
+  val activator: Player
+  val blocks: Array[Array[Array[Block]]]
+  val pattern: Pattern
+
+  val rotation: Matrix4
 
 }

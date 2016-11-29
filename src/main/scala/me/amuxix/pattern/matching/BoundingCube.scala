@@ -1,25 +1,28 @@
 package me.amuxix.pattern.matching
 
 import me.amuxix.pattern.Pattern
-import me.amuxix.util.{Axis, Block, Location, Vector3}
+import me.amuxix.util.{Block, Location, Vector3}
 import org.bukkit.World
 
 import scala.collection.immutable.SortedSet
+import scala.math.Numeric.DoubleAsIfIntegral
 
 /**
   * Created by Amuxix on 21/11/2016.
   */
 case class BoundingCube(world: World, possiblePatterns: SortedSet[Pattern], center: Location) {
-	val dimensions: Vector3 = possiblePatterns.foldLeft((0, 0, 0)) { case (acc, pattern) =>
+	/*val dimensions: Vector3 = possiblePatterns.foldLeft((0, 0, 0)) { case (acc, pattern) =>
 		maxByValue(acc, pattern.boundingCubeDimensions)
-	}
-	val cubeOrigin = center - dimensions / 2
-	val blocks: Array[Array[Array[Block]]] = Array.tabulate(dimensions.x.toInt, dimensions.y.toInt, dimensions.z.toInt){
+	}*/
+  val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, patttern) => math.max(acc, patttern.largestDimension) }
+  private val vector: Vector3[Double] = Vector3[Double](dimension.toDouble, dimension.toDouble, dimension.toDouble)(DoubleAsIfIntegral)
+  val cubeOrigin: Location = center - vector / 2
+	val blocks = Array.tabulate[Block](dimension, dimension, dimension){
 		case (x, y, z) => world.getBlockAt(x, y, z)
 	}
 
-  def getBlock(position: Vector3): Block = {
-    blocks(position.x.toInt)(position.y.toInt)(position.z.toInt)
+  def getBlock(position: Vector3[Int]): Block = {
+    blocks(position.x)(position.y)(position.z)
   }
 
 	def maxByValue(a: (Int, Int, Int), b: (Int, Int, Int)): (Int, Int, Int) = {

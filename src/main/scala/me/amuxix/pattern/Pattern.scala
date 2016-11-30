@@ -35,8 +35,8 @@ object Pattern {
   * @param numberOfMirroredAxis 0 - no mirroring, 1 - mirrored vertically horizontally, 2 - mirrored in both axis.
   * @param verticality whether the rune can be made vertically
   */
-case class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], numberOfMirroredAxis: Int = 2, verticality: Boolean = false, directional: Boolean = false,
-                   canBeBuiltOnCeiling: Boolean = true) {
+case class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], numberOfMirroredAxis: Int, verticality: Boolean, directional: Boolean,
+                   canBeBuiltOnCeiling: Boolean) {
 	/* IN GAME AXIS
 		 *          Y axis
 		 *          |

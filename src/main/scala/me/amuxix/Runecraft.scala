@@ -10,7 +10,7 @@ class Runecraft extends JavaPlugin {
 	/**
 	  * This register this file as a listener to all of bukkit events.
 	  */
-	override def onEnable(): Unit = {
-		Bukkit.getPluginManager.registerEvents(new Listener, this)
+	override def onEnable() = {
+		Bukkit.getPluginManager.registerEvents(Listener, this)
 	}
 }

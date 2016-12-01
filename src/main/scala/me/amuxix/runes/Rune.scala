@@ -10,7 +10,6 @@ trait Rune {
   val location: Location
   val activator: Player
   val blocks: Array[Array[Array[Block]]]
-  val pattern: Pattern
 
   val rotation: Matrix4
 

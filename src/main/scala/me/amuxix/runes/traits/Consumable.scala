@@ -9,7 +9,5 @@ import me.amuxix.runes.Rune
   * Defines a trait for runes that can have all their blocks consumed, ie: faith when activated consumes all blocks
   */
 trait Consumable extends Tiered { this: Rune =>
-	def consumeRuneBlocks: Unit = {
-
-	}
+	def consumeRuneBlocks() = ???
 }

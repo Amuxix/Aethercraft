@@ -1,7 +1,8 @@
 package me.amuxix.pattern
 
 import me.amuxix.pattern.matching.BoundingCube
-import me.amuxix.util.{Matrix4, Vector3}
+import me.amuxix.runes.{Rune, Test}
+import me.amuxix.util.{Location, Player, _}
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -18,11 +19,16 @@ object ActivationLayer {
 class ActivationLayer(_elements: Element*) extends Layer(_elements:_*)
 
 object Pattern {
-  def apply(width: Int, numberOfMirroredAxis: Int = 2, verticality: Boolean = false,
-            directional: Boolean = false, canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
+  def apply(creator: (Location, Player, Array[Array[Array[Block]]], Matrix4) => Rune, width: Int,
+            numberOfMirroredAxis: Int = 2, verticality: Boolean = false, directional: Boolean = false,
+            canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
     val elements: Seq[Seq[Seq[Element]]] = layers.map(_.toElementsArray(width))
-    new Pattern(activationLayer, elements, numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling)
+    new Pattern(activationLayer, elements, numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling) {
+      def createRune(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4): Rune = {
+        creator(location, activator, blocks, rotation)
+      }
+    }
   }
 }
 
@@ -35,7 +41,7 @@ object Pattern {
   * @param numberOfMirroredAxis 0 - no mirroring, 1 - mirrored vertically horizontally, 2 - mirrored in both axis.
   * @param verticality whether the rune can be made vertically
   */
-case class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], numberOfMirroredAxis: Int, verticality: Boolean, directional: Boolean,
+abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], numberOfMirroredAxis: Int, verticality: Boolean, directional: Boolean,
                    canBeBuiltOnCeiling: Boolean) {
 	/* IN GAME AXIS
 		 *          Y axis
@@ -53,79 +59,14 @@ case class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], numbe
 	private val highHeight: Int = height - activationLayer //Distance from the top layer to the activation layer EXCLUDING the activation layer
 	val largestDimension: Int = ((lowHeight max highHeight) * 2) max width max depth
 	private val patternMaterials: Set[Material] = elements.flatten.flatten.collect { case m: Material => m }.toSet //Set of materials the rune contains
-  /*val boundingCubeDimensions: (Int, Int, Int) = calculateBoundingCubeDimensions //X, Y, Z, activation Layer
-  val boundingCubeCenter: Vector3 = Vector3(ceil(width / 2), activationLayer, ceil(depth / 2)) //X, Y, Z
-
-  private def calculateBoundingCubeDimensions: (Int, Int, Int) = {
-    //Default value for when rune is direction but cannot be built vertically
-    val height: Int = if (canBeBuiltOnCeiling) (lowHeight max highHeight) * 2 else this.height
-    if (directional) {
-      if (verticality) {
-        //Rune must face a certain direction but can be built vertically
-        (width max height, depth max width max height, depth max height)
-      } else {
-        (width, height, depth)
-      }
-    } else {
-      if (verticality) {
-        //Rune can be rotated to any direction and can be built vertically
-        (depth max width max height, depth max width max height, depth max width max height)
-      } else {
-        //Rune can be rotated but can NOT be built vertically
-        (depth max width, height, depth max width)
-      }
-    }
-  }
-
-  private def calculateBoundingCubeCenter: Vector3 = {
-    //Default value for when rune is direction but cannot be built vertically
-    val height: Int = if (canBeBuiltOnCeiling) (lowHeight max highHeight) * 2 else this.height
-    if (directional) {
-      if (verticality) {
-        //Rune must face a certain direction but can be built vertically
-        (width max height, depth max width max height, depth max height)
-      } else {
-        Vector3(ceil(width / 2), activationLayer, ceil(depth / 2))
-      }
-    } else {
-      if (verticality) {
-        //Rune can be rotated to any direction and can be built vertically
-        (depth max width max height, depth max width max height, depth max width max height)
-      } else {
-        //Rune can be rotated but can NOT be built vertically
-        (depth max width, height, depth max width)
-      }
-    }
-  }*/
-
-	/*private def calculateBoundingCubeDimensions: (Int, Int, Int, Int) = {
-		//Default value for when rune is direction but cannot be built vertically
-		val height: Int = if (canBeBuiltOnCeiling) (lowHeight max highHeight) * 2 else this.height
-    val activationLayer: Int = if (canBeBuiltOnCeiling) height / 2 else this.activationLayer
-		if (directional) {
-			if (verticality) {
-				//Rune must face a certain direction but can be built vertically
-        (depth max width max height, width max height, depth max height, activationLayer)
-			} else {
-        (height, width, depth, activationLayer)
-      }
-		} else {
-			if (verticality) {
-				//Rune can be rotated to any direction and can be built vertically
-        (depth max width max height, depth max width max height, depth max width max height, activationLayer)
-			} else {
-				//Rune can be rotated but can NOT be built vertically
-        (height, depth max width, depth max width, activationLayer)
-			}
-		}
-	}*/
-
-	/*
+  /*
 	def verifyRuneIntegrity //Verifies if pattern is possible
     width and depth are odd(even dimensions won't have a center block)
     Runes 1 layer high can always be built on ceiling
 
    */
+
+  def createRune(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4): Rune
 
   /**
     * Looks for this pattern in the given bounding cube
@@ -182,29 +123,31 @@ case class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], numbe
       elements(layer)(line)(block) match {
         //Material different from pattern
         case material: Material if blockMaterial != material => return false
-        case patternElement =>
+        case Tier =>
           if (patternMaterials contains blockMaterial) {
-            //Tier, signature, key and none blocks can't be specific rune materials
+            //
             return false
           }
-          patternElement match {
-            case Tier =>
-              if (firstTier.isDefined && blockMaterial != firstTier.get) {
-                //All tier blocks must be the same material
-                return false
-              } else {
-                firstTier = Option(blockMaterial)
-              }
-            case Signature => signature += blockMaterial
-            case Key => key += blockMaterial
-            case NotInRune => none += blockMaterial
+          if (firstTier.isDefined && blockMaterial != firstTier.get) {
+            //All tier blocks must be the same material
+            return false
+          } else {
+            firstTier = Option(blockMaterial)
           }
+        case Signature => signature += blockMaterial
+        case Key => key += blockMaterial
+        case NotInRune => none += blockMaterial
       }
     }
 
     if (firstTier.isDefined) {
-      if (signature ++ key ++ none contains firstTier.get) {
+      val specialBlocks: Set[Material] = signature ++ key ++ none
+      if (specialBlocks contains firstTier.get) {
         //Signature, key and none can't be the same as tier or specific materials
+        return false
+      }
+      if (patternMaterials.exists((specialBlocks ++ firstTier).contains)) {
+        //Checks if any of the special block is a pattern material, we don't want that to avoid possible missmatches
         return false
       }
     }

@@ -1,11 +1,8 @@
 package me.amuxix.pattern.matching
 
-import me.amuxix.pattern.Pattern
-import me.amuxix.runes.Rune
-import me.amuxix.util.{Location, Matrix4}
-import org.bukkit.World
-
-import scala.collection.immutable.SortedSet
+import me.amuxix.pattern.{RunePattern, Pattern}
+import me.amuxix.runes.{Test, Test2}
+import me.amuxix.util.{Location, Player}
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -13,26 +10,26 @@ import scala.collection.immutable.SortedSet
   */
 object Matcher {
 
-  //private var patterns: Map[Pattern, A => Rune]
-
-  /*def addRune(rune: Class[_ <: Rune]): Unit = {
-
-  }*/
-
-
+  private val patterns: Seq[RunePattern] = Seq(Test, Test2)
 
   /**
     * Looks for runes at the given location
     * @param location position to look for runes
     */
-  def lookForRunesAt(location: Location): Unit = {
-
+  def lookForRunesAt(location: Location, activator: Player): Unit = {
+    val possiblePatterns: Set[Pattern] = patterns.map((obj) => obj.pattern).toSet
+      matchRunes(location, activator, possiblePatterns)
   }
-  def matchRunes(world: World, possiblePatterns: SortedSet[Pattern], center: Location) = {
-    val boundingCube = BoundingCube(world, possiblePatterns, center)
+
+  def matchRunes(center: Location, activator: Player, possiblePatterns: Set[Pattern]) = { //The pattern set needs to be sorted to allow some runes to have priority over others
+    val boundingCube = BoundingCube(center, possiblePatterns)
+    /*for {
+      pattern <- possiblePatterns if pattern.foundIn(boundingCube)
+    } yield pattern.createRune(center, activator, boundingCube, )*/
+
     for (pattern <- possiblePatterns) {
       if (pattern.foundIn(boundingCube)) {
-        true //Return rune here
+        true //pattern.createRune(center, activator) //Return rune here
       }
     }
   }

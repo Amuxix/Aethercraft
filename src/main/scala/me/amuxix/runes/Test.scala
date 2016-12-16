@@ -12,8 +12,9 @@ import org.bukkit.Material.ENDER_STONE
     * Test rune, does nothing pattern might chance
     */
 
-  object Test {
-    val pattern = Pattern(Test.apply, width = 3)(ActivationLayer(
+object Test extends RunePattern {
+    val pattern = Pattern(Test.apply, width = 3)(
+      ActivationLayer(
         NotInRune, ENDER_STONE, NotInRune,
         ENDER_STONE, NotInRune, ENDER_STONE,
         NotInRune, ENDER_STONE, NotInRune
@@ -21,9 +22,10 @@ import org.bukkit.Material.ENDER_STONE
         Tier, Signature, Tier,
         ENDER_STONE, ENDER_STONE, ENDER_STONE,
         ENDER_STONE, ENDER_STONE, ENDER_STONE
-      ))
+      )
+    )
 }
-case class Test(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4)
+case class Test(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4, pattern: Pattern)
   extends Rune
     with Tiered
     with Consumable

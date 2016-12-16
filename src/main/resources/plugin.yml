@@ -1,6 +1,5 @@
 name: Runecraft
 version: Scala Alpha
 authors: [ Zeerix, SuperLlama, C'tri, RivkiinShadows, josiah42, Amuxix, lvletei ]
-main: net.cerberusstudios.llama.runecraft.Runecraft
+main: me.amuxix.Runecraft
 website: http://forums.bukkit.org/threads/Runecraft.14897/
-downloads: http://llama.cerberusstudios.net/runecraft/

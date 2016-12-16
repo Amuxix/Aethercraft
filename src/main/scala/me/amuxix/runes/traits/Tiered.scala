@@ -1,5 +1,6 @@
 package me.amuxix.runes.traits
 
+import me.amuxix.pattern.Tier
 import me.amuxix.runes.Rune
 import me.amuxix.util.{Block, Matrix4}
 
@@ -10,6 +11,9 @@ import me.amuxix.util.{Block, Matrix4}
   * Used by runes that have a tier associated with them
   */
 trait Tiered { this: Rune =>
-  def getTierBlocks: List[Block] = ???
+  def getTierBlocks: Seq[Block] = {
+    pattern.getSpecialBlocksPositions(Tier)
+    ???
+  }
 	def getTier: Integer = ???
 }

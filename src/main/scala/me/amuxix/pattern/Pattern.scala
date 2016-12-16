@@ -19,14 +19,14 @@ object ActivationLayer {
 class ActivationLayer(_elements: Element*) extends Layer(_elements:_*)
 
 object Pattern {
-  def apply(creator: (Location, Player, Array[Array[Array[Block]]], Matrix4) => Rune, width: Int,
+  def apply[R <: Rune](creator: (Location, Player, Array[Array[Array[Block]]], Matrix4, Pattern) => R, width: Int,
             numberOfMirroredAxis: Int = 2, verticality: Boolean = false, directional: Boolean = false,
             canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
     val elements: Seq[Seq[Seq[Element]]] = layers.map(_.toElementsArray(width))
     new Pattern(activationLayer, elements, numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling) {
       def createRune(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4): Rune = {
-        creator(location, activator, blocks, rotation)
+        creator(location, activator, blocks, rotation, this)
       }
     }
   }
@@ -118,7 +118,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], n
       line <- 0 to width
       block <- 0 to depth
     } {
-      val relativePosition: Vector3[Int] = Vector3(layer , line, block) - offsetVector
+      val relativePosition: Vector3[Int] = Vector3(layer , line, block) + offsetVector
       val blockMaterial: Material = boundingCube.getBlock(rotationMatrix * relativePosition).getType
       elements(layer)(line)(block) match {
         //Material different from pattern

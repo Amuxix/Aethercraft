@@ -10,7 +10,7 @@ import scala.math.Numeric.DoubleAsIfIntegral
 /**
   * Created by Amuxix on 21/11/2016.
   */
-case class BoundingCube(world: World, possiblePatterns: SortedSet[Pattern], center: Location) {
+case class BoundingCube(center: Location, possiblePatterns: Set[Pattern]) {
 	/*val dimensions: Vector3 = possiblePatterns.foldLeft((0, 0, 0)) { case (acc, pattern) =>
 		maxByValue(acc, pattern.boundingCubeDimensions)
 	}*/
@@ -18,7 +18,7 @@ case class BoundingCube(world: World, possiblePatterns: SortedSet[Pattern], cent
   private val vector: Vector3[Double] = Vector3[Double](dimension.toDouble, dimension.toDouble, dimension.toDouble)(DoubleAsIfIntegral)
   val cubeOrigin: Location = center - vector / 2
 	val blocks = Array.tabulate[Block](dimension, dimension, dimension){
-		case (x, y, z) => world.getBlockAt(x, y, z)
+		case (x, y, z) => center.world.getBlockAt(x, y, z)
 	}
 
   def getBlock(position: Vector3[Int]): Block = {

@@ -6,7 +6,10 @@ scalaVersion := "2.12.0"
 
 resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/groups/public/"
 
-libraryDependencies += "org.bukkit" % "bukkit" % "1.11-R0.1-SNAPSHOT"
+libraryDependencies ++= Seq(
+  "org.bukkit" % "bukkit" % "1.11-R0.1-SNAPSHOT",
+  "org.scalatest" % "scalatest_2.11" % "3.0.1" % Test
+)
 
 scalacOptions ++= Seq(
   "-deprecation", //Emit warning and location for usages of deprecated APIs.

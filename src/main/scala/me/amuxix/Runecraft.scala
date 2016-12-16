@@ -6,7 +6,7 @@ import org.bukkit.plugin.java.JavaPlugin
 /**
   * Created by Amuxix on 21/11/2016.
   */
-class Runecraft extends JavaPlugin {
+object Runecraft extends JavaPlugin {
 	/**
 	  * This register this file as a listener to all of bukkit events.
 	  */

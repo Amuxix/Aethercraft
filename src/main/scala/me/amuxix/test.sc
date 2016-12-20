@@ -1,4 +1,5 @@
-List(Seq(1, 2), Seq(3, 4)) map {
-  case m @ Seq(x, y) => println("x: $x y: $y")
+import java.util.Calendar
+import java.text.SimpleDateFormat
 
-}
+Calendar.getInstance().getTime
+new SimpleDateFormat("dd/MM/yy HH'h'mm zzz").format(Calendar.getInstance().getTime)

@@ -11,11 +11,11 @@ import org.bukkit.Material.ENDER_STONE
 object Test2 extends RunePattern {
   val pattern = Pattern(Test2.apply, width = 5)(
     ActivationLayer(
-      NotInRune, ENDER_STONE, NotInRune, ENDER_STONE, NotInRune,
       ENDER_STONE, NotInRune, ENDER_STONE, NotInRune, ENDER_STONE,
       NotInRune, ENDER_STONE, NotInRune, ENDER_STONE, NotInRune,
       ENDER_STONE, NotInRune, ENDER_STONE, NotInRune, ENDER_STONE,
-      NotInRune, ENDER_STONE, NotInRune, ENDER_STONE, NotInRune
+      NotInRune, ENDER_STONE, NotInRune, ENDER_STONE, NotInRune,
+      ENDER_STONE, NotInRune, ENDER_STONE, NotInRune, ENDER_STONE
     )
   )
 }

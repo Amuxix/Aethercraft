@@ -4,7 +4,7 @@ import me.amuxix.logging.Logger
 import me.amuxix.pattern.{Pattern, RunePattern}
 import me.amuxix.runes.{Rune, Test2}
 import me.amuxix.util.Block.Location
-import me.amuxix.util.Player
+import me.amuxix.util.{Matrix4, Player}
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -31,9 +31,10 @@ object Matcher {
     } yield pattern.createRune(center, activator, boundingCube, )*/
 
     for (pattern <- possiblePatterns) {
-      if (pattern.foundIn(boundingCube)) {
+      val maybeMatrix: Option[Matrix4] = pattern.foundIn(boundingCube)
+      if (maybeMatrix.isDefined) {
         Logger.log("Rune found")
-        return None //Some(pattern.createRune(center, activator)) //Return rune here
+        return Some(pattern.createRune(center, activator, pattern.getRuneBlocks(boundingCube), maybeMatrix.get))
       }
     }
     None

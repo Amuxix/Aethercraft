@@ -1,5 +1,6 @@
 package me.amuxix.runes
 
+import me.amuxix.logging.Logger
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Consumable
 import me.amuxix.util.Block.Location
@@ -22,5 +23,5 @@ object Test2 extends RunePattern {
 }
 case class Test2(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4, pattern: Pattern)
   extends Rune with Consumable {
-
+  Logger.log("Test 2 activated.")
 }

@@ -1,11 +1,9 @@
 package me.amuxix.pattern.matching
 
 import me.amuxix.pattern.Pattern
-import me.amuxix.util.{Block, Location, Vector3}
-import org.bukkit.World
+import me.amuxix.util.Block.Location
+import me.amuxix.util.{Block, Vector3}
 
-import scala.collection.immutable.SortedSet
-import scala.math.Numeric.DoubleAsIfIntegral
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -15,10 +13,10 @@ case class BoundingCube(center: Location, possiblePatterns: Set[Pattern]) {
 		maxByValue(acc, pattern.boundingCubeDimensions)
 	}*/
   val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, patttern) => math.max(acc, patttern.largestDimension) }
-  private val vector: Vector3[Double] = Vector3[Double](dimension.toDouble, dimension.toDouble, dimension.toDouble)(DoubleAsIfIntegral)
+  private val vector: Vector3[Int] = Vector3(dimension, dimension, dimension)
   val cubeOrigin: Location = center - vector / 2
 	val blocks = Array.tabulate[Block](dimension, dimension, dimension){
-		case (x, y, z) => center.world.getBlockAt(x, y, z)
+		case (x, y, z) => (cubeOrigin + Vector3(x, y, z)).getBlock
 	}
 
   def getBlock(position: Vector3[Int]): Block = {

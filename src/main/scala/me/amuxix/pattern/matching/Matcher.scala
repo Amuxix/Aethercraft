@@ -1,8 +1,10 @@
 package me.amuxix.pattern.matching
 
-import me.amuxix.pattern.{RunePattern, Pattern}
-import me.amuxix.runes.{Test, Test2}
-import me.amuxix.util.{Location, Player}
+import me.amuxix.logging.Logger
+import me.amuxix.pattern.{Pattern, RunePattern}
+import me.amuxix.runes.{Rune, Test2}
+import me.amuxix.util.Block.Location
+import me.amuxix.util.Player
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -10,18 +12,19 @@ import me.amuxix.util.{Location, Player}
   */
 object Matcher {
 
-  private val patterns: Seq[RunePattern] = Seq(Test, Test2)
+  private val patterns: Seq[RunePattern] = Seq(Test2)
 
   /**
     * Looks for runes at the given location
     * @param location position to look for runes
     */
-  def lookForRunesAt(location: Location, activator: Player): Unit = {
+  def lookForRunesAt(location: Location, activator: Player): Option[Rune] = {
+    Logger.log("Click Location:" + location)
     val possiblePatterns: Set[Pattern] = patterns.map((obj) => obj.pattern).toSet
-      matchRunes(location, activator, possiblePatterns)
+    matchRunes(location, activator, possiblePatterns)
   }
 
-  def matchRunes(center: Location, activator: Player, possiblePatterns: Set[Pattern]) = { //The pattern set needs to be sorted to allow some runes to have priority over others
+  def matchRunes(center: Location, activator: Player, possiblePatterns: Set[Pattern]): Option[Rune] = { //The pattern set needs to be sorted to allow some runes to have priority over others
     val boundingCube = BoundingCube(center, possiblePatterns)
     /*for {
       pattern <- possiblePatterns if pattern.foundIn(boundingCube)
@@ -29,8 +32,10 @@ object Matcher {
 
     for (pattern <- possiblePatterns) {
       if (pattern.foundIn(boundingCube)) {
-        true //pattern.createRune(center, activator) //Return rune here
+        Logger.log("Rune found")
+        return None //Some(pattern.createRune(center, activator)) //Return rune here
       }
     }
+    None
   }
 }

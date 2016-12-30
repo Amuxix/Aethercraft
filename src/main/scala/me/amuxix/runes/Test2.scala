@@ -2,7 +2,8 @@ package me.amuxix.runes
 
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Consumable
-import me.amuxix.util.{Block, Location, Matrix4, Player}
+import me.amuxix.util.Block.Location
+import me.amuxix.util.{Block, Matrix4, Player}
 import org.bukkit.Material.ENDER_STONE
 
 /**

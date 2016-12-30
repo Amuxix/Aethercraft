@@ -7,6 +7,6 @@ import me.amuxix.Runecraft
   */
 object Logger {
   def log(text: String): Unit = {
-    Runecraft.getLogger.info(text)
+    Runecraft.logger.info(text)
   }
 }

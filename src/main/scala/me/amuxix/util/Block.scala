@@ -1,15 +1,17 @@
 package me.amuxix.util
 
+import me.amuxix.util.Block.Location
 import org.bukkit.Material
 import org.bukkit.block.{Block => BukkitBlock}
-
-object Block {
-  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitBlock.getLocation())
-}
 
 /**
   * Created by Amuxix on 22/11/2016.
   */
-case class Block(location: Location) {
-	def getType: Material = ???
+object Block {
+  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitBlock, bukkitBlock.getType)
+  type Location = Position[Int]
+}
+
+case class Block(location: Location, material: Material) {
+	def getType: Material = material
 }

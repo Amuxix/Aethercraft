@@ -1,7 +1,8 @@
 package me.amuxix.runes
 
 import me.amuxix.pattern.Pattern
-import me.amuxix.util.{Block, Location, Matrix4, Player}
+import me.amuxix.util.Block.Location
+import me.amuxix.util.{Block, Matrix4, Player}
 
 /**
   * Created by Amuxix on 22/11/2016.

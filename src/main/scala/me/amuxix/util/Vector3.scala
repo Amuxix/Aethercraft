@@ -17,4 +17,6 @@ case class Vector3[T : Integral](x: T, y: T, z: T) {
 	def -(vector: Vector3[T]): Vector3[T] = Vector3(x - vector.x, y - vector.y, z - vector.z)
 	def *(constant: T): Vector3[T] = Vector3(x * constant, y * constant, z * constant)
 	def /(constant: T): Vector3[T] = Vector3(x / constant, y / constant, z / constant)
+
+  override def toString: String = "(" + x + ", " + y + ", " + z + ")"
 }

@@ -1,8 +1,10 @@
 package me.amuxix.pattern
 
+import me.amuxix.logging.Logger.log
 import me.amuxix.pattern.matching.BoundingCube
-import me.amuxix.runes.{Rune, Test}
-import me.amuxix.util.{Location, Player, _}
+import me.amuxix.runes.Rune
+import me.amuxix.util.Block.Location
+import me.amuxix.util.{Block, Matrix4, Player, Vector3}
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -75,14 +77,19 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], n
     */
   def foundIn(boundingCube: BoundingCube): Boolean = {
     val rotationMatrix = Matrix4.IDENTITY
+    log("Match without rotation")
     if (matchHorizontalRotations(boundingCube, rotationMatrix)) return true
     if (verticality) {
+      log("Match z vertical")
       val zRotationMatrix = rotationMatrix.rotateZ(90).translate((0, boundingCube.dimension, 0))
       if (matchHorizontalRotations(boundingCube, zRotationMatrix)) return true
+      log("Match x vertical")
       val xRotationMatrix = rotationMatrix.rotateX(90).translate((0, 0, boundingCube.dimension))
       if (matchHorizontalRotations(boundingCube, xRotationMatrix)) return true
     }
-    if (canBeBuiltOnCeiling) {
+    if (canBeBuiltOnCeiling && height > 1) {
+      //No need to rotate if the rune only has 1 layer as it will be the same shape before and after rotating
+      log("Match ceiling")
       val ceilingRotationMatrix = rotationMatrix.rotateX(180).translate((0, boundingCube.dimension, boundingCube.dimension))
       if (matchHorizontalRotations(boundingCube, ceilingRotationMatrix)) return true
     }
@@ -91,14 +98,18 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], n
 
   private def matchHorizontalRotations(boundingCube: BoundingCube, originalMatrix: Matrix4): Boolean = {
     var rotationMatrix: Matrix4 = originalMatrix
+    log("Match default")
     if (matchesRotation(boundingCube, rotationMatrix)) return true
     if (directional == false && numberOfMirroredAxis < 2) {
       //Directional Runes don't need to rotate in Y axis
+      log("Match at 90º")
       rotationMatrix = rotationMatrix.rotateY(90).translate((boundingCube.dimension, 0, 0))
       if (matchesRotation(boundingCube, rotationMatrix.invert)) return true
       if (numberOfMirroredAxis == 0) {
+        log("Match at 180º")
         rotationMatrix = rotationMatrix.rotateY(90).translate((boundingCube.dimension, 0, 0))
         if (matchesRotation(boundingCube, rotationMatrix.invert)) return true
+        log("Match at 270º")
         rotationMatrix = rotationMatrix.rotateY(90).translate((boundingCube.dimension, 0, 0))
         if (matchesRotation(boundingCube, rotationMatrix.invert)) return true
       }
@@ -111,15 +122,25 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], n
     var signature = Set.empty[Material]
     var key = Set.empty[Material]
     var none = Set.empty[Material]
+    log("Bounding cube dimension: " + boundingCube.dimension)
+    log("width: " + width)
+    log("depth: " + depth)
+    log("height: " + height)
     val offsetVector: Vector3[Int] = Vector3(boundingCube.dimension - width,  boundingCube.dimension - height, boundingCube.dimension - depth) / 2 //Needs testing
+    log("Offset Vector: " + offsetVector)
     //These offsets represent the difference in dimensions from the bounding cube to this pattern
     for {
-      layer <- 0 to height
-      line <- 0 to width
-      block <- 0 to depth
+      layer <- 0 until height
+      line <- 0 until width
+      block <- 0 until depth
     } {
       val relativePosition: Vector3[Int] = Vector3(layer , line, block) + offsetVector
+      log("Relative Position: " + relativePosition)
+      log("Rotation Matrix: " + rotationMatrix)
+      log("Rotated Position: " + rotationMatrix * relativePosition)
       val blockMaterial: Material = boundingCube.getBlock(rotationMatrix * relativePosition).getType
+      log("Block Type: " + blockMaterial)
+      log("Absolute Block position: " + boundingCube.getBlock(rotationMatrix * relativePosition).location)
       elements(layer)(line)(block) match {
         //Material different from pattern
         case material: Material if blockMaterial != material => return false

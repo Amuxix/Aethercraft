@@ -14,7 +14,7 @@ import org.bukkit.Material.{ENDER_STONE, GLASS}
     */
 
 object Test extends RunePattern {
-    val pattern = Pattern(Test.apply, width = 3, numberOfMirroredAxis = 1, verticality = true)(
+    val pattern = Pattern(Test.apply, width = 3, numberOfMirroredAxis = false, verticality = true)(
       ActivationLayer(
         ENDER_STONE, NotInRune, ENDER_STONE,
         NotInRune, ENDER_STONE, NotInRune,

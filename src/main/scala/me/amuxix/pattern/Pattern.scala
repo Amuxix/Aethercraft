@@ -23,7 +23,7 @@ class ActivationLayer(_elements: Element*) extends Layer(_elements:_*)
 
 object Pattern {
   def apply[R <: Rune](creator: (Location, Player, Array[Array[Array[Block]]], Matrix4, Vector3[Int], Pattern) => R, width: Int,
-            numberOfMirroredAxis: Int = 2, verticality: Boolean = false, directional: Boolean = false,
+            numberOfMirroredAxis: Boolean = true, verticality: Boolean = false, directional: Boolean = false,
             canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
     val elements: Seq[Seq[Seq[Element]]] = layers.map(_.toElementsArray(width))
@@ -40,13 +40,13 @@ object Pattern {
   * Pattern for a rune
   * @param activationLayer Layer where the activation block is
   * @param elements The pattern itself, layer by layer
-  * @param numberOfMirroredAxis 0 - no mirroring, 1 - mirrored vertically horizontally, 2 - mirrored in both axis.
+  * @param hasTwoMirroredAxis 0 - no mirroring, 1 - mirrored vertically horizontally, 2 - mirrored in both axis.
   * @param verticality Whether the rune can be made vertically
   * @param directional True when the rune has to be built in a certain direction
   * @param canBeBuiltOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
   */
-abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], numberOfMirroredAxis: Int, verticality: Boolean, directional: Boolean,
-                   canBeBuiltOnCeiling: Boolean) {
+abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], hasTwoMirroredAxis: Boolean, verticality: Boolean, directional: Boolean,
+                       canBeBuiltOnCeiling: Boolean) {
 	/* IN GAME AXIS
 		 *          Y axis
 		 *          |
@@ -99,12 +99,12 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], n
   private def matchHorizontalRotations(boundingCube: BoundingCube, rotationMatrix: Matrix4): Option[Matrix4] = {
     var possibleRotations = Seq(() => rotationMatrix)
     if (directional == false) {
-      if (numberOfMirroredAxis < 2) {
+      if (hasTwoMirroredAxis == false) {
         possibleRotations :+= (() => rotationMatrix.rotateY(90))
         possibleRotations :+= (() => rotationMatrix.rotateY(180))
         possibleRotations :+= (() => rotationMatrix.rotateY(270))
       }
-      if (numberOfMirroredAxis == 2 && width != depth) {
+      if (hasTwoMirroredAxis == true && width != depth) {
         possibleRotations :+= (() => rotationMatrix.rotateY(90))
       }
     }

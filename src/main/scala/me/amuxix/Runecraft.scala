@@ -8,6 +8,7 @@ import org.bukkit.{Bukkit, Server}
 object Runecraft{
   var logger: Logger = _
   var server: Server = _
+  var self: Runecraft = _
 }
 
 /**
@@ -21,5 +22,6 @@ class Runecraft extends JavaPlugin {
 		Bukkit.getPluginManager.registerEvents(Listener, this)
     Runecraft.logger = getLogger
     Runecraft.server = getServer
+    Runecraft.self = this
 	}
 }

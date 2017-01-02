@@ -12,4 +12,8 @@ object Logger {
   def trace(text: => String): Unit = {
     Runecraft.logger.finest(text)
   }
+
+  def severe(text: => String): Unit = {
+    Runecraft.logger.severe(text)
+  }
 }

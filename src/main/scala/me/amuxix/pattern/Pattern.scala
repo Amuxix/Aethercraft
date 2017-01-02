@@ -1,6 +1,6 @@
 package me.amuxix.pattern
 
-import me.amuxix.logging.Logger.trace
+import me.amuxix.logging.Logger.{severe, trace}
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.Rune
 import me.amuxix.util.Block.Location
@@ -26,6 +26,9 @@ object Pattern {
             numberOfMirroredAxis: Boolean = true, verticality: Boolean = false, directional: Boolean = false,
             canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
+    if (width % 2 == 0) {
+      severe("Rune pattern has even width making it impossible to have a center!")
+    }
     val elements: Seq[Seq[Seq[Element]]] = layers.map(_.toElementsArray(width))
     new Pattern(activationLayer, elements, numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling) {
       def createRune(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune = {
@@ -65,9 +68,9 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
 	private val patternMaterials: Set[Material] = elements.flatten.flatten.collect { case m: Material => m }.toSet //Set of materials the rune contains
   /*
 	def verifyRuneIntegrity //Verifies if pattern is possible
-    width and depth are odd(even dimensions won't have a center block)
+    Width and depth must be odd(even dimensions won't have a center block)
     Runes 1 layer high can always be built on ceiling
-    Runes that implement Tiered must have tier blocks
+    Runes that implement Tiered must have tier blocks and vice versa
    */
 
   def createRune(center: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune

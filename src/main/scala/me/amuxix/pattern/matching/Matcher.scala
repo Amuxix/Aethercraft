@@ -1,7 +1,7 @@
 package me.amuxix.pattern.matching
 
 import me.amuxix.pattern.{Pattern, RunePattern}
-import me.amuxix.runes.{Rune, Test, Test2}
+import me.amuxix.runes.{Compass, Rune, Test, Test2}
 import me.amuxix.util.Block.Location
 import me.amuxix.util.{Matrix4, Player}
 
@@ -11,7 +11,7 @@ import me.amuxix.util.{Matrix4, Player}
   */
 object Matcher {
 
-  private val patterns: Seq[RunePattern] = Seq(Test, Test2)
+  private val patterns: Seq[RunePattern] = Seq(Test, Test2, Compass)
 
   /**
     * Looks for runes at the given location

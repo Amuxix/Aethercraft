@@ -6,7 +6,10 @@ import me.amuxix.Runecraft
   * Created by Amuxix on 15/12/2016.
   */
 object Logger {
-  def log(text: String): Unit = {
+  def info(text: => String): Unit = {
     Runecraft.logger.info(text)
+  }
+  def trace(text: => String): Unit = {
+    Runecraft.logger.finest(text)
   }
 }

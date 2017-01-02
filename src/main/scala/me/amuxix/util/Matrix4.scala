@@ -198,7 +198,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
-    * and then does a rotation; positive values rotate counter-clockwise.
+    * and then does a rotation; positive values rotate clockwise.
     * In other words, a rotation matrix is left-multiplied to the current matrix.
     * @param degrees the Euler angles of the rotation; rotation is performed in XYZ order
     * @return the new transformation matrix
@@ -207,27 +207,27 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
-    * and then does a rotation about the positive X-axis; positive values rotate counter-clockwise.
+    * and then does a rotation about the positive X-axis; positive values rotate clockwise.
     * In other words, a rotation matrix is left-multiplied to the current matrix.
-    * @param degrees the degrees to rotate counter-clockwise along the +X-axis
+    * @param degrees the degrees to rotate clockwise along the +X-axis
     * @return the new transformation matrix
     */
   def rotateX(degrees: Int) = new Matrix4(mult(Matrix4.rotateX(degrees).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
-    * and then does a rotation about the positive Y-axis; positive values rotate counter-clockwise.
+    * and then does a rotation about the positive Y-axis; positive values rotate clockwise.
     * In other words, a rotation matrix is left-multiplied to the current matrix.
-    * @param degrees the degrees to rotate counter-clockwise along the +Y-axis
+    * @param degrees the degrees to rotate clockwise along the +Y-axis
     * @return the new transformation matrix
     */
   def rotateY(degrees: Int) = new Matrix4(mult(Matrix4.rotateY(degrees).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
-    * and then does a rotation about the positive Z-axis; positive values rotate counter-clockwise.
+    * and then does a rotation about the positive Z-axis; positive values rotate clockwise.
     * In other words, a rotation matrix is left-multiplied to the current matrix.
-    * @param degrees the degrees to rotate counter-clockwise along the +Z-axis
+    * @param degrees the degrees to rotate clockwise along the +Z-axis
     * @return the new transformation matrix
     */
   def rotateZ(degrees: Int) = new Matrix4(mult(Matrix4.rotateZ(degrees).data, data))
@@ -310,16 +310,16 @@ object Matrix4 {
     0, 0, 0, 0))
 
   /**
-    * Performs a counter-clockwise rotation on the positive x-axis,
-    * i.e. the rotation would appear to be counter-clockwise if looking in
+    * Performs a clockwise rotation on the positive x-axis,
+    * i.e. the rotation would appear to be clockwise if looking in
     * the direction of the negative x-axis.
     *
     * @param degrees the angle to rotate
     * @return the rotation matrix
     */
   def rotateX(degrees: Int) = {
-    val c: Int = cos(degrees.toRadians).toInt
-    val s: Int = sin(degrees.toRadians).toInt
+    val c: Int = cos(degrees.toRadians).round.toInt
+    val s: Int = sin(degrees.toRadians).round.toInt
 
     new Matrix4(Array(1, 0, 0, 0,
       0, c,    -s,   0,
@@ -328,16 +328,16 @@ object Matrix4 {
   }
 
   /**
-    * Performs a counter-clockwise rotation on the positive y-axis,
-    * i.e. the rotation would appear to be counter-clockwise if looking in
+    * Performs a clockwise rotation on the positive y-axis,
+    * i.e. the rotation would appear to be clockwise if looking in
     * the direction of the negative y-axis.
     *
     * @param degrees the angle to rotate
     * @return the rotation matrix
     */
   def rotateY(degrees: Int) = {
-    val c: Int = cos(degrees.toRadians).toInt
-    val s: Int = sin(degrees.toRadians).toInt
+    val c: Int = cos(degrees.toRadians).round.toInt
+    val s: Int = sin(degrees.toRadians).round.toInt
 
     new Matrix4(Array(c,    0, s,  0,
       0, 1, 0, 0,
@@ -346,16 +346,16 @@ object Matrix4 {
   }
 
   /**
-    * Performs a counter-clockwise rotation on the positive z-axis,
-    * i.e. the rotation would appear to be counter-clockwise if looking in
+    * Performs a clockwise rotation on the positive z-axis,
+    * i.e. the rotation would appear to be clockwise if looking in
     * the direction of the negative z-axis.
     *
     * @param degrees the angle to rotate
     * @return the rotation matrix
     */
   def rotateZ(degrees: Int) = {
-    val c: Int = cos(degrees.toRadians).toInt
-    val s: Int = sin(degrees.toRadians).toInt
+    val c: Int = cos(degrees.toRadians).round.toInt
+    val s: Int = sin(degrees.toRadians).round.toInt
 
     new Matrix4(Array(c,    -s,   0, 0,
       s,    c,    0, 0,

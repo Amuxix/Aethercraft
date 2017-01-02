@@ -1,8 +1,7 @@
 package me.amuxix.pattern.matching
 
-import me.amuxix.logging.Logger
 import me.amuxix.pattern.{Pattern, RunePattern}
-import me.amuxix.runes.{Rune, Test2}
+import me.amuxix.runes.{Rune, Test, Test2}
 import me.amuxix.util.Block.Location
 import me.amuxix.util.{Matrix4, Player}
 
@@ -12,14 +11,13 @@ import me.amuxix.util.{Matrix4, Player}
   */
 object Matcher {
 
-  private val patterns: Seq[RunePattern] = Seq(Test2)
+  private val patterns: Seq[RunePattern] = Seq(Test, Test2)
 
   /**
     * Looks for runes at the given location
     * @param location position to look for runes
     */
   def lookForRunesAt(location: Location, activator: Player): Option[Rune] = {
-    Logger.log("Click Location:" + location)
     val possiblePatterns: Set[Pattern] = patterns.map((obj) => obj.pattern).toSet
     matchRunes(location, activator, possiblePatterns)
   }
@@ -33,8 +31,7 @@ object Matcher {
     for (pattern <- possiblePatterns) {
       val maybeMatrix: Option[Matrix4] = pattern.foundIn(boundingCube)
       if (maybeMatrix.isDefined) {
-        Logger.log("Rune found")
-        return Some(pattern.createRune(center, activator, pattern.getRuneBlocks(boundingCube), maybeMatrix.get))
+        return Some(pattern.createRune(center, activator, pattern.getRuneBlocks(boundingCube), maybeMatrix.get, boundingCube.center))
       }
     }
     None

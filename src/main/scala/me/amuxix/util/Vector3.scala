@@ -18,5 +18,14 @@ case class Vector3[T : Integral](x: T, y: T, z: T) {
 	def *(constant: T): Vector3[T] = Vector3(x * constant, y * constant, z * constant)
 	def /(constant: T): Vector3[T] = Vector3(x / constant, y / constant, z / constant)
 
+  /**
+    * @param rotationMatrix Matrix that defines the rotation to be applied
+    * @param about Point about which this vector should be rotated
+    * @return This vector rotated by the given matrix about the given point
+    */
+  def rotateAbout(rotationMatrix: Matrix4, about: Vector3[Int])(implicit ev: T =:= Int): Vector3[Int] = {
+    Matrix4.IDENTITY.translate(about) * rotationMatrix * Matrix4.IDENTITY.translate(about * -1) * this.asInstanceOf[Vector3[Int]]
+  }
+
   override def toString: String = "(" + x + ", " + y + ", " + z + ")"
 }

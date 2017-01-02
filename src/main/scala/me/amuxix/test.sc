@@ -1,6 +1,6 @@
-/*import java.util.Calendar
-import java.text.SimpleDateFormat
+for {
+  a <- 1 to 10
+  b <- 'A' to 'B'
+} yield s"$a $b"
 
-Calendar.getInstance().getTime
-new SimpleDateFormat("dd/MM/yy HH'h'mm zzz").format(Calendar.getInstance().getTime)*/
-(0 until 1).toList
+for (a <- 1 to 10) yield for {b <- 'A' to 'B'} yield s"$a $b"

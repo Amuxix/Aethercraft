@@ -21,6 +21,9 @@ object Position {
   }
 }
 case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
+  def x: T = coordinates.x
+  def y: T = coordinates.y
+  def z: T = coordinates.z
 
   def +(vector: Vector3[T]): Position[T] = Position(world, coordinates + vector)
   def -(vector: Vector3[T]): Position[T] = Position(world, coordinates - vector)

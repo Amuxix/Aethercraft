@@ -2,12 +2,12 @@ package me.amuxix
 
 import java.util.logging.Logger
 
-import org.bukkit.Bukkit
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.{Bukkit, Server}
 
-object Runecraft {
-  // Hack to circumvent the fact we do not have access to the instance of the class Runecraft
+object Runecraft{
   var logger: Logger = _
+  var server: Server = _
 }
 
 /**
@@ -20,6 +20,6 @@ class Runecraft extends JavaPlugin {
 	override def onEnable() = {
 		Bukkit.getPluginManager.registerEvents(Listener, this)
     Runecraft.logger = getLogger
-
+    Runecraft.server = getServer
 	}
 }

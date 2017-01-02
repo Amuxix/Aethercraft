@@ -9,7 +9,7 @@ object Entity {
 
 }
 abstract class Entity {
-  val location: Location
-  val pitch: Double
-  val yaw: Double
+  def location: Option[Location]
+  def pitch: Double
+  def yaw: Double
 }

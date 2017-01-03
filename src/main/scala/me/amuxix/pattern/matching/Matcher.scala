@@ -2,8 +2,8 @@ package me.amuxix.pattern.matching
 
 import me.amuxix.pattern.{Pattern, RunePattern}
 import me.amuxix.runes.{Compass, Rune, Test, Test2}
-import me.amuxix.util.Block.Location
-import me.amuxix.util.{Matrix4, Player}
+import me.amuxix.util.Matrix4
+import org.bukkit.event.player.PlayerInteractEvent
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -17,13 +17,13 @@ object Matcher {
     * Looks for runes at the given location
     * @param location position to look for runes
     */
-  def lookForRunesAt(location: Location, activator: Player): Option[Rune] = {
-    val possiblePatterns: Set[Pattern] = patterns.map((obj) => obj.pattern).toSet
-    matchRunes(location, activator, possiblePatterns)
+  def lookForRunesAt(event: PlayerInteractEvent): Option[Rune] = {
+    val possiblePatterns: Set[Pattern] = patterns.map(_.pattern).toSet
+    matchRunes(event, possiblePatterns)
   }
 
-  def matchRunes(center: Location, activator: Player, possiblePatterns: Set[Pattern]): Option[Rune] = { //The pattern set needs to be sorted to allow some runes to have priority over others
-    val boundingCube = BoundingCube(center, possiblePatterns)
+  def matchRunes(event: PlayerInteractEvent, possiblePatterns: Set[Pattern]): Option[Rune] = { //The pattern set needs to be sorted to allow some runes to have priority over others
+    val boundingCube = BoundingCube(event.getClickedBlock, possiblePatterns)
     /*for {
       pattern <- possiblePatterns if pattern.foundIn(boundingCube)
     } yield pattern.createRune(center, activator, boundingCube, )*/
@@ -31,7 +31,7 @@ object Matcher {
     for (pattern <- possiblePatterns) {
       val maybeMatrix: Option[Matrix4] = pattern.foundIn(boundingCube)
       if (maybeMatrix.isDefined) {
-        return Some(pattern.createRune(center, activator, pattern.getRuneBlocks(boundingCube), maybeMatrix.get, boundingCube.center))
+        return Some(pattern.createRune(event, pattern.getRuneBlocks(boundingCube), maybeMatrix.get, boundingCube.center))
       }
     }
     None

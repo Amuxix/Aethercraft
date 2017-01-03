@@ -3,9 +3,9 @@ package me.amuxix.pattern
 import me.amuxix.logging.Logger.{severe, trace}
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.Rune
-import me.amuxix.util.Block.Location
-import me.amuxix.util.{Block, Matrix4, Player, Vector3}
+import me.amuxix.util.{Block, Matrix4, Vector3}
 import org.bukkit.ChatColor
+import org.bukkit.event.player.PlayerInteractEvent
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -22,7 +22,7 @@ object ActivationLayer {
 class ActivationLayer(_elements: Element*) extends Layer(_elements:_*)
 
 object Pattern {
-  def apply[R <: Rune](creator: (Location, Player, Array[Array[Array[Block]]], Matrix4, Vector3[Int], Pattern) => R, width: Int,
+  def apply[R <: Rune](creator: (PlayerInteractEvent, Array[Array[Array[Block]]], Matrix4, Vector3[Int], Pattern) => R, width: Int,
             numberOfMirroredAxis: Boolean = true, verticality: Boolean = false, directional: Boolean = false,
             canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
@@ -31,8 +31,8 @@ object Pattern {
     }
     val elements: Seq[Seq[Seq[Element]]] = layers.map(_.toElementsArray(width))
     new Pattern(activationLayer, elements, numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling) {
-      def createRune(location: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune = {
-        creator(location, activator, blocks, rotation, rotationCenter, this)
+      def createRune(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune = {
+        creator(event, blocks, rotation, rotationCenter, this)
       }
     }
   }
@@ -73,7 +73,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     Runes that implement Tiered must have tier blocks and vice versa
    */
 
-  def createRune(center: Location, activator: Player, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune
+  def createRune(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune
 
   /**
     * Looks for this pattern in the given bounding cube
@@ -215,7 +215,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     }
   }
 
-  def getSpecialBlocksVectors(element: Element): Seq[Vector3[Int]] = {
+  def specialBlocksVectors(element: Element): Seq[Vector3[Int]] = {
     for {
       layer <- 0 until height
       line <- 0 until depth
@@ -224,7 +224,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     } yield Vector3(line, layer, block)
   }
 
-  def getAllRuneBlocksVectors: Seq[Vector3[Int]] = {
+  def allRuneBlocksVectors: Seq[Vector3[Int]] = {
     for {
       layer <- 0 until height
       line <- 0 until depth

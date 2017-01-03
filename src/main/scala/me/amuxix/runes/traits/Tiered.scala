@@ -12,11 +12,9 @@ import org.bukkit.Material
   * Used by runes that have a tier associated with them
   */
 trait Tiered { this: Rune =>
-  def getTierBlocks: Seq[Block] = {
-    pattern.getSpecialBlocksVectors(Tier).map(getBlockAt)
-  }
+  val tierBlocks: Seq[Block] = specialBlocks(Tier)
 
-  val getTierType: Material = getTierBlocks.head.getType
+  val tierType: Material = tierBlocks.head.getType
 
-	def getTier: Integer = ???
+	def tier: Integer = 4 // See xkcd about randomness
 }

@@ -1,5 +1,6 @@
 package me.amuxix.runes.traits
 
+import me.amuxix.pattern.{Key, Signature}
 import me.amuxix.runes.Rune
 
 /**
@@ -9,6 +10,8 @@ import me.amuxix.runes.Rune
   * Defines a trait for runes that can have all their blocks consumed, ie: faith when activated consumes all blocks
   */
 trait Consumable extends Tiered { this: Rune =>
-	def consumeRuneBlocks() = pattern.getAllRuneBlocksVectors.map(getBlockAt).foreach(_.consume(activator))
-	def consumeTierBlocks() = getTierBlocks.foreach(_.consume(activator))
+	def consumeRuneBlocks(): Unit = pattern.allRuneBlocksVectors.map(blockAt).foreach(_.consume(activator))
+	def consumeTierBlocks(): Unit = tierBlocks.foreach(_.consume(activator))
+  def consumeSignatureBlocks(): Unit = pattern.specialBlocksVectors(Signature).map(blockAt).foreach(_.consume(activator))
+  def consumeKeyBlocks(): Unit = pattern.specialBlocksVectors(Key).map(blockAt).foreach(_.consume(activator))
 }

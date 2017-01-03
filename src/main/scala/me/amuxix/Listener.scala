@@ -12,10 +12,12 @@ object Listener extends org.bukkit.event.Listener {
   def onPlayerInteract(event: PlayerInteractEvent) = {
     //This gets fired Twice in a row, once for main hand and one for the off hand
     if (event.getAction == Action.RIGHT_CLICK_BLOCK && event.getHand == HAND && event.getPlayer.getInventory.getItemInMainHand.getType.isBlock == false) {
-      if (Matcher.lookForRunesAt(event.getClickedBlock, event.getPlayer).isDefined) {
+      if (Matcher.lookForRunesAt(event).isDefined) {
         event.setCancelled(true)
         //Cancel event from offhand if rune is activated
       }
     }
   }
+
+
 }

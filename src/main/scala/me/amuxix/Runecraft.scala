@@ -2,6 +2,7 @@ package me.amuxix
 
 import java.util.logging.Logger
 
+import me.amuxix.runes.Rune
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, Server}
 
@@ -9,6 +10,15 @@ object Runecraft{
   var logger: Logger = _
   var server: Server = _
   var self: Runecraft = _
+
+  // These waypoints fit stuff with a maximum size of:
+  // small - objects
+  // medium - entities
+  // large - blocks(faiths and stuff)
+  // The map key is the signature of the waypoint (currently an hashcode)
+  var smallWaypoints = Map.empty[Int, Rune]
+  var mediumWaypoints = Map.empty[Int, Rune]
+  var largeWaypoints = Map.empty[Int, Rune]
 }
 
 /**

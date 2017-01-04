@@ -34,8 +34,8 @@ case class Block(location: Location, material: Material, state: BlockState) {
     * @return true if the move was successful, false otherwise.
     */
   def moveTo(target: Location): Boolean = {
-    if (target.getBlock.getType == AIR) {
-      target.getBlock.setType(this.getType)
+    if (target.block.getType == AIR) {
+      target.block.setType(this.getType)
       setType(AIR)
       true
     } else {
@@ -47,5 +47,7 @@ case class Block(location: Location, material: Material, state: BlockState) {
     * Consumes this block and gives energy to the player
     * @param player Player who receives the energy for consuming this block
     */
-  def consume(player: Player) = setType(Material.STONE)
+  def consume(player: Player): Unit = setType(Material.STONE)
+
+  def equals(block: Block): Boolean = location.equals(block.location)
 }

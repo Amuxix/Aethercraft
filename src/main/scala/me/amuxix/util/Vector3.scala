@@ -28,4 +28,6 @@ case class Vector3[T : Integral](x: T, y: T, z: T) {
   }
 
   override def toString: String = "(" + x + ", " + y + ", " + z + ")"
+
+  def equals(vector: Vector3[T]): Boolean = x == vector.x && y == vector.y && y == vector.y
 }

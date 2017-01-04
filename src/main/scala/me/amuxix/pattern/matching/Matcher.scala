@@ -1,7 +1,8 @@
 package me.amuxix.pattern.matching
 
 import me.amuxix.pattern.{Pattern, RunePattern}
-import me.amuxix.runes.{Compass, Rune, Test, Test2}
+import me.amuxix.runes._
+import me.amuxix.runes.teleports.Waypoint
 import me.amuxix.util.Matrix4
 import org.bukkit.event.player.PlayerInteractEvent
 
@@ -11,7 +12,7 @@ import org.bukkit.event.player.PlayerInteractEvent
   */
 object Matcher {
 
-  private val patterns: Seq[RunePattern] = Seq(Test, Test2, Compass)
+  private val patterns: Seq[RunePattern] = Seq(Test, Test2, Waypoint, Teleporter)
 
   /**
     * Looks for runes at the given location

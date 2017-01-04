@@ -1,39 +1,45 @@
 package me.amuxix.util
 
+import org.bukkit.block.BlockFace
+
 /**
   * Created by Amuxix on 03/01/2017.
   */
 object CardinalPoint {
-  implicit def CardinalPoint2Vector3Int(cardinalPoint: CardinalPoint): Vector3[Int] = cardinalPoint.vector
+  implicit def BlockFace2CardinalPoint(blockFace: BlockFace): CardinalPoint = {
+    new CardinalPoint((blockFace.getModX, blockFace.getModY, blockFace.getModZ)) {}
+  }
+  implicit  def CardinalPoint2Vector3Int(cardinalPoint: CardinalPoint): Vector3[Int] = cardinalPoint.vector
 }
 
-sealed trait CardinalPoint {
-  val vector: Vector3[Int]
+sealed abstract class CardinalPoint(val vector: Vector3[Int]) {
   def +(cardinalPoint: CardinalPoint): Vector3[Int] = vector + cardinalPoint.vector
 }
 
-case object North extends CardinalPoint {val vector  = Vector3[Int](0, 0, -1)}
-case object South extends CardinalPoint {val vector = Vector3[Int](0, 0, 1)}
-case object East extends CardinalPoint {val vector = Vector3[Int](1, 0, 0)}
-case object West extends CardinalPoint {val vector = Vector3[Int](-1, 0, 0)}
-case object Up extends CardinalPoint {val vector = Vector3[Int](0, 1, 0)}
-case object Down extends CardinalPoint {val vector = Vector3[Int](0, -1, 0)}
+case object Self extends CardinalPoint((0, 0, 0))
+
+case object North extends CardinalPoint((0, 0, -1))
+case object South extends CardinalPoint((0, 0, 1))
+case object East extends CardinalPoint((1, 0, 0))
+case object West extends CardinalPoint((-1, 0, 0))
+case object Up extends CardinalPoint((0, 1, 0))
+case object Down extends CardinalPoint((0, -1, 0))
 
 
-case object NorthWest extends CardinalPoint {val vector = North + West}
-case object NorthEast extends CardinalPoint {val vector = North + East}
-case object SouthEast extends CardinalPoint {val vector = South + East}
-case object SouthWest extends CardinalPoint {val vector = South + West}
+case object NorthWest extends CardinalPoint(North + West)
+case object NorthEast extends CardinalPoint(North + East)
+case object SouthEast extends CardinalPoint(South + East)
+case object SouthWest extends CardinalPoint(South + West)
   
-case object UpWest extends CardinalPoint {val vector = Up + West}
-case object UpEast extends CardinalPoint {val vector = Up + East}
-case object DownEast extends CardinalPoint {val vector = Down + East}
-case object DownWest extends CardinalPoint {val vector = Down + West}
+case object UpWest extends CardinalPoint(Up + West)
+case object UpEast extends CardinalPoint(Up + East)
+case object DownEast extends CardinalPoint(Down + East)
+case object DownWest extends CardinalPoint(Down + West)
   
-case object UpSouth extends CardinalPoint {val vector = Up + South}
-case object UpNorth extends CardinalPoint {val vector = Up + North}
-case object DownNorth extends CardinalPoint {val vector = Down + North}
-case object DownSouth extends CardinalPoint {val vector = Down + South}
+case object UpSouth extends CardinalPoint(Up + South)
+case object UpNorth extends CardinalPoint(Up + North)
+case object DownNorth extends CardinalPoint(Down + North)
+case object DownSouth extends CardinalPoint(Down + South)
 
 /*
   To generate this follow these steps:

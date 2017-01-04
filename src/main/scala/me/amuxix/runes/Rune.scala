@@ -1,10 +1,9 @@
 package me.amuxix.runes
 
-import me.amuxix.logging.Logger
+import me.amuxix.logging.Logger.info
 import me.amuxix.pattern._
 import me.amuxix.util.Block.Location
 import me.amuxix.util.{Block, Matrix4, Player, Vector3}
-import org.bukkit.ChatColor
 import org.bukkit.event.player.PlayerInteractEvent
 
 /**
@@ -19,17 +18,22 @@ abstract class Rune {
   val center: Location = event.getClickedBlock
   val activator: Player = event.getPlayer
 
-  activator.sendMessage(ChatColor.GREEN + getClass.getSimpleName + " activated")
-  Logger.info(activator.name + " activated " + getClass.getSimpleName + " in " + center)
-
-  def blockAt(position: Vector3[Int]): Block = {
-    val rotatedPosition: Vector3[Int] = position.rotateAbout(rotation, rotationCenter)
-    blocks(rotatedPosition.x)(rotatedPosition.y)(rotatedPosition.z)
+  def notifyActivator(): Unit = {
+    activator.sendMessage(getClass.getSimpleName + " activated")
   }
+
+  def logRuneActivation(): Unit = {
+    info(activator.name + " activated " + getClass.getSimpleName + " in " + center)
+  }
+
+  def getKeyBlocks: Seq[Block] = specialBlocks(Key)
 
   protected def specialBlocks(element: Element): Seq[Block] = {
     pattern.specialBlocksVectors(element).map(blockAt)
   }
 
-  def getKeyBlocks: Seq[Block] = specialBlocks(Key)
+  def blockAt(position: Vector3[Int]): Block = {
+    val rotatedPosition: Vector3[Int] = position.rotateAbout(rotation, rotationCenter)
+    blocks(rotatedPosition.x)(rotatedPosition.y)(rotatedPosition.z)
+  }
 }

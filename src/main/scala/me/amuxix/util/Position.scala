@@ -4,6 +4,8 @@ import org.bukkit.block.{Block => BBlock}
 import org.bukkit.entity.{Entity => BEntity}
 import org.bukkit.{World, Location => BLocation}
 
+import scala.math.{pow, sqrt}
+
 /**
   * Created by Amuxix on 30/12/2016.
   */
@@ -28,9 +30,22 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
   def +(vector: Vector3[T]): Position[T] = Position(world, coordinates + vector)
   def -(vector: Vector3[T]): Position[T] = Position(world, coordinates - vector)
 
-  def getBlock(implicit ev: T =:= Int): Block = {
+  def block(implicit ev: T =:= Int): Block = {
     world.getBlockAt(coordinates.x, coordinates.y, coordinates.z)
   }
 
+  /**
+    * Checks if this position and the position above this have blocks that players can be on, ie: the blocks are lava, or air, or reeds.
+    * @return true if a player can fit
+    */
+  def canFitPlayer(implicit ev: T =:= Int): Boolean = this.block.getType.isSolid == false && (this.asInstanceOf[Position[Int]] + Up).block.getType.isSolid == false
+
+  def distance(t: Position[T]): Double = {
+    import Integral.Implicits._
+    sqrt(pow((x - t.x).toDouble(), 2) + pow((y - t.y).toDouble(), 2) + pow((z - t.z).toDouble(), 2))
+  }
+
   override def toString: String = {"[" + world.getName + "@" + coordinates.toString + "]"}
+
+  def equals(position: Position[T]): Boolean = world.getUID == position.world.getUID && coordinates.equals(position.coordinates)
 }

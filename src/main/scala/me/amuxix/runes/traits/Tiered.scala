@@ -16,5 +16,5 @@ trait Tiered { this: Rune =>
 
   val tierType: Material = tierBlocks.head.getType
 
-	def tier: Integer = 4 // See xkcd about randomness
+	val tier: Integer = 4 // See xkcd about randomness
 }

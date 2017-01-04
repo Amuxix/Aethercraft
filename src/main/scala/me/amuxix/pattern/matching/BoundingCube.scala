@@ -20,7 +20,7 @@ case class BoundingCube(centerLocation: Location, possiblePatterns: Set[Pattern]
   trace("Center: " + centerLocation)
   trace("Cube Origin: " + cubeOrigin)
 	val blocks = Array.tabulate[Block](dimension, dimension, dimension){
-		case (x, y, z) => (cubeOrigin + Vector3(x, y, z)).getBlock
+		case (x, y, z) => (cubeOrigin + Vector3(x, y, z)).block
 	}
 
   def getBlock(position: Vector3[Int]): Block = {

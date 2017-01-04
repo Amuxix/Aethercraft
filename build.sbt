@@ -20,7 +20,7 @@ scalacOptions ++= Seq(
 
 resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/groups/public/"
 libraryDependencies ++= Seq(
-  "org.bukkit" % "bukkit" % "1.11-R0.1-SNAPSHOT",
+  "org.bukkit" % "bukkit" % "1.11.2-R0.1-SNAPSHOT",
   "org.scalatest" % "scalatest_2.11" % "3.0.1" % Test
 )
 

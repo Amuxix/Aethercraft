@@ -29,10 +29,17 @@ object Pattern {
     if (width % 2 == 0) {
       severe("Rune pattern has even width making it impossible to have a center!")
     }
-    val elements: Seq[Seq[Seq[Element]]] = layers.map(_.toElementsArray(width))
-    new Pattern(activationLayer, elements, numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling) {
+    new Pattern(activationLayer, layers.map(_.toElementsArray(width)), numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling) {
       def createRune(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune = {
         creator(event, blocks, rotation, rotationCenter, this)
+        /*try {
+          val rune = creator(event, blocks, rotation, rotationCenter, this)
+          rune.notifyActivator()
+          rune.logRuneActivation()
+        } catch {
+          case ex: RuneInitializationException =>
+            Player.bukkitPlayer2Player(event.getPlayer).sendMessage(ChatColor.RED + ex.textError)
+        }*/
       }
     }
   }
@@ -54,10 +61,10 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
 		 *          Y axis
 		 *          |
 		 *          |     X axis
-		 *          /----->  North
+		 *          /----->  East
 		 *        /
 		 *      /Z axis
-		 *    East
+		 *    South
 		 */
   private val height: Int = elements.length //Distance along the Y axis in the default orientation
   private val width: Int = elements.head.length //Distance along the X axis in the default orientation
@@ -73,6 +80,9 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     Runes that implement Tiered must have tier blocks and vice versa
    */
 
+  /**
+    * Attempts to create the rune, may fail.
+    */
   def createRune(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int]): Rune
 
   /**
@@ -148,8 +158,6 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
           //Material different from pattern
           trace(ChatColor.RED + "Material does not match")
           return false
-        case material: Material =>
-          trace(ChatColor.GREEN + "Material matches")
         case Tier =>
           if ((patternMaterials contains blockMaterial)/* || blockMaterial.material == AIR*/) {
             trace("This block cannot be used as a tier material as its a material used by the rune")
@@ -170,6 +178,8 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
           trace(ChatColor.YELLOW + "Its a Key block")
         case NotInRune => none += blockMaterial
           trace(ChatColor.YELLOW + "Its a NotInRune block")
+        case _ =>
+          trace(ChatColor.GREEN + "Material matches")
       }
     }
 

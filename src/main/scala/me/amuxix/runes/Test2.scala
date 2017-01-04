@@ -10,7 +10,7 @@ import org.bukkit.event.player.PlayerInteractEvent
   * Created by Amuxix on 01/12/2016.
   */
 object Test2 extends RunePattern {
-  val pattern = Pattern(Test2.apply, width = 5, numberOfMirroredAxis = false)(
+  val pattern: Pattern = Pattern(Test2.apply, width = 5, numberOfMirroredAxis = false)(
     ActivationLayer(
       GLASS, NotInRune, ENDER_STONE, NotInRune, GLASS,
       NotInRune, GLASS, NotInRune, GLASS, NotInRune,
@@ -20,8 +20,8 @@ object Test2 extends RunePattern {
     )
   )
 }
+
 case class Test2(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int], pattern: Pattern)
   extends Rune
-    with Consumable {
-  consumeRuneBlocks()
+          with Consumable {
 }

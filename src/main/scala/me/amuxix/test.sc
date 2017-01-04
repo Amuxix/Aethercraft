@@ -1,6 +1,3 @@
-for {
-  a <- 1 to 10
-  b <- 'A' to 'B'
-} yield s"$a $b"
-
-for (a <- 1 to 10) yield for {b <- 'A' to 'B'} yield s"$a $b"
+var a: Map[Int, String] = Map(1 -> "a", 2 -> "a", 3 -> "a")
+val b = a - 1
+a -= 1

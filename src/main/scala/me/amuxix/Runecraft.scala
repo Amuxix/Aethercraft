@@ -2,6 +2,7 @@ package me.amuxix
 
 import java.util.logging.Logger
 
+import me.amuxix.material.Tier
 import me.amuxix.runes.Rune
 import me.amuxix.runes.teleports.WaypointTrait
 import me.amuxix.runes.traits.Persistent
@@ -32,5 +33,6 @@ class Runecraft extends JavaPlugin {
     Runecraft.logger = getLogger
     Runecraft.server = getServer
     Runecraft.self = this
+    new Tier()
 	}
 }

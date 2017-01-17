@@ -9,6 +9,9 @@ object Logger {
   def info(text: => String): Unit = {
     Runecraft.logger.info(text)
   }
+  def info(text: Any): Unit = {
+    Runecraft.logger.info(text.toString)
+  }
   def trace(text: => String): Unit = {
     Runecraft.logger.finest(text)
   }

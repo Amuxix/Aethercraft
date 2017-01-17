@@ -11,6 +11,6 @@ import me.amuxix.util.CardinalPoint
   * This represents a point that can be targeted by a waypoint.
   */
 trait WaypointTrait extends Tiered { this: Rune =>
-  val direction: CardinalPoint = event.getBlockFace
+  val direction: CardinalPoint = CardinalPoint.BlockFace2CardinalPoint(event.getBlockFace)
   val size: WaypointSize
 }

@@ -13,7 +13,7 @@ import org.bukkit.event.player.PlayerInteractEvent
   * Created by Amuxix on 03/01/2017.
   */
 object Waypoint extends RunePattern {
-  val pattern: Pattern = Pattern(Waypoint.apply, width = 5)(
+  val pattern: Pattern = Pattern(Waypoint.apply, width = 5, verticality = true)(
     ActivationLayer(
       NotInRune, Tier,      Tier,      Tier,      NotInRune,
       Tier,      Tier,      Signature, Tier,      Tier,

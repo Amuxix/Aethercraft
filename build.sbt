@@ -11,16 +11,17 @@ scalacOptions ++= Seq(
   "-feature", //Emit warning and location for usages of features that should be imported explicitly.
   "-language:implicitConversions", //Explicitly enables the implicit conversions feature
   "-unchecked", //Enable detailed unchecked (erasure) warnings
-  "-Xfatal-warnings", //Fail the compilation if there are any warnings.
+  //"-Xfatal-warnings", //Fail the compilation if there are any warnings.
   "-Xlint", //Enable recommended additional warnings.
   //"-Yinline-warnings", //Emit inlining warnings.
-  "-Yno-adapted-args", //Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
+  //"-Yno-adapted-args", //Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
   "-Ywarn-dead-code" //Warn when dead code is identified.
 )
 
 resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/groups/public/"
 libraryDependencies ++= Seq(
   "org.bukkit" % "bukkit" % "1.11.2-R0.1-SNAPSHOT",
+  "com.beachape" %% "enumeratum" % "1.5.6",
   "org.scalatest" % "scalatest_2.11" % "3.0.1" % Test
 )
 
@@ -46,7 +47,8 @@ mappings in(Compile, packageBin) += {
   (resourceManaged.value / "plugin.yml") -> "plugin.yml"
 }
 
-packageOptions in (Compile, packageBin) += Package.ManifestAttributes("Class-Path" -> ("libs\\" + (baseDirectory.value / "libs").list.filter(_.contains("scala"))(0)))
+val libFolderName = "libs"
+packageOptions in (Compile, packageBin) += Package.ManifestAttributes("Class-Path" -> (baseDirectory.value / libFolderName).list.map(libFolderName + "\\" + _).mkString(" "))
 
 def firstLine(f: java.io.File): Option[String] = {
   val src = io.Source.fromFile(f)

@@ -4,18 +4,19 @@ import me.amuxix.IntegrityMonitor.checkIntegrityAfterBlockDestruction
 import me.amuxix.pattern.matching.Matcher
 import me.amuxix.runes.exceptions.RuneInitializationException
 import me.amuxix.util.Player.bukkitPlayer2Player
-import org.bukkit.ChatColor
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block._
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot.HAND
+import org.bukkit.{ChatColor, Material}
 
 object Listener extends org.bukkit.event.Listener {
 
   @EventHandler
   def onPlayerInteract(event: PlayerInteractEvent): Unit = {
     //This gets fired Twice in a row, once for main hand and one for the off hand
-    if (event.getAction == Action.RIGHT_CLICK_BLOCK && event.getHand == HAND && event.getPlayer.getInventory.getItemInMainHand.getType.isBlock == false) {
+    val itemInHand: Material = event.getPlayer.getInventory.getItemInMainHand.getType
+    if (event.getAction == Action.RIGHT_CLICK_BLOCK && event.getHand == HAND && (itemInHand.isBlock == false || itemInHand == Material.AIR)) {
       try {
         if (Runecraft.persistentRunes.contains(event.getClickedBlock)) {
           //There is a rune at this location, update it.

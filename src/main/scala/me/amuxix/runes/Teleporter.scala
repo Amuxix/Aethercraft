@@ -3,13 +3,14 @@ package me.amuxix.runes
 import me.amuxix.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
 import me.amuxix.Runecraft
 import me.amuxix.logging.Logger.info
+import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
+import me.amuxix.material.Solid
 import me.amuxix.pattern._
 import me.amuxix.runes.exceptions.RuneInitializationException
 import me.amuxix.runes.teleports.WaypointTrait
 import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
 import me.amuxix.util.Block.Location
 import me.amuxix.util._
-import org.bukkit.Material.{CHORUS_FLOWER, CHORUS_PLANT}
 import org.bukkit.event.player.PlayerInteractEvent
 
 import scala.math.Numeric.DoubleAsIfIntegral
@@ -40,7 +41,7 @@ case class Teleporter(event: PlayerInteractEvent, blocks: Array[Array[Array[Bloc
     if (signatureIsEmpty) {
       throw RuneInitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
-      throw RuneInitializationException(tierType.name() + " can't be used on this rune because it is the same as the tier used in rune.")
+      throw RuneInitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
     }
     true
   }
@@ -57,7 +58,7 @@ case class Teleporter(event: PlayerInteractEvent, blocks: Array[Array[Array[Bloc
     val target: Location = {
       (1 to maxDistance).find((dist) => {
         val possibleTarget: Location = targetWP.center + targetWP.direction * dist
-        possibleTarget.block.material.isSolid == false && possibleTarget.canFitPlayer
+        possibleTarget.block.material.isInstanceOf[Solid] == false && possibleTarget.canFitPlayer
       }) match {
         case Some(dist) => targetWP.center + targetWP.direction * dist
         case None => throw RuneInitializationException("The way is barred on the other side!")
@@ -70,7 +71,7 @@ case class Teleporter(event: PlayerInteractEvent, blocks: Array[Array[Array[Bloc
       targetTier + scala.math.min(0, scala.math.log10(center.distance(target) - 1000).toInt)
     }
 
-    if (targetWPTier > tier && (tierType != CHORUS_PLANT || tierType != CHORUS_FLOWER)) {
+    if (targetWPTier > tier && (tierType != ChorusPlant || tierType != ChorusFlower)) {
       throw RuneInitializationException("This teleporter is not powerful enough to reach the destination.")
     } else {
       val blockCenterOffset: Vector3[Double] = {

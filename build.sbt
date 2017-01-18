@@ -11,7 +11,7 @@ scalacOptions ++= Seq(
   "-feature", //Emit warning and location for usages of features that should be imported explicitly.
   "-language:implicitConversions", //Explicitly enables the implicit conversions feature
   "-unchecked", //Enable detailed unchecked (erasure) warnings
-  //"-Xfatal-warnings", //Fail the compilation if there are any warnings.
+  "-Xfatal-warnings", //Fail the compilation if there are any warnings.
   "-Xlint", //Enable recommended additional warnings.
   //"-Yinline-warnings", //Emit inlining warnings.
   //"-Yno-adapted-args", //Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
@@ -19,9 +19,11 @@ scalacOptions ++= Seq(
 )
 
 resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/groups/public/"
+addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "0.5")
 libraryDependencies ++= Seq(
   "org.bukkit" % "bukkit" % "1.11.2-R0.1-SNAPSHOT",
   "com.beachape" %% "enumeratum" % "1.5.6",
+  "com.github.ghik" %% "silencer-lib" % "0.5",
   "org.scalatest" % "scalatest_2.11" % "3.0.1" % Test
 )
 

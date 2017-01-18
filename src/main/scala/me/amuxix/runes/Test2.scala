@@ -1,9 +1,9 @@
 package me.amuxix.runes
 
+import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Consumable
 import me.amuxix.util.{Block, Matrix4, Vector3}
-import org.bukkit.Material.{ENDER_STONE, GLASS}
 import org.bukkit.event.player.PlayerInteractEvent
 
 /**
@@ -12,11 +12,11 @@ import org.bukkit.event.player.PlayerInteractEvent
 object Test2 extends RunePattern {
   val pattern: Pattern = Pattern(Test2.apply, width = 5, numberOfMirroredAxis = false)(
     ActivationLayer(
-      GLASS, NotInRune, ENDER_STONE, NotInRune, GLASS,
-      NotInRune, GLASS, NotInRune, GLASS, NotInRune,
-      GLASS, NotInRune, GLASS, NotInRune, GLASS,
-      NotInRune, GLASS, NotInRune, GLASS, NotInRune,
-      GLASS, NotInRune, GLASS, NotInRune, GLASS
+      Glass, NotInRune, EndStone, NotInRune, Glass,
+      NotInRune, Glass, NotInRune, Glass, NotInRune,
+      Glass, NotInRune, Glass, NotInRune, Glass,
+      NotInRune, Glass, NotInRune, Glass, NotInRune,
+      Glass, NotInRune, Glass, NotInRune, Glass
     )
   )
 }

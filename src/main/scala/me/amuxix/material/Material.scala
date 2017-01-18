@@ -1,14 +1,17 @@
 package me.amuxix.material
 
+import java.util.NoSuchElementException
+
+import com.github.ghik.silencer.silent
 import enumeratum._
 import me.amuxix.material.generics._
+import me.amuxix.pattern.Element
 import org.bukkit.DyeColor._
 import org.bukkit.GrassSpecies._
 import org.bukkit.Material.{TNT => BTNT, _}
 import org.bukkit.SandstoneType._
 import org.bukkit.TreeSpecies._
 import org.bukkit.block.{Block => BBlock}
-import org.bukkit.inventory.ItemStack
 import org.bukkit.material._
 import org.bukkit.{CoalType, Material => BMaterial}
 
@@ -19,7 +22,7 @@ import scala.math.{E, log}
   * Created by Amuxix on 04/01/2017.
   */
 
-sealed abstract case class Material(var energy: Option[Int] = None) extends EnumEntry {
+sealed abstract case class Material(var energy: Option[Int] = None) extends EnumEntry with Element {
   def this(energy: Int) = this(Some(energy))
   def this(tierString: String) = this(Math.pow(E * 2, tierString.substring(1).toDouble).round.toInt)
   lazy val tier: Option[Int] = {
@@ -50,1437 +53,720 @@ sealed abstract case class Material(var energy: Option[Int] = None) extends Enum
 //TODO: Add Potions
 
 object Material extends Enum[Material] {
-  implicit def bukkitBlock2Material(bBlock: BBlock): Material = {
-    getMaterial(bBlock.getState.getType, bBlock.getState.getData)
-  }
 
-  implicit def bukkitStack2Material(stack: ItemStack): Material = {
-    getMaterial(stack.getType, stack.getData)
-  }
+  @silent private val materialDataToMaterial: Map[MaterialData, Material] = HashMap(
+    new MaterialData(AIR) -> Air,
+    new MaterialData(STONE) -> Stone,
+    new MaterialData(STONE, 1.toByte) -> Granite,
+    new MaterialData(STONE, 2.toByte) -> PolishedGranite,
+    new MaterialData(STONE, 3.toByte) -> Diorite,
+    new MaterialData(STONE, 4.toByte) -> PolishedDiorite,
+    new MaterialData(STONE, 5.toByte) -> Andesite,
+    new MaterialData(STONE, 6.toByte) -> PolishedAndesite,
+    new MaterialData(GRASS) -> Grass,
+    new MaterialData(DIRT) -> Dirt,
+    new MaterialData(DIRT, 1.toByte) -> CoarseDirt,
+    new MaterialData(DIRT, 2.toByte) -> Podzol,
+    new MaterialData(COBBLESTONE) -> Cobblestone,
+    new Wood(GENERIC) -> OakWoodPlanks,
+    new Wood(REDWOOD) -> SpruceWoodPlanks,
+    new Wood(BIRCH) -> BirchWoodPlanks,
+    new Wood(JUNGLE) -> JungleWoodPlanks,
+    new Wood(ACACIA) -> AcaciaWoodPlanks,
+    new Wood(DARK_OAK) -> DarkOakWoodPlanks,
+    new Sapling(GENERIC) -> OakSapling,
+    new Sapling(REDWOOD) -> SpruceSapling,
+    new Sapling(BIRCH) -> BirchSapling,
+    new Sapling(JUNGLE) -> JungleSapling,
+    new Sapling(ACACIA) -> AcaciaSapling,
+    new Sapling(DARK_OAK) -> DarkOakSapling,
+    new MaterialData(BEDROCK) -> Bedrock,
+    new MaterialData(WATER) -> Water,
+    new MaterialData(STATIONARY_WATER) -> StationaryWater,
+    new MaterialData(LAVA) -> Lava,
+    new MaterialData(STATIONARY_LAVA) -> StationaryLava,
+    new MaterialData(SAND) -> Sand,
+    new MaterialData(SAND, 1.toByte) -> RedSand,
+    new MaterialData(GRAVEL) -> Gravel,
+    new MaterialData(GOLD_ORE) -> GoldOre,
+    new MaterialData(IRON_ORE) -> IronOre,
+    new MaterialData(COAL_ORE) -> CoalOre,
+    new Tree(GENERIC) -> OakLog,
+    new Tree(REDWOOD) -> SpruceLog,
+    new Tree(BIRCH) -> BirchLog,
+    new Tree(JUNGLE) -> JungleLog,
+    new Leaves(GENERIC) -> OakLeaves,
+    new Leaves(REDWOOD) -> SpruceLeaves,
+    new Leaves(BIRCH) -> BirchLeaves,
+    new Leaves(JUNGLE) -> JungleLeaves,
+    new MaterialData(SPONGE) -> Sponge,
+    new MaterialData(SPONGE, 1.toByte) -> WetSponge,
+    new MaterialData(GLASS) -> Glass,
+    new MaterialData(LAPIS_ORE) -> LapisLazuliOre,
+    new MaterialData(LAPIS_BLOCK) -> LapisLazuliBlock,
+    new MaterialData(DISPENSER) -> Dispenser,
+    new Sandstone(CRACKED) -> Sandstone,
+    new Sandstone(SMOOTH) -> SmoothSandstone,
+    new Sandstone(GLYPHED) -> ChiseledSandstone,
+    new MaterialData(NOTE_BLOCK) -> NoteBlock,
+    new MaterialData(BED_BLOCK) -> BedBlock,
+    new MaterialData(POWERED_RAIL) -> PoweredRails,
+    new MaterialData(DETECTOR_RAIL) -> DetectorRails,
+    new MaterialData(PISTON_STICKY_BASE) -> StickyPiston,
+    new MaterialData(WEB) -> Cobweb,
+    new LongGrass(DEAD) -> Shrub,
+    new LongGrass(NORMAL) -> LongGrass,
+    new LongGrass(FERN_LIKE) -> Fern,
+    new MaterialData(DEAD_BUSH) -> DeadBush,
+    new MaterialData(PISTON_BASE) -> Piston,
+    new MaterialData(PISTON_EXTENSION) -> PistonExtension,
+    new Wool(WHITE) -> WhiteWool,
+    new Wool(ORANGE) -> OrangeWool,
+    new Wool(MAGENTA) -> MagentaWool,
+    new Wool(LIGHT_BLUE) -> LightBlueWool,
+    new Wool(YELLOW) -> YellowWool,
+    new Wool(LIME) -> LimeWool,
+    new Wool(PINK) -> PinkWool,
+    new Wool(GRAY) -> GrayWool,
+    new Wool(SILVER) -> LightGrayWool,
+    new Wool(CYAN) -> CyanWool,
+    new Wool(PURPLE) -> PurpleWool,
+    new Wool(BLUE) -> BlueWool,
+    new Wool(BROWN) -> BrownWool,
+    new Wool(GREEN) -> GreenWool,
+    new Wool(RED) -> RedWool,
+    new Wool(BLACK) -> BlackWool,
+    new MaterialData(PISTON_MOVING_PIECE) -> PistonMovingPiece,
+    new MaterialData(YELLOW_FLOWER) -> Dandelion,
+    new MaterialData(RED_ROSE) -> Poppy,
+    new MaterialData(RED_ROSE, 1.toByte) -> BlueOrchid,
+    new MaterialData(RED_ROSE, 2.toByte) -> Allium,
+    new MaterialData(RED_ROSE, 3.toByte) -> AzureBluet,
+    new MaterialData(RED_ROSE, 4.toByte) -> RedTulip,
+    new MaterialData(RED_ROSE, 5.toByte) -> OrangeTulip,
+    new MaterialData(RED_ROSE, 6.toByte) -> WhiteTulip,
+    new MaterialData(RED_ROSE, 7.toByte) -> PinkTulip,
+    new MaterialData(RED_ROSE, 8.toByte) -> OxeyeDaisy,
+    new MaterialData(BROWN_MUSHROOM) -> BrownMushroom,
+    new MaterialData(RED_MUSHROOM) -> RedMushroom,
+    new MaterialData(GOLD_BLOCK) -> GoldBlock,
+    new MaterialData(IRON_BLOCK) -> IronBlock,
+    new MaterialData(DOUBLE_STEP) -> StoneDoubleSlab,
+    new MaterialData(DOUBLE_STEP, 1.toByte) -> SandstoneDoubleSlab,
+    new MaterialData(DOUBLE_STEP, 2.toByte) -> OldWoodDoubleSlab,
+    new MaterialData(DOUBLE_STEP, 3.toByte) -> CobblestoneDoubleSlab,
+    new MaterialData(DOUBLE_STEP, 4.toByte) -> BrickDoubleSlab,
+    new MaterialData(DOUBLE_STEP, 5.toByte) -> StoneBrickDoubleSlab,
+    new MaterialData(DOUBLE_STEP, 6.toByte) -> NetherBrickDoubleSlab,
+    new MaterialData(DOUBLE_STEP, 7.toByte) -> QuartzDoubleSlab,
+    new MaterialData(STEP) -> StoneSingleSlab,
+    new MaterialData(STEP, 1.toByte) -> SandstoneSingleSlab,
+    new MaterialData(STEP, 2.toByte) -> OldWoodSingleSlab,
+    new MaterialData(STEP, 3.toByte) -> CobblestoneSingleSlab,
+    new MaterialData(STEP, 4.toByte) -> BrickSingleSlab,
+    new MaterialData(STEP, 5.toByte) -> StoneBrickSingleSlab,
+    new MaterialData(STEP, 6.toByte) -> NetherBrickSingleSlab,
+    new MaterialData(STEP, 7.toByte) -> QuartzSingleSlab,
+    new MaterialData(BRICK) -> BrickBlock,
+    new MaterialData(BTNT) -> TNT,
+    new MaterialData(BOOKSHELF) -> Bookshelf,
+    new MaterialData(MOSSY_COBBLESTONE) -> MossyCobblestone,
+    new MaterialData(OBSIDIAN) -> Obsidian,
+    new MaterialData(TORCH) -> Torch,
+    new MaterialData(FIRE) -> Fire,
+    new MaterialData(MOB_SPAWNER) -> MobSpawner,
+    new MaterialData(WOOD_STAIRS) -> OakStairs,
+    new MaterialData(CHEST) -> Chest,
+    new MaterialData(REDSTONE_WIRE) -> RedstoneWire,
+    new MaterialData(DIAMOND_ORE) -> DiamondOre,
+    new MaterialData(DIAMOND_BLOCK) -> DiamondBlock,
+    new MaterialData(WORKBENCH) -> CraftingTable,
+    new MaterialData(CROPS) -> Crops,
+    new MaterialData(SOIL) -> Soil,
+    new MaterialData(FURNACE) -> Furnace,
+    new MaterialData(BURNING_FURNACE) -> BurningFurnace,
+    new MaterialData(SIGN_POST) -> SignPost,
+    new MaterialData(WOODEN_DOOR) -> OakDoor,
+    new MaterialData(LADDER) -> Ladder,
+    new MaterialData(RAILS) -> Rails,
+    new MaterialData(COBBLESTONE_STAIRS) -> CobblestoneStairs,
+    new MaterialData(WALL_SIGN) -> WallSign,
+    new MaterialData(LEVER) -> Lever,
+    new MaterialData(STONE_PLATE) -> StonePressurePlate,
+    new MaterialData(IRON_DOOR_BLOCK) -> IronDoorBlock,
+    new MaterialData(WOOD_PLATE) -> WoodPressurePlate,
+    new MaterialData(REDSTONE_ORE) -> RedstoneOre,
+    new MaterialData(GLOWING_REDSTONE_ORE) -> GlowingRedstoneOre,
+    new MaterialData(REDSTONE_TORCH_OFF) -> RedstoneTorchOff,
+    new MaterialData(REDSTONE_TORCH_ON) -> RedstoneTorchOn,
+    new MaterialData(STONE_BUTTON) -> StoneButton,
+    new MaterialData(SNOW) -> Snow,
+    new MaterialData(ICE) -> Ice,
+    new MaterialData(SNOW_BLOCK) -> SnowBlock,
+    new MaterialData(CACTUS) -> Cactus,
+    new MaterialData(CLAY) -> Clay,
+    new MaterialData(SUGAR_CANE_BLOCK) -> SugarCaneBlock,
+    new MaterialData(JUKEBOX) -> Jukebox,
+    new MaterialData(FENCE) -> OakFence,
+    new MaterialData(PUMPKIN) -> Pumpkin,
+    new MaterialData(NETHERRACK) -> Netherrack,
+    new MaterialData(SOUL_SAND) -> SoulSand,
+    new MaterialData(GLOWSTONE) -> Glowstone,
+    new MaterialData(PORTAL) -> Portal,
+    new MaterialData(JACK_O_LANTERN) -> JackOLantern,
+    new MaterialData(CAKE_BLOCK) -> CakeBlock,
+    new MaterialData(DIODE_BLOCK_OFF) -> RedstoneRepeaterOff,
+    new MaterialData(DIODE_BLOCK_ON) -> RedstoneRepeaterOn,
+    new MaterialData(STAINED_GLASS) -> WhiteGlass,
+    new MaterialData(STAINED_GLASS, 1.toByte) -> OrangeGlass,
+    new MaterialData(STAINED_GLASS, 2.toByte) -> MagentaGlass,
+    new MaterialData(STAINED_GLASS, 3.toByte) -> LightBlueGlass,
+    new MaterialData(STAINED_GLASS, 4.toByte) -> YellowGlass,
+    new MaterialData(STAINED_GLASS, 5.toByte) -> LimeGlass,
+    new MaterialData(STAINED_GLASS, 6.toByte) -> PinkGlass,
+    new MaterialData(STAINED_GLASS, 7.toByte) -> GrayGlass,
+    new MaterialData(STAINED_GLASS, 8.toByte) -> LightGrayGlass,
+    new MaterialData(STAINED_GLASS, 9.toByte) -> CyanGlass,
+    new MaterialData(STAINED_GLASS, 10.toByte) -> PurpleGlass,
+    new MaterialData(STAINED_GLASS, 11.toByte) -> BlueGlass,
+    new MaterialData(STAINED_GLASS, 12.toByte) -> BrownGlass,
+    new MaterialData(STAINED_GLASS, 13.toByte) -> GreenGlass,
+    new MaterialData(STAINED_GLASS, 14.toByte) -> RedGlass,
+    new MaterialData(STAINED_GLASS, 15.toByte) -> BlackGlass,
+    new MaterialData(TRAP_DOOR) -> TrapDoor,
+    new MaterialData(MONSTER_EGGS) -> MonsterEggs,
+    new MaterialData(SMOOTH_BRICK) -> StoneBrick,
+    new MaterialData(SMOOTH_BRICK, 1.toByte) -> CrackedStoneBrick,
+    new MaterialData(SMOOTH_BRICK, 2.toByte) -> MossyStoneBrick,
+    new MaterialData(SMOOTH_BRICK, 3.toByte) -> ChiseledStoneBrick,
+    new MaterialData(HUGE_MUSHROOM_1) -> HugeMushroom1,
+    new MaterialData(HUGE_MUSHROOM_2) -> HugeMushroom2,
+    new MaterialData(IRON_FENCE) -> IronFence,
+    new MaterialData(THIN_GLASS) -> GlassPane,
+    new MaterialData(MELON_BLOCK) -> MelonBlock,
+    new MaterialData(PUMPKIN_STEM) -> PumpkinStem,
+    new MaterialData(MELON_STEM) -> MelonStem,
+    new MaterialData(VINE) -> Vine,
+    new MaterialData(FENCE_GATE) -> OakFenceGate,
+    new MaterialData(BRICK_STAIRS) -> BrickStairs,
+    new MaterialData(SMOOTH_STAIRS) -> StoneBrickStairs,
+    new MaterialData(MYCEL) -> Mycelium,
+    new MaterialData(WATER_LILY) -> WaterLily,
+    new MaterialData(NETHER_BRICK) -> NetherBrick,
+    new MaterialData(NETHER_FENCE) -> NetherBrickFence,
+    new MaterialData(NETHER_BRICK_STAIRS) -> NetherBrickStairs,
+    new MaterialData(NETHER_WARTS) -> NetherWarts,
+    new MaterialData(ENCHANTMENT_TABLE) -> EnchantmentTable,
+    new MaterialData(BREWING_STAND) -> BrewingStand,
+    new MaterialData(CAULDRON) -> Cauldron,
+    new MaterialData(ENDER_PORTAL) -> EnderPortal,
+    new MaterialData(ENDER_PORTAL_FRAME) -> EnderPortalFrame,
+    new MaterialData(ENDER_STONE) -> EndStone,
+    new MaterialData(DRAGON_EGG) -> DragonEgg,
+    new MaterialData(REDSTONE_LAMP_OFF) -> RedstoneLampOff,
+    new MaterialData(REDSTONE_LAMP_ON) -> RedstoneLampOn,
+    new Wood(GENERIC) -> OakDoubleSlab,
+    new Wood(REDWOOD) -> SpruceDoubleSlab,
+    new Wood(BIRCH) -> BirchDoubleSlab,
+    new Wood(JUNGLE) -> JungleDoubleSlab,
+    new Wood(ACACIA) -> AcaciaDoubleSlab,
+    new Wood(DARK_OAK) -> DarkOakDoubleSlab,
+    new WoodenStep(GENERIC) -> OakSingleSlab,
+    new WoodenStep(REDWOOD) -> SpruceSingleSlab,
+    new WoodenStep(BIRCH) -> BirchSingleSlab,
+    new WoodenStep(JUNGLE) -> JungleSingleSlab,
+    new WoodenStep(ACACIA) -> AcaciaSingleSlab,
+    new WoodenStep(DARK_OAK) -> DarkOakSingleSlab,
+    new MaterialData(COCOA) -> Cocoa,
+    new MaterialData(SANDSTONE_STAIRS) -> SandstoneStairs,
+    new MaterialData(EMERALD_ORE) -> EmeraldOre,
+    new MaterialData(ENDER_CHEST) -> EnderChest,
+    new MaterialData(TRIPWIRE_HOOK) -> TripwireHook,
+    new MaterialData(TRIPWIRE) -> Tripwire,
+    new MaterialData(EMERALD_BLOCK) -> EmeraldBlock,
+    new MaterialData(SPRUCE_WOOD_STAIRS) -> SpruceStairs,
+    new MaterialData(BIRCH_WOOD_STAIRS) -> BirchStairs,
+    new MaterialData(JUNGLE_WOOD_STAIRS) -> JungleStairs,
+    new MaterialData(COMMAND) -> Command,
+    new MaterialData(BEACON) -> Beacon,
+    new MaterialData(COBBLE_WALL) -> CobblestoneWall,
+    new MaterialData(COBBLE_WALL, 1.toByte) -> MossyCobblestoneWall,
+    new MaterialData(FLOWER_POT) -> FlowerPot,
+    new MaterialData(CARROT) -> Carrot,
+    new MaterialData(POTATO) -> Potato,
+    new MaterialData(WOOD_BUTTON) -> WoodButton,
+    new MaterialData(SKULL) -> Skull,
+    new MaterialData(ANVIL) -> Anvil,
+    new MaterialData(TRAPPED_CHEST) -> TrappedChest,
+    new MaterialData(GOLD_PLATE) -> GoldPressurePlate,
+    new MaterialData(IRON_PLATE) -> IronPressurePlate,
+    new MaterialData(REDSTONE_COMPARATOR_OFF) -> RedstoneComparatorOff,
+    new MaterialData(REDSTONE_COMPARATOR_ON) -> RedstoneComparatorOn,
+    new MaterialData(DAYLIGHT_DETECTOR) -> DaylightSensor,
+    new MaterialData(REDSTONE_BLOCK) -> RedstoneBlock,
+    new MaterialData(QUARTZ_ORE) -> QuartzOre,
+    new MaterialData(HOPPER) -> Hopper,
+    new MaterialData(QUARTZ_BLOCK) -> QuartzBlock,
+    new MaterialData(QUARTZ_BLOCK, 1.toByte) -> ChiseledQuartzBlock,
+    new MaterialData(QUARTZ_BLOCK, 2.toByte) -> PillarQuartzBlock,
+    new MaterialData(QUARTZ_STAIRS) -> QuartzStairs,
+    new MaterialData(ACTIVATOR_RAIL) -> ActivatorRails,
+    new MaterialData(DROPPER) -> Dropper,
+    new MaterialData(STAINED_CLAY) -> WhiteHardenedClay,
+    new MaterialData(STAINED_CLAY, 1.toByte) -> OrangeHardenedClay,
+    new MaterialData(STAINED_CLAY, 2.toByte) -> MagentaHardenedClay,
+    new MaterialData(STAINED_CLAY, 3.toByte) -> LightBlueHardenedClay,
+    new MaterialData(STAINED_CLAY, 4.toByte) -> YellowHardenedClay,
+    new MaterialData(STAINED_CLAY, 5.toByte) -> LimeHardenedClay,
+    new MaterialData(STAINED_CLAY, 6.toByte) -> PinkHardenedClay,
+    new MaterialData(STAINED_CLAY, 7.toByte) -> GrayHardenedClay,
+    new MaterialData(STAINED_CLAY, 8.toByte) -> LightGrayHardenedClay,
+    new MaterialData(STAINED_CLAY, 9.toByte) -> CyanHardenedClay,
+    new MaterialData(STAINED_CLAY, 10.toByte) -> PurpleHardenedClay,
+    new MaterialData(STAINED_CLAY, 11.toByte) -> BlueHardenedClay,
+    new MaterialData(STAINED_CLAY, 12.toByte) -> BrownHardenedClay,
+    new MaterialData(STAINED_CLAY, 13.toByte) -> GreenHardenedClay,
+    new MaterialData(STAINED_CLAY, 14.toByte) -> RedHardenedClay,
+    new MaterialData(STAINED_CLAY, 15.toByte) -> BlackHardenedClay,
+    new MaterialData(STAINED_GLASS_PANE) -> WhiteGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 1.toByte) -> OrangeGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 2.toByte) -> MagentaGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 3.toByte) -> LightBlueGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 4.toByte) -> YellowGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 5.toByte) -> LimeGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 6.toByte) -> PinkGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 7.toByte) -> GrayGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 8.toByte) -> LightGrayGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 9.toByte) -> CyanGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 10.toByte) -> PurpleGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 11.toByte) -> BlueGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 12.toByte) -> BrownGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 13.toByte) -> GreenGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 14.toByte) -> RedGlassPane,
+    new MaterialData(STAINED_GLASS_PANE, 15.toByte) -> BlackGlassPane,
+    new Leaves(ACACIA) -> AcaciaLeaves,
+    new Leaves(DARK_OAK) -> DarkOakLeaves,
+    new Tree(ACACIA) -> AcaciaLog,
+    new Tree(DARK_OAK) -> DarkOakLog,
+    new MaterialData(ACACIA_STAIRS) -> AcaciaStairs,
+    new MaterialData(DARK_OAK_STAIRS) -> DarkOakStairs,
+    new MaterialData(SLIME_BLOCK) -> SlimeBlock,
+    new MaterialData(BARRIER) -> Barrier,
+    new MaterialData(IRON_TRAPDOOR) -> IronTrapdoor,
+    new MaterialData(PRISMARINE) -> Prismarine,
+    new MaterialData(PRISMARINE, 1.toByte) -> PrismarineBrick,
+    new MaterialData(PRISMARINE, 2.toByte) -> DarkPrismarine,
+    new MaterialData(SEA_LANTERN) -> SeaLantern,
+    new MaterialData(HAY_BLOCK) -> HayBale,
+    new MaterialData(CARPET) -> WhiteCarpet,
+    new MaterialData(CARPET, 1.toByte) -> OrangeCarpet,
+    new MaterialData(CARPET, 2.toByte) -> MagentaCarpet,
+    new MaterialData(CARPET, 3.toByte) -> LightBlueCarpet,
+    new MaterialData(CARPET, 4.toByte) -> YellowCarpet,
+    new MaterialData(CARPET, 5.toByte) -> LimeCarpet,
+    new MaterialData(CARPET, 6.toByte) -> PinkCarpet,
+    new MaterialData(CARPET, 7.toByte) -> GrayCarpet,
+    new MaterialData(CARPET, 8.toByte) -> LightGrayCarpet,
+    new MaterialData(CARPET, 9.toByte) -> CyanCarpet,
+    new MaterialData(CARPET, 10.toByte) -> PurpleCarpet,
+    new MaterialData(CARPET, 11.toByte) -> BlueCarpet,
+    new MaterialData(CARPET, 12.toByte) -> BrownCarpet,
+    new MaterialData(CARPET, 13.toByte) -> GreenCarpet,
+    new MaterialData(CARPET, 14.toByte) -> RedCarpet,
+    new MaterialData(CARPET, 15.toByte) -> BlackCarpet,
+    new MaterialData(HARD_CLAY) -> HardenedClay,
+    new MaterialData(COAL_BLOCK) -> CoalBlock,
+    new MaterialData(PACKED_ICE) -> PackedIce,
+    new MaterialData(DOUBLE_PLANT) -> DoublePlant,
+    new MaterialData(DOUBLE_PLANT, 1.toByte) -> Sunflower,
+    new MaterialData(DOUBLE_PLANT, 2.toByte) -> Lilac,
+    new MaterialData(DOUBLE_PLANT, 3.toByte) -> DoubleTallgrass,
+    new MaterialData(DOUBLE_PLANT, 4.toByte) -> LargeFern,
+    new MaterialData(DOUBLE_PLANT, 5.toByte) -> RoseBush,
+    new MaterialData(DOUBLE_PLANT, 6.toByte) -> Peony,
+    new MaterialData(DOUBLE_PLANT, 7.toByte) -> TopPlantHalf,
+    new MaterialData(STANDING_BANNER) -> StandingBanner,
+    new MaterialData(WALL_BANNER) -> WallBanner,
+    new MaterialData(DAYLIGHT_DETECTOR_INVERTED) -> InvertedDaylightSensor,
+    new MaterialData(RED_SANDSTONE) -> RedSandstone,
+    new MaterialData(RED_SANDSTONE, 1.toByte) -> SmoothRedSandstone,
+    new MaterialData(RED_SANDSTONE, 2.toByte) -> ChiseledRedSandstone,
+    new MaterialData(RED_SANDSTONE_STAIRS) -> RedSandstoneStairs,
+    new MaterialData(DOUBLE_STONE_SLAB2) -> RedSandstoneDoubleSlab,
+    new MaterialData(STONE_SLAB2) -> RedSandstoneSingleSlab,
+    new MaterialData(SPRUCE_FENCE_GATE) -> SpruceFenceGate,
+    new MaterialData(BIRCH_FENCE_GATE) -> BirchFenceGate,
+    new MaterialData(JUNGLE_FENCE_GATE) -> JungleFenceGate,
+    new MaterialData(DARK_OAK_FENCE_GATE) -> DarkOakFenceGate,
+    new MaterialData(ACACIA_FENCE_GATE) -> AcaciaFenceGate,
+    new MaterialData(SPRUCE_FENCE) -> SpruceFence,
+    new MaterialData(BIRCH_FENCE) -> BirchFence,
+    new MaterialData(JUNGLE_FENCE) -> JungleFence,
+    new MaterialData(DARK_OAK_FENCE) -> DarkOakFence,
+    new MaterialData(ACACIA_FENCE) -> AcaciaFence,
+    new MaterialData(SPRUCE_DOOR) -> SpruceDoor,
+    new MaterialData(BIRCH_DOOR) -> BirchDoor,
+    new MaterialData(JUNGLE_DOOR) -> JungleDoor,
+    new MaterialData(ACACIA_DOOR) -> AcaciaDoor,
+    new MaterialData(DARK_OAK_DOOR) -> DarkOakDoor,
+    new MaterialData(END_ROD) -> EndRod,
+    new MaterialData(CHORUS_PLANT) -> ChorusPlant,
+    new MaterialData(CHORUS_FLOWER) -> ChorusFlower,
+    new MaterialData(PURPUR_BLOCK) -> PurpurBlock,
+    new MaterialData(PURPUR_PILLAR) -> PurpurPillar,
+    new MaterialData(PURPUR_STAIRS) -> PurpurStairs,
+    new MaterialData(PURPUR_DOUBLE_SLAB) -> PurpurDoubleSlab,
+    new MaterialData(PURPUR_SLAB) -> PurpurSingleSlab,
+    new MaterialData(END_BRICKS) -> EndStoneBricks,
+    new MaterialData(BEETROOT_BLOCK) -> BeetrootPlantation,
+    new MaterialData(GRASS_PATH) -> GrassPath,
+    new MaterialData(END_GATEWAY) -> EndGateway,
+    new MaterialData(COMMAND_REPEATING) -> CommandRepeating,
+    new MaterialData(COMMAND_CHAIN) -> CommandChain,
+    new MaterialData(FROSTED_ICE) -> FrostedIce,
+    new MaterialData(MAGMA) -> Magma,
+    new MaterialData(NETHER_WART_BLOCK) -> NetherWartBlock,
+    new MaterialData(RED_NETHER_BRICK) -> RedNetherBrick,
+    new MaterialData(BONE_BLOCK) -> BoneBlock,
+    new MaterialData(STRUCTURE_VOID) -> StructureVoid,
+    new MaterialData(OBSERVER) -> Observer,
+    new MaterialData(WHITE_SHULKER_BOX) -> WhiteShulkerBox,
+    new MaterialData(ORANGE_SHULKER_BOX) -> OrangeShulkerBox,
+    new MaterialData(MAGENTA_SHULKER_BOX) -> MagentaShulkerBox,
+    new MaterialData(LIGHT_BLUE_SHULKER_BOX) -> LightBlueShulkerBox,
+    new MaterialData(YELLOW_SHULKER_BOX) -> YellowShulkerBox,
+    new MaterialData(LIME_SHULKER_BOX) -> LimeShulkerBox,
+    new MaterialData(PINK_SHULKER_BOX) -> PinkShulkerBox,
+    new MaterialData(GRAY_SHULKER_BOX) -> GrayShulkerBox,
+    new MaterialData(SILVER_SHULKER_BOX) -> LightGrayShulkerBox,
+    new MaterialData(CYAN_SHULKER_BOX) -> CyanShulkerBox,
+    new MaterialData(PURPLE_SHULKER_BOX) -> PurpleShulkerBox,
+    new MaterialData(BLUE_SHULKER_BOX) -> BlueShulkerBox,
+    new MaterialData(BROWN_SHULKER_BOX) -> BrownShulkerBox,
+    new MaterialData(GREEN_SHULKER_BOX) -> GreenShulkerBox,
+    new MaterialData(RED_SHULKER_BOX) -> RedShulkerBox,
+    new MaterialData(BLACK_SHULKER_BOX) -> BlackShulkerBox,
+    new MaterialData(STRUCTURE_BLOCK) -> StructureSaveBlock,
+    new MaterialData(STRUCTURE_BLOCK, 1.toByte) -> StructureLoadBlock,
+    new MaterialData(STRUCTURE_BLOCK, 2.toByte) -> StructureCornerBlock,
+    new MaterialData(STRUCTURE_BLOCK, 3.toByte) -> StructureDataBlock,
+    new MaterialData(IRON_SPADE) -> IronShovel,
+    new MaterialData(IRON_PICKAXE) -> IronPickaxe,
+    new MaterialData(IRON_AXE) -> IronAxe,
+    new MaterialData(FLINT_AND_STEEL) -> FlintAndSteel,
+    new MaterialData(APPLE) -> Apple,
+    new MaterialData(BOW) -> Bow,
+    new MaterialData(ARROW) -> Arrow,
+    new Coal(CoalType.COAL) -> Coal,
+    new Coal(CoalType.CHARCOAL) -> Charcoal,
+    new MaterialData(DIAMOND) -> Diamond,
+    new MaterialData(IRON_INGOT) -> IronIngot,
+    new MaterialData(GOLD_INGOT) -> GoldIngot,
+    new MaterialData(IRON_SWORD) -> IronSword,
+    new MaterialData(WOOD_SWORD) -> WoodSword,
+    new MaterialData(WOOD_SPADE) -> WoodShovel,
+    new MaterialData(WOOD_PICKAXE) -> WoodPickaxe,
+    new MaterialData(WOOD_AXE) -> WoodAxe,
+    new MaterialData(STONE_SWORD) -> StoneSword,
+    new MaterialData(STONE_SPADE) -> StoneShovel,
+    new MaterialData(STONE_PICKAXE) -> StonePickaxe,
+    new MaterialData(STONE_AXE) -> StoneAxe,
+    new MaterialData(DIAMOND_SWORD) -> DiamondSword,
+    new MaterialData(DIAMOND_SPADE) -> DiamondShovel,
+    new MaterialData(DIAMOND_PICKAXE) -> DiamondPickaxe,
+    new MaterialData(DIAMOND_AXE) -> DiamondAxe,
+    new MaterialData(STICK) -> Stick,
+    new MaterialData(BOWL) -> Bowl,
+    new MaterialData(MUSHROOM_SOUP) -> MushroomStew,
+    new MaterialData(GOLD_SWORD) -> GoldSword,
+    new MaterialData(GOLD_SPADE) -> GoldShovel,
+    new MaterialData(GOLD_PICKAXE) -> GoldPickaxe,
+    new MaterialData(GOLD_AXE) -> GoldAxe,
+    new MaterialData(STRING) -> String,
+    new MaterialData(FEATHER) -> Feather,
+    new MaterialData(SULPHUR) -> GunPowder,
+    new MaterialData(WOOD_HOE) -> WoodHoe,
+    new MaterialData(STONE_HOE) -> StoneHoe,
+    new MaterialData(IRON_HOE) -> IronHoe,
+    new MaterialData(DIAMOND_HOE) -> DiamondHoe,
+    new MaterialData(GOLD_HOE) -> GoldHoe,
+    new MaterialData(SEEDS) -> Seeds,
+    new MaterialData(WHEAT) -> Wheat,
+    new MaterialData(BREAD) -> Bread,
+    new MaterialData(LEATHER_HELMET) -> LeatherHelmet,
+    new MaterialData(LEATHER_CHESTPLATE) -> LeatherChestplate,
+    new MaterialData(LEATHER_LEGGINGS) -> LeatherLeggings,
+    new MaterialData(LEATHER_BOOTS) -> LeatherBoots,
+    new MaterialData(CHAINMAIL_HELMET) -> ChainmailHelmet,
+    new MaterialData(CHAINMAIL_CHESTPLATE) -> ChainmailChestplate,
+    new MaterialData(CHAINMAIL_LEGGINGS) -> ChainmailLeggings,
+    new MaterialData(CHAINMAIL_BOOTS) -> ChainmailBoots,
+    new MaterialData(IRON_HELMET) -> IronHelmet,
+    new MaterialData(IRON_CHESTPLATE) -> IronChestplate,
+    new MaterialData(IRON_LEGGINGS) -> IronLeggings,
+    new MaterialData(IRON_BOOTS) -> IronBoots,
+    new MaterialData(DIAMOND_HELMET) -> DiamondHelmet,
+    new MaterialData(DIAMOND_CHESTPLATE) -> DiamondChestplate,
+    new MaterialData(DIAMOND_LEGGINGS) -> DiamondLeggings,
+    new MaterialData(DIAMOND_BOOTS) -> DiamondBoots,
+    new MaterialData(GOLD_HELMET) -> GoldHelmet,
+    new MaterialData(GOLD_CHESTPLATE) -> GoldChestplate,
+    new MaterialData(GOLD_LEGGINGS) -> GoldLeggings,
+    new MaterialData(GOLD_BOOTS) -> GoldBoots,
+    new MaterialData(FLINT) -> Flint,
+    new MaterialData(PORK) -> RawPorkchop,
+    new MaterialData(GRILLED_PORK) -> CookedPorkchop,
+    new MaterialData(PAINTING) -> Painting,
+    new MaterialData(GOLDEN_APPLE) -> GoldenApple,
+    new MaterialData(GOLDEN_APPLE, 1.toByte) -> EnchantedGoldenApple,
+    new MaterialData(SIGN) -> Sign,
+    new MaterialData(WOOD_DOOR) -> OakDoorItem,
+    new MaterialData(BUCKET) -> Bucket,
+    new MaterialData(WATER_BUCKET) -> WaterBucket,
+    new MaterialData(LAVA_BUCKET) -> LavaBucket,
+    new MaterialData(MINECART) -> Minecart,
+    new MaterialData(SADDLE) -> Saddle,
+    new MaterialData(IRON_DOOR) -> IronDoor,
+    new MaterialData(REDSTONE) -> Redstone,
+    new MaterialData(SNOW_BALL) -> SnowBall,
+    new MaterialData(BOAT) -> OakBoat,
+    new MaterialData(LEATHER) -> Leather,
+    new MaterialData(MILK_BUCKET) -> MilkBucket,
+    new MaterialData(CLAY_BRICK) -> ClayBrick,
+    new MaterialData(CLAY_BALL) -> ClayBall,
+    new MaterialData(SUGAR_CANE) -> SugarCane,
+    new MaterialData(PAPER) -> Paper,
+    new MaterialData(BOOK) -> Book,
+    new MaterialData(SLIME_BALL) -> SlimeBall,
+    new MaterialData(STORAGE_MINECART) -> StorageMinecart,
+    new MaterialData(POWERED_MINECART) -> PoweredMinecart,
+    new MaterialData(EGG) -> Egg,
+    new MaterialData(COMPASS) -> Compass,
+    new MaterialData(FISHING_ROD) -> FishingRod,
+    new MaterialData(WATCH) -> Watch,
+    new MaterialData(GLOWSTONE_DUST) -> GlowstoneDust,
+    new MaterialData(RAW_FISH) -> RawFish,
+    new MaterialData(RAW_FISH, 1.toByte) -> RawSalmon,
+    new MaterialData(RAW_FISH, 2.toByte) -> Clownfish,
+    new MaterialData(RAW_FISH, 3.toByte) -> Pufferfish,
+    new MaterialData(COOKED_FISH) -> CookedFish,
+    new MaterialData(COOKED_FISH, 1.toByte) -> CookedSalmon,
+    new Dye(BLACK) -> InkSack,
+    new Dye(RED) -> RoseRed,
+    new Dye(GREEN) -> CactusGreen,
+    new Dye(BROWN) -> CocoaBeans,
+    new Dye(BLUE) -> LapisLazuli,
+    new Dye(PURPLE) -> PurpleDye,
+    new Dye(CYAN) -> CyanDye,
+    new Dye(SILVER) -> LightGrayDye,
+    new Dye(GRAY) -> GrayDye,
+    new Dye(PINK) -> PinkDye,
+    new Dye(LIME) -> LimeDye,
+    new Dye(YELLOW) -> DandelionYellow,
+    new Dye(LIGHT_BLUE) -> LightBlueDye,
+    new Dye(MAGENTA) -> MagentaDye,
+    new Dye(ORANGE) -> OrangeDye,
+    new Dye(WHITE) -> BoneMeal,
+    new MaterialData(BONE) -> Bone,
+    new MaterialData(SUGAR) -> Sugar,
+    new MaterialData(CAKE) -> Cake,
+    new MaterialData(BED) -> Bed,
+    new MaterialData(DIODE) -> RedstoneRepeater,
+    new MaterialData(COOKIE) -> Cookie,
+    new MaterialData(MAP) -> DrawnMap,
+    new MaterialData(SHEARS) -> Shears,
+    new MaterialData(MELON) -> Melon,
+    new MaterialData(PUMPKIN_SEEDS) -> PumpkinSeeds,
+    new MaterialData(MELON_SEEDS) -> MelonSeeds,
+    new MaterialData(RAW_BEEF) -> RawBeef,
+    new MaterialData(COOKED_BEEF) -> CookedBeef,
+    new MaterialData(RAW_CHICKEN) -> RawChicken,
+    new MaterialData(COOKED_CHICKEN) -> CookedChicken,
+    new MaterialData(ROTTEN_FLESH) -> RottenFlesh,
+    new MaterialData(ENDER_PEARL) -> EnderPearl,
+    new MaterialData(BLAZE_ROD) -> BlazeRod,
+    new MaterialData(GHAST_TEAR) -> GhastTear,
+    new MaterialData(GOLD_NUGGET) -> GoldNugget,
+    new MaterialData(NETHER_STALK) -> NetherWart,
+    new MaterialData(POTION) -> Potion,
+    new MaterialData(GLASS_BOTTLE) -> GlassBottle,
+    new MaterialData(SPIDER_EYE) -> SpiderEye,
+    new MaterialData(FERMENTED_SPIDER_EYE) -> FermentedSpiderEye,
+    new MaterialData(BLAZE_POWDER) -> BlazePowder,
+    new MaterialData(MAGMA_CREAM) -> MagmaCream,
+    new MaterialData(BREWING_STAND_ITEM) -> BrewingStandItem,
+    new MaterialData(CAULDRON_ITEM) -> CauldronItem,
+    new MaterialData(EYE_OF_ENDER) -> EyeOfEnder,
+    new MaterialData(SPECKLED_MELON) -> GlisteringMelon,
+    new MaterialData(MONSTER_EGG) -> MonsterEgg,
+    new MaterialData(EXP_BOTTLE) -> ExpBottle,
+    new MaterialData(FIREBALL) -> FireCharge,
+    new MaterialData(BOOK_AND_QUILL) -> BookAndQuill,
+    new MaterialData(WRITTEN_BOOK) -> WrittenBook,
+    new MaterialData(EMERALD) -> Emerald,
+    new MaterialData(ITEM_FRAME) -> ItemFrame,
+    new MaterialData(FLOWER_POT_ITEM) -> FlowerPotItem,
+    new MaterialData(CARROT_ITEM) -> CarrotItem,
+    new MaterialData(POTATO_ITEM) -> PotatoItem,
+    new MaterialData(BAKED_POTATO) -> BakedPotato,
+    new MaterialData(POISONOUS_POTATO) -> PoisonousPotato,
+    new MaterialData(EMPTY_MAP) -> EmptyMap,
+    new MaterialData(GOLDEN_CARROT) -> GoldenCarrot,
+    new MaterialData(SKULL_ITEM) -> SkeletonHead,
+    new MaterialData(SKULL_ITEM, 1.toByte) -> WitherSkeletonHead,
+    new MaterialData(SKULL_ITEM, 2.toByte) -> ZombieHead,
+    new MaterialData(SKULL_ITEM, 3.toByte) -> PlayerHead,
+    new MaterialData(SKULL_ITEM, 4.toByte) -> CreeperHead,
+    new MaterialData(SKULL_ITEM, 5.toByte) -> DragonHead,
+    new MaterialData(CARROT_STICK) -> CarrotStick,
+    new MaterialData(NETHER_STAR) -> NetherStar,
+    new MaterialData(PUMPKIN_PIE) -> PumpkinPie,
+    new MaterialData(FIREWORK) -> FireworkRocket,
+    new MaterialData(FIREWORK_CHARGE) -> FireworkStar,
+    new MaterialData(ENCHANTED_BOOK) -> EnchantedBook,
+    new MaterialData(REDSTONE_COMPARATOR) -> RedstoneComparator,
+    new MaterialData(NETHER_BRICK_ITEM) -> NetherBrickItem,
+    new MaterialData(QUARTZ) -> Quartz,
+    new MaterialData(EXPLOSIVE_MINECART) -> ExplosiveMinecart,
+    new MaterialData(HOPPER_MINECART) -> HopperMinecart,
+    new MaterialData(PRISMARINE_SHARD) -> PrismarineShard,
+    new MaterialData(PRISMARINE_CRYSTALS) -> PrismarineCrystals,
+    new MaterialData(RABBIT) -> RawRabbit,
+    new MaterialData(COOKED_RABBIT) -> CookedRabbit,
+    new MaterialData(RABBIT_STEW) -> RabbitStew,
+    new MaterialData(RABBIT_FOOT) -> RabbitFoot,
+    new MaterialData(RABBIT_HIDE) -> RabbitHide,
+    new MaterialData(ARMOR_STAND) -> ArmorStand,
+    new MaterialData(IRON_BARDING) -> IronHorseArmor,
+    new MaterialData(GOLD_BARDING) -> GoldHorseArmor,
+    new MaterialData(DIAMOND_BARDING) -> DiamondHorseArmor,
+    new MaterialData(LEASH) -> Leash,
+    new MaterialData(NAME_TAG) -> NameTag,
+    new MaterialData(COMMAND_MINECART) -> CommandMinecart,
+    new MaterialData(MUTTON) -> RawMutton,
+    new MaterialData(COOKED_MUTTON) -> CookedMutton,
+    new MaterialData(BANNER) -> WhiteBanner,
+    new MaterialData(BANNER, 1.toByte) -> OrangeBanner,
+    new MaterialData(BANNER, 2.toByte) -> MagentaBanner,
+    new MaterialData(BANNER, 3.toByte) -> LightBlueBanner,
+    new MaterialData(BANNER, 4.toByte) -> YellowBanner,
+    new MaterialData(BANNER, 5.toByte) -> LimeBanner,
+    new MaterialData(BANNER, 6.toByte) -> PinkBanner,
+    new MaterialData(BANNER, 7.toByte) -> GrayBanner,
+    new MaterialData(BANNER, 8.toByte) -> LightGrayBanner,
+    new MaterialData(BANNER, 9.toByte) -> CyanBanner,
+    new MaterialData(BANNER, 10.toByte) -> PurpleBanner,
+    new MaterialData(BANNER, 11.toByte) -> BlueBanner,
+    new MaterialData(BANNER, 12.toByte) -> BrownBanner,
+    new MaterialData(BANNER, 13.toByte) -> GreenBanner,
+    new MaterialData(BANNER, 14.toByte) -> RedBanner,
+    new MaterialData(BANNER, 15.toByte) -> BlackBanner,
+    new MaterialData(END_CRYSTAL) -> EndCrystal,
+    new MaterialData(SPRUCE_DOOR_ITEM) -> SpruceDoorItem,
+    new MaterialData(BIRCH_DOOR_ITEM) -> BirchDoorItem,
+    new MaterialData(JUNGLE_DOOR_ITEM) -> JungleDoorItem,
+    new MaterialData(ACACIA_DOOR_ITEM) -> AcaciaDoorItem,
+    new MaterialData(DARK_OAK_DOOR_ITEM) -> DarkOakDoorItem,
+    new MaterialData(CHORUS_FRUIT) -> ChorusFruit,
+    new MaterialData(CHORUS_FRUIT_POPPED) -> PoppedChorusFruit,
+    new MaterialData(BEETROOT) -> Beetroot,
+    new MaterialData(BEETROOT_SEEDS) -> BeetrootSeeds,
+    new MaterialData(BEETROOT_SOUP) -> BeetrootSoup,
+    new MaterialData(DRAGONS_BREATH) -> DragonsBreath,
+    new MaterialData(SPLASH_POTION) -> SplashPotion,
+    new MaterialData(SPECTRAL_ARROW) -> SpectralArrow,
+    new MaterialData(TIPPED_ARROW) -> TippedArrow,
+    new MaterialData(LINGERING_POTION) -> LingeringPotion,
+    new MaterialData(SHIELD) -> Shield,
+    new MaterialData(ELYTRA) -> Elytra,
+    new MaterialData(BOAT_SPRUCE) -> SpruceBoat,
+    new MaterialData(BOAT_BIRCH) -> BirchBoat,
+    new MaterialData(BOAT_JUNGLE) -> JungleBoat,
+    new MaterialData(BOAT_ACACIA) -> AcaciaBoat,
+    new MaterialData(BOAT_DARK_OAK) -> DarkOakBoat,
+    new MaterialData(TOTEM) -> TotemOfUndying,
+    new MaterialData(SHULKER_SHELL) -> ShulkerShell,
+    new MaterialData(IRON_NUGGET) -> IronNugget,
+    new MaterialData(GOLD_RECORD) -> GoldRecord,
+    new MaterialData(GREEN_RECORD) -> GreenRecord,
+    new MaterialData(RECORD_3) -> Record3,
+    new MaterialData(RECORD_4) -> Record4,
+    new MaterialData(RECORD_5) -> Record5,
+    new MaterialData(RECORD_6) -> Record6,
+    new MaterialData(RECORD_7) -> Record7,
+    new MaterialData(RECORD_8) -> Record8,
+    new MaterialData(RECORD_9) -> Record9,
+    new MaterialData(RECORD_10) -> Record10,
+    new MaterialData(RECORD_11) -> Record11,
+    new MaterialData(RECORD_12) -> Record12,
+    new MaterialData(STONE, (-1).toByte) -> Seq(Stone, Granite, PolishedGranite, Diorite, PolishedDiorite, Andesite, PolishedAndesite).minBy(_.energy),
+    new MaterialData(DIRT, (-1).toByte) -> Seq(Dirt, CoarseDirt, Podzol).minBy(_.energy),
+    new MaterialData(WOOD, (-1).toByte) -> Seq(OakWoodPlanks, SpruceWoodPlanks, BirchWoodPlanks, JungleWoodPlanks, AcaciaWoodPlanks, DarkOakWoodPlanks).minBy(_.energy),
+    new MaterialData(SAPLING, (-1).toByte) -> Seq(OakSapling, SpruceSapling, BirchSapling, JungleSapling, AcaciaSapling, DarkOakSapling).minBy(_.energy),
+    new MaterialData(LOG, (-1).toByte) -> Seq(OakLog, SpruceLog, BirchLog, JungleLog).minBy(_.energy),
+    new MaterialData(LEAVES, (-1).toByte) -> Seq(OakLeaves, SpruceLeaves, BirchLeaves, JungleLeaves).minBy(_.energy),
+    new MaterialData(SPONGE, (-1).toByte) -> Seq(Sponge, WetSponge).minBy(_.energy),
+    new MaterialData(SANDSTONE, (-1).toByte) -> Seq(Sandstone, SmoothSandstone, ChiseledSandstone).minBy(_.energy),
+    new MaterialData(LONG_GRASS, (-1).toByte) -> Seq(Shrub, LongGrass, Fern).minBy(_.energy),
+    new MaterialData(WOOL, (-1).toByte) -> Seq(WhiteWool, OrangeWool, MagentaWool, LightBlueWool, YellowWool, LimeWool, PinkWool, GrayWool, LightGrayWool, CyanWool, PurpleWool, BlueWool, BrownWool, GreenWool, RedWool, BlackWool).minBy(_.energy),
+    new MaterialData(RED_ROSE, (-1).toByte) -> Seq(Poppy, BlueOrchid, Allium, AzureBluet, RedTulip, OrangeTulip, WhiteTulip, PinkTulip, OxeyeDaisy).minBy(_.energy),
+    new MaterialData(DOUBLE_STEP, (-1).toByte) -> Seq(StoneDoubleSlab, SandstoneDoubleSlab, OldWoodDoubleSlab, CobblestoneDoubleSlab, BrickDoubleSlab, StoneBrickDoubleSlab, NetherBrickDoubleSlab, QuartzDoubleSlab).minBy(_.energy),
+    new MaterialData(STEP, (-1).toByte) -> Seq(StoneSingleSlab, SandstoneSingleSlab, OldWoodSingleSlab, CobblestoneSingleSlab, BrickSingleSlab, StoneBrickSingleSlab, NetherBrickSingleSlab, QuartzSingleSlab).minBy(_.energy),
+    new MaterialData(STAINED_GLASS, (-1).toByte) -> Seq(WhiteGlass, OrangeGlass, MagentaGlass, LightBlueGlass, YellowGlass, LimeGlass, PinkGlass, GrayGlass, LightGrayGlass, CyanGlass, PurpleGlass, BlueGlass, BrownGlass, GreenGlass, RedGlass, BlackGlass).minBy(_.energy),
+    new MaterialData(SMOOTH_BRICK, (-1).toByte) -> Seq(StoneBrick, CrackedStoneBrick, MossyStoneBrick, ChiseledStoneBrick).minBy(_.energy),
+    new MaterialData(WOOD_DOUBLE_STEP, (-1).toByte) -> Seq(OakDoubleSlab, SpruceDoubleSlab, BirchDoubleSlab, JungleDoubleSlab, AcaciaDoubleSlab, DarkOakDoubleSlab).minBy(_.energy),
+    new MaterialData(WOOD_STEP, (-1).toByte) -> Seq(OakSingleSlab, SpruceSingleSlab, BirchSingleSlab, JungleSingleSlab, AcaciaSingleSlab, DarkOakSingleSlab).minBy(_.energy),
+    new MaterialData(COBBLE_WALL, (-1).toByte) -> Seq(CobblestoneWall, MossyCobblestoneWall).minBy(_.energy),
+    new MaterialData(QUARTZ_BLOCK, (-1).toByte) -> Seq(QuartzBlock, ChiseledQuartzBlock, PillarQuartzBlock).minBy(_.energy),
+    new MaterialData(STAINED_CLAY, (-1).toByte) -> Seq(WhiteHardenedClay, OrangeHardenedClay, MagentaHardenedClay, LightBlueHardenedClay, YellowHardenedClay, LimeHardenedClay, PinkHardenedClay, GrayHardenedClay, LightGrayHardenedClay, CyanHardenedClay, PurpleHardenedClay, BlueHardenedClay, BrownHardenedClay, GreenHardenedClay, RedHardenedClay, BlackHardenedClay).minBy(_.energy),
+    new MaterialData(STAINED_GLASS_PANE, (-1).toByte) -> Seq(WhiteGlassPane, OrangeGlassPane, MagentaGlassPane, LightBlueGlassPane, YellowGlassPane, LimeGlassPane, PinkGlassPane, GrayGlassPane, LightGrayGlassPane, CyanGlassPane, PurpleGlassPane, BlueGlassPane, BrownGlassPane, GreenGlassPane, RedGlassPane, BlackGlassPane).minBy(_.energy),
+    new MaterialData(LEAVES_2, (-1).toByte) -> Seq(AcaciaLeaves, DarkOakLeaves).minBy(_.energy),
+    new MaterialData(LOG_2, (-1).toByte) -> Seq(AcaciaLog, DarkOakLog).minBy(_.energy),
+    new MaterialData(PRISMARINE, (-1).toByte) -> Seq(Prismarine, PrismarineBrick, DarkPrismarine).minBy(_.energy),
+    new MaterialData(CARPET, (-1).toByte) -> Seq(WhiteCarpet, OrangeCarpet, MagentaCarpet, LightBlueCarpet, YellowCarpet, LimeCarpet, PinkCarpet, GrayCarpet, LightGrayCarpet, CyanCarpet, PurpleCarpet, BlueCarpet, BrownCarpet, GreenCarpet, RedCarpet, BlackCarpet).minBy(_.energy),
+    new MaterialData(DOUBLE_PLANT, (-1).toByte) -> Seq(DoublePlant, Sunflower, Lilac, DoubleTallgrass, LargeFern, RoseBush, Peony, TopPlantHalf).minBy(_.energy),
+    new MaterialData(RED_SANDSTONE, (-1).toByte) -> Seq(RedSandstone, SmoothRedSandstone, ChiseledRedSandstone).minBy(_.energy),
+    new MaterialData(STRUCTURE_BLOCK, (-1).toByte) -> Seq(StructureSaveBlock, StructureLoadBlock, StructureCornerBlock, StructureDataBlock).minBy(_.energy),
+    new MaterialData(COAL, (-1).toByte) -> Seq(Coal, Charcoal).minBy(_.energy),
+    new MaterialData(GOLDEN_APPLE, (-1).toByte) -> Seq(GoldenApple, EnchantedGoldenApple).minBy(_.energy),
+    new MaterialData(RAW_FISH, (-1).toByte) -> Seq(RawFish, RawSalmon, Clownfish, Pufferfish).minBy(_.energy),
+    new MaterialData(COOKED_FISH, (-1).toByte) -> Seq(CookedFish, CookedSalmon).minBy(_.energy),
+    new MaterialData(INK_SACK, (-1).toByte) -> Seq(InkSack, RoseRed, CactusGreen, CocoaBeans, LapisLazuli, PurpleDye, CyanDye, LightGrayDye, GrayDye, PinkDye, LimeDye, DandelionYellow, LightBlueDye, MagentaDye, OrangeDye, BoneMeal).minBy(_.energy),
+    new MaterialData(SKULL_ITEM, (-1).toByte) -> Seq(SkeletonHead, WitherSkeletonHead, ZombieHead, PlayerHead, CreeperHead, DragonHead).minBy(_.energy),
+    new MaterialData(SAND, (-1).toByte) -> Seq(Sand, RedSand).minBy(_.energy),
+    new MaterialData(BANNER, (-1).toByte) -> Seq(WhiteBanner, OrangeBanner, MagentaBanner, LightBlueBanner, YellowBanner, LimeBanner, PinkBanner, GrayBanner, LightGrayBanner, CyanBanner, PurpleBanner, BlueBanner, BrownBanner, GreenBanner, RedBanner, BlackBanner).minBy(_.energy)
+  )
 
-  def getMaterial(bMaterial: BMaterial, data: MaterialData): Material = {
-    val nullMaterialData = new MaterialData(AIR)
-    val materials: HashMap[(BMaterial, MaterialData), Material] = HashMap(
-      (AIR, nullMaterialData) -> Air,
-      (STONE, new MaterialData(STONE, 0.toByte)) -> Stone,
-      (STONE, new MaterialData(STONE, 1.toByte)) -> Granite,
-      (STONE, new MaterialData(STONE, 2.toByte)) -> PolishedGranite,
-      (STONE, new MaterialData(STONE, 3.toByte)) -> Diorite,
-      (STONE, new MaterialData(STONE, 4.toByte)) -> PolishedDiorite,
-      (STONE, new MaterialData(STONE, 5.toByte)) -> Andesite,
-      (STONE, new MaterialData(STONE, 6.toByte)) -> PolishedAndesite,
-      (GRASS, nullMaterialData) -> Grass,
-      (DIRT, new MaterialData(DIRT, 0.toByte)) -> Dirt,
-      (DIRT, new MaterialData(DIRT, 1.toByte)) -> CoarseDirt,
-      (DIRT, new MaterialData(DIRT, 2.toByte)) -> Podzol,
-      (COBBLESTONE, nullMaterialData) -> Cobblestone,
-      (WOOD, new Wood(GENERIC)) -> OakWoodPlanks,
-      (WOOD, new Wood(REDWOOD)) -> SpruceWoodPlanks,
-      (WOOD, new Wood(BIRCH)) -> BirchWoodPlanks,
-      (WOOD, new Wood(JUNGLE)) -> JungleWoodPlanks,
-      (WOOD, new Wood(ACACIA)) -> AcaciaWoodPlanks,
-      (WOOD, new Wood(DARK_OAK)) -> DarkOakWoodPlanks,
-      (SAPLING, new Sapling(GENERIC)) -> OakSapling,
-      (SAPLING, new Sapling(REDWOOD)) -> SpruceSapling,
-      (SAPLING, new Sapling(BIRCH)) -> BirchSapling,
-      (SAPLING, new Sapling(JUNGLE)) -> JungleSapling,
-      (SAPLING, new Sapling(ACACIA)) -> AcaciaSapling,
-      (SAPLING, new Sapling(DARK_OAK)) -> DarkOakSapling,
-      (BEDROCK, nullMaterialData) -> Bedrock,
-      (WATER, nullMaterialData) -> Water,
-      (STATIONARY_WATER, nullMaterialData) -> StationaryWater,
-      (LAVA, nullMaterialData) -> Lava,
-      (STATIONARY_LAVA, nullMaterialData) -> StationaryLava,
-      (SAND, nullMaterialData) -> Sand,
-      (GRAVEL, nullMaterialData) -> Gravel,
-      (GOLD_ORE, nullMaterialData) -> GoldOre,
-      (IRON_ORE, nullMaterialData) -> IronOre,
-      (COAL_ORE, nullMaterialData) -> CoalOre,
-      (LOG, new Tree(GENERIC)) -> OakLog,
-      (LOG, new Tree(REDWOOD)) -> SpruceLog,
-      (LOG, new Tree(BIRCH)) -> BirchLog,
-      (LOG, new Tree(JUNGLE)) -> JungleLog,
-      (LEAVES, new Leaves(GENERIC)) -> OakLeaves,
-      (LEAVES, new Leaves(REDWOOD)) -> SpruceLeaves,
-      (LEAVES, new Leaves(BIRCH)) -> BirchLeaves,
-      (LEAVES, new Leaves(JUNGLE)) -> JungleLeaves,
-      (SPONGE, new MaterialData(SPONGE, 0.toByte)) -> Sponge,
-      (SPONGE, new MaterialData(SPONGE, 1.toByte)) -> WetSponge,
-      (GLASS, nullMaterialData) -> Glass,
-      (LAPIS_ORE, nullMaterialData) -> LapisLazuliOre,
-      (LAPIS_BLOCK, nullMaterialData) -> LapisLazuliBlock,
-      (DISPENSER, nullMaterialData) -> Dispenser,
-      (SANDSTONE, new Sandstone(CRACKED)) -> Sandstone,
-      (SANDSTONE, new Sandstone(SMOOTH)) -> SmoothSandstone,
-      (SANDSTONE, new Sandstone(GLYPHED)) -> ChiseledSandstone,
-      (NOTE_BLOCK, nullMaterialData) -> NoteBlock,
-      (BED_BLOCK, nullMaterialData) -> BedBlock,
-      (POWERED_RAIL, nullMaterialData) -> PoweredRails,
-      (DETECTOR_RAIL, nullMaterialData) -> DetectorRails,
-      (PISTON_STICKY_BASE, nullMaterialData) -> StickyPiston,
-      (WEB, nullMaterialData) -> Cobweb,
-      (LONG_GRASS, new LongGrass(DEAD)) -> Shrub,
-      (LONG_GRASS, new LongGrass(NORMAL)) -> LongGrass,
-      (LONG_GRASS, new LongGrass(FERN_LIKE)) -> Fern,
-      (DEAD_BUSH, nullMaterialData) -> DeadBush,
-      (PISTON_BASE, nullMaterialData) -> Piston,
-      (PISTON_EXTENSION, nullMaterialData) -> PistonExtension,
-      (WOOL, new Wool(WHITE)) -> WhiteWool,
-      (WOOL, new Wool(ORANGE)) -> OrangeWool,
-      (WOOL, new Wool(MAGENTA)) -> MagentaWool,
-      (WOOL, new Wool(LIGHT_BLUE)) -> LightBlueWool,
-      (WOOL, new Wool(YELLOW)) -> YellowWool,
-      (WOOL, new Wool(LIME)) -> LimeWool,
-      (WOOL, new Wool(PINK)) -> PinkWool,
-      (WOOL, new Wool(GRAY)) -> GrayWool,
-      (WOOL, new Wool(SILVER)) -> LightGrayWool,
-      (WOOL, new Wool(CYAN)) -> CyanWool,
-      (WOOL, new Wool(PURPLE)) -> PurpleWool,
-      (WOOL, new Wool(BLUE)) -> BlueWool,
-      (WOOL, new Wool(BROWN)) -> BrownWool,
-      (WOOL, new Wool(GREEN)) -> GreenWool,
-      (WOOL, new Wool(RED)) -> RedWool,
-      (WOOL, new Wool(BLACK)) -> BlackWool,
-      (PISTON_MOVING_PIECE, nullMaterialData) -> PistonMovingPiece,
-      (YELLOW_FLOWER, nullMaterialData) -> Dandelion,
-      (RED_ROSE, new MaterialData(RED_ROSE, 0.toByte)) -> Poppy,
-      (RED_ROSE, new MaterialData(RED_ROSE, 1.toByte)) -> BlueOrchid,
-      (RED_ROSE, new MaterialData(RED_ROSE, 2.toByte)) -> Allium,
-      (RED_ROSE, new MaterialData(RED_ROSE, 3.toByte)) -> AzureBluet,
-      (RED_ROSE, new MaterialData(RED_ROSE, 4.toByte)) -> RedTulip,
-      (RED_ROSE, new MaterialData(RED_ROSE, 5.toByte)) -> OrangeTulip,
-      (RED_ROSE, new MaterialData(RED_ROSE, 6.toByte)) -> WhiteTulip,
-      (RED_ROSE, new MaterialData(RED_ROSE, 7.toByte)) -> PinkTulip,
-      (RED_ROSE, new MaterialData(RED_ROSE, 8.toByte)) -> OxeyeDaisy,
-      (BROWN_MUSHROOM, nullMaterialData) -> BrownMushroom,
-      (RED_MUSHROOM, nullMaterialData) -> RedMushroom,
-      (GOLD_BLOCK, nullMaterialData) -> GoldBlock,
-      (IRON_BLOCK, nullMaterialData) -> IronBlock,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 0.toByte)) -> StoneDoubleSlab,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 1.toByte)) -> SandstoneDoubleSlab,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 2.toByte)) -> OldWoodDoubleSlab,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 3.toByte)) -> CobblestoneDoubleSlab,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 4.toByte)) -> BrickDoubleSlab,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 5.toByte)) -> StoneBrickDoubleSlab,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 6.toByte)) -> NetherBrickDoubleSlab,
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, 7.toByte)) -> QuartzDoubleSlab,
-      (STEP, new MaterialData(STEP, 0.toByte)) -> StoneSingleSlab,
-      (STEP, new MaterialData(STEP, 1.toByte)) -> SandstoneSingleSlab,
-      (STEP, new MaterialData(STEP, 2.toByte)) -> OldWoodSingleSlab,
-      (STEP, new MaterialData(STEP, 3.toByte)) -> CobblestoneSingleSlab,
-      (STEP, new MaterialData(STEP, 4.toByte)) -> BrickSingleSlab,
-      (STEP, new MaterialData(STEP, 5.toByte)) -> StoneBrickSingleSlab,
-      (STEP, new MaterialData(STEP, 6.toByte)) -> NetherBrickSingleSlab,
-      (STEP, new MaterialData(STEP, 7.toByte)) -> QuartzSingleSlab,
-      (BRICK, nullMaterialData) -> BrickBlock,
-      (BTNT, nullMaterialData) -> TNT,
-      (BOOKSHELF, nullMaterialData) -> Bookshelf,
-      (MOSSY_COBBLESTONE, nullMaterialData) -> MossyCobblestone,
-      (OBSIDIAN, nullMaterialData) -> Obsidian,
-      (TORCH, nullMaterialData) -> Torch,
-      (FIRE, nullMaterialData) -> Fire,
-      (MOB_SPAWNER, nullMaterialData) -> MobSpawner,
-      (WOOD_STAIRS, nullMaterialData) -> OakStairs,
-      (CHEST, nullMaterialData) -> Chest,
-      (REDSTONE_WIRE, nullMaterialData) -> RedstoneWire,
-      (DIAMOND_ORE, nullMaterialData) -> DiamondOre,
-      (DIAMOND_BLOCK, nullMaterialData) -> DiamondBlock,
-      (WORKBENCH, nullMaterialData) -> CraftingTable,
-      (CROPS, nullMaterialData) -> Crops,
-      (SOIL, nullMaterialData) -> Soil,
-      (FURNACE, nullMaterialData) -> Furnace,
-      (BURNING_FURNACE, nullMaterialData) -> BurningFurnace,
-      (SIGN_POST, nullMaterialData) -> SignPost,
-      (WOODEN_DOOR, nullMaterialData) -> OakDoor,
-      (LADDER, nullMaterialData) -> Ladder,
-      (RAILS, nullMaterialData) -> Rails,
-      (COBBLESTONE_STAIRS, nullMaterialData) -> CobblestoneStairs,
-      (WALL_SIGN, nullMaterialData) -> WallSign,
-      (LEVER, nullMaterialData) -> Lever,
-      (STONE_PLATE, nullMaterialData) -> StonePressurePlate,
-      (IRON_DOOR_BLOCK, nullMaterialData) -> IronDoorBlock,
-      (WOOD_PLATE, nullMaterialData) -> WoodPressurePlate,
-      (REDSTONE_ORE, nullMaterialData) -> RedstoneOre,
-      (GLOWING_REDSTONE_ORE, nullMaterialData) -> GlowingRedstoneOre,
-      (REDSTONE_TORCH_OFF, nullMaterialData) -> RedstoneTorchOff,
-      (REDSTONE_TORCH_ON, nullMaterialData) -> RedstoneTorchOn,
-      (STONE_BUTTON, nullMaterialData) -> StoneButton,
-      (SNOW, nullMaterialData) -> Snow,
-      (ICE, nullMaterialData) -> Ice,
-      (SNOW_BLOCK, nullMaterialData) -> SnowBlock,
-      (CACTUS, nullMaterialData) -> Cactus,
-      (CLAY, nullMaterialData) -> Clay,
-      (SUGAR_CANE_BLOCK, nullMaterialData) -> SugarCaneBlock,
-      (JUKEBOX, nullMaterialData) -> Jukebox,
-      (FENCE, nullMaterialData) -> OakFence,
-      (PUMPKIN, nullMaterialData) -> Pumpkin,
-      (NETHERRACK, nullMaterialData) -> Netherrack,
-      (SOUL_SAND, nullMaterialData) -> SoulSand,
-      (GLOWSTONE, nullMaterialData) -> Glowstone,
-      (PORTAL, nullMaterialData) -> Portal,
-      (JACK_O_LANTERN, nullMaterialData) -> JackOLantern,
-      (CAKE_BLOCK, nullMaterialData) -> CakeBlock,
-      (DIODE_BLOCK_OFF, nullMaterialData) -> RedstoneRepeaterOff,
-      (DIODE_BLOCK_ON, nullMaterialData) -> RedstoneRepeaterOn,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 0.toByte)) -> WhiteGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 1.toByte)) -> OrangeGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 2.toByte)) -> MagentaGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 3.toByte)) -> LightBlueGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 4.toByte)) -> YellowGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 5.toByte)) -> LimeGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 6.toByte)) -> PinkGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 7.toByte)) -> GrayGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 8.toByte)) -> LightGrayGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 9.toByte)) -> CyanGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 10.toByte)) -> PurpleGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 11.toByte)) -> BlueGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 12.toByte)) -> BrownGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 13.toByte)) -> GreenGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 14.toByte)) -> RedGlass,
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, 15.toByte)) -> BlackGlass,
-      (TRAP_DOOR, nullMaterialData) -> TrapDoor,
-      (MONSTER_EGGS, nullMaterialData) -> MonsterEggs,
-      (SMOOTH_BRICK, new MaterialData(SMOOTH_BRICK, 0.toByte)) -> StoneBrick,
-      (SMOOTH_BRICK, new MaterialData(SMOOTH_BRICK, 1.toByte)) -> CrackedStoneBrick,
-      (SMOOTH_BRICK, new MaterialData(SMOOTH_BRICK, 2.toByte)) -> MossyStoneBrick,
-      (SMOOTH_BRICK, new MaterialData(SMOOTH_BRICK, 3.toByte)) -> ChiseledStoneBrick,
-      (HUGE_MUSHROOM_1, nullMaterialData) -> HugeMushroom1,
-      (HUGE_MUSHROOM_2, nullMaterialData) -> HugeMushroom2,
-      (IRON_FENCE, nullMaterialData) -> IronFence,
-      (THIN_GLASS, nullMaterialData) -> GlassPane,
-      (MELON_BLOCK, nullMaterialData) -> MelonBlock,
-      (PUMPKIN_STEM, nullMaterialData) -> PumpkinStem,
-      (MELON_STEM, nullMaterialData) -> MelonStem,
-      (VINE, nullMaterialData) -> Vine,
-      (FENCE_GATE, nullMaterialData) -> OakFenceGate,
-      (BRICK_STAIRS, nullMaterialData) -> BrickStairs,
-      (SMOOTH_STAIRS, nullMaterialData) -> StoneBrickStairs,
-      (MYCEL, nullMaterialData) -> Mycelium,
-      (WATER_LILY, nullMaterialData) -> WaterLily,
-      (NETHER_BRICK, nullMaterialData) -> NetherBrick,
-      (NETHER_FENCE, nullMaterialData) -> NetherBrickFence,
-      (NETHER_BRICK_STAIRS, nullMaterialData) -> NetherBrickStairs,
-      (NETHER_WARTS, nullMaterialData) -> NetherWarts,
-      (ENCHANTMENT_TABLE, nullMaterialData) -> EnchantmentTable,
-      (BREWING_STAND, nullMaterialData) -> BrewingStand,
-      (CAULDRON, nullMaterialData) -> Cauldron,
-      (ENDER_PORTAL, nullMaterialData) -> EnderPortal,
-      (ENDER_PORTAL_FRAME, nullMaterialData) -> EnderPortalFrame,
-      (ENDER_STONE, nullMaterialData) -> EndStone,
-      (DRAGON_EGG, nullMaterialData) -> DragonEgg,
-      (REDSTONE_LAMP_OFF, nullMaterialData) -> RedstoneLampOff,
-      (REDSTONE_LAMP_ON, nullMaterialData) -> RedstoneLampOn,
-      (WOOD_DOUBLE_STEP, new Wood(GENERIC)) -> OakDoubleSlab,
-      (WOOD_DOUBLE_STEP, new Wood(REDWOOD)) -> SpruceDoubleSlab,
-      (WOOD_DOUBLE_STEP, new Wood(BIRCH)) -> BirchDoubleSlab,
-      (WOOD_DOUBLE_STEP, new Wood(JUNGLE)) -> JungleDoubleSlab,
-      (WOOD_DOUBLE_STEP, new Wood(ACACIA)) -> AcaciaDoubleSlab,
-      (WOOD_DOUBLE_STEP, new Wood(DARK_OAK)) -> DarkOakDoubleSlab,
-      (WOOD_STEP, new WoodenStep(GENERIC)) -> OakSingleSlab,
-      (WOOD_STEP, new WoodenStep(REDWOOD)) -> SpruceSingleSlab,
-      (WOOD_STEP, new WoodenStep(BIRCH)) -> BirchSingleSlab,
-      (WOOD_STEP, new WoodenStep(JUNGLE)) -> JungleSingleSlab,
-      (WOOD_STEP, new WoodenStep(ACACIA)) -> AcaciaSingleSlab,
-      (WOOD_STEP, new WoodenStep(DARK_OAK)) -> DarkOakSingleSlab,
-      (COCOA, nullMaterialData) -> Cocoa,
-      (SANDSTONE_STAIRS, nullMaterialData) -> SandstoneStairs,
-      (EMERALD_ORE, nullMaterialData) -> EmeraldOre,
-      (ENDER_CHEST, nullMaterialData) -> EnderChest,
-      (TRIPWIRE_HOOK, nullMaterialData) -> TripwireHook,
-      (TRIPWIRE, nullMaterialData) -> Tripwire,
-      (EMERALD_BLOCK, nullMaterialData) -> EmeraldBlock,
-      (SPRUCE_WOOD_STAIRS, nullMaterialData) -> SpruceStairs,
-      (BIRCH_WOOD_STAIRS, nullMaterialData) -> BirchStairs,
-      (JUNGLE_WOOD_STAIRS, nullMaterialData) -> JungleStairs,
-      (COMMAND, nullMaterialData) -> Command,
-      (BEACON, nullMaterialData) -> Beacon,
-      (COBBLE_WALL, nullMaterialData) -> CobblestoneWall,
-      (FLOWER_POT, nullMaterialData) -> FlowerPot,
-      (CARROT, nullMaterialData) -> Carrot,
-      (POTATO, nullMaterialData) -> Potato,
-      (WOOD_BUTTON, nullMaterialData) -> WoodButton,
-      (SKULL, nullMaterialData) -> Skull,
-      (ANVIL, nullMaterialData) -> Anvil,
-      (TRAPPED_CHEST, nullMaterialData) -> TrappedChest,
-      (GOLD_PLATE, nullMaterialData) -> GoldPressurePlate,
-      (IRON_PLATE, nullMaterialData) -> IronPressurePlate,
-      (REDSTONE_COMPARATOR_OFF, nullMaterialData) -> RedstoneComparatorOff,
-      (REDSTONE_COMPARATOR_ON, nullMaterialData) -> RedstoneComparatorOn,
-      (DAYLIGHT_DETECTOR, nullMaterialData) -> DaylightSensor,
-      (REDSTONE_BLOCK, nullMaterialData) -> RedstoneBlock,
-      (QUARTZ_ORE, nullMaterialData) -> QuartzOre,
-      (HOPPER, nullMaterialData) -> Hopper,
-      (QUARTZ_BLOCK, new MaterialData(QUARTZ_BLOCK, 0.toByte)) -> QuartzBlock,
-      (QUARTZ_BLOCK, new MaterialData(QUARTZ_BLOCK, 1.toByte)) -> ChiseledQuartzBlock,
-      (QUARTZ_BLOCK, new MaterialData(QUARTZ_BLOCK, 2.toByte)) -> PillarQuartzBlock,
-      (QUARTZ_STAIRS, nullMaterialData) -> QuartzStairs,
-      (ACTIVATOR_RAIL, nullMaterialData) -> ActivatorRails,
-      (DROPPER, nullMaterialData) -> Dropper,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 0.toByte)) -> WhiteHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 1.toByte)) -> OrangeHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 2.toByte)) -> MagentaHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 3.toByte)) -> LightBlueHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 4.toByte)) -> YellowHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 5.toByte)) -> LimeHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 6.toByte)) -> PinkHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 7.toByte)) -> GrayHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 8.toByte)) -> LightGrayHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 9.toByte)) -> CyanHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 10.toByte)) -> PurpleHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 11.toByte)) -> BlueHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 12.toByte)) -> BrownHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 13.toByte)) -> GreenHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 14.toByte)) -> RedHardenedClay,
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, 15.toByte)) -> BlackHardenedClay,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 0.toByte)) -> WhiteGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 1.toByte)) -> OrangeGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 2.toByte)) -> MagentaGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 3.toByte)) -> LightBlueGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 4.toByte)) -> YellowGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 5.toByte)) -> LimeGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 6.toByte)) -> PinkGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 7.toByte)) -> GrayGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 8.toByte)) -> LightGrayGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 9.toByte)) -> CyanGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 10.toByte)) -> PurpleGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 11.toByte)) -> BlueGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 12.toByte)) -> BrownGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 13.toByte)) -> GreenGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 14.toByte)) -> RedGlassPane,
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, 15.toByte)) -> BlackGlassPane,
-      (LEAVES_2, new Leaves(ACACIA)) -> AcaciaLeaves,
-      (LEAVES_2, new Leaves(DARK_OAK)) -> DarkOakLeaves,
-      (LOG_2, new Tree(ACACIA)) -> AcaciaLog,
-      (LOG_2, new Tree(DARK_OAK)) -> DarkOakLog,
-      (ACACIA_STAIRS, nullMaterialData) -> AcaciaStairs,
-      (DARK_OAK_STAIRS, nullMaterialData) -> DarkOakStairs,
-      (SLIME_BLOCK, nullMaterialData) -> SlimeBlock,
-      (BARRIER, nullMaterialData) -> Barrier,
-      (IRON_TRAPDOOR, nullMaterialData) -> IronTrapdoor,
-      (PRISMARINE, new MaterialData(PRISMARINE, 0.toByte)) -> Prismarine,
-      (PRISMARINE, new MaterialData(PRISMARINE, 1.toByte)) -> PrismarineBrick,
-      (PRISMARINE, new MaterialData(PRISMARINE, 2.toByte)) -> DarkPrismarine,
-      (SEA_LANTERN, nullMaterialData) -> SeaLantern,
-      (HAY_BLOCK, nullMaterialData) -> HayBale,
-      (CARPET, new MaterialData(CARPET, 0.toByte)) -> WhiteCarpet,
-      (CARPET, new MaterialData(CARPET, 1.toByte)) -> OrangeCarpet,
-      (CARPET, new MaterialData(CARPET, 2.toByte)) -> MagentaCarpet,
-      (CARPET, new MaterialData(CARPET, 3.toByte)) -> LightBlueCarpet,
-      (CARPET, new MaterialData(CARPET, 4.toByte)) -> YellowCarpet,
-      (CARPET, new MaterialData(CARPET, 5.toByte)) -> LimeCarpet,
-      (CARPET, new MaterialData(CARPET, 6.toByte)) -> PinkCarpet,
-      (CARPET, new MaterialData(CARPET, 7.toByte)) -> GrayCarpet,
-      (CARPET, new MaterialData(CARPET, 8.toByte)) -> LightGrayCarpet,
-      (CARPET, new MaterialData(CARPET, 9.toByte)) -> CyanCarpet,
-      (CARPET, new MaterialData(CARPET, 10.toByte)) -> PurpleCarpet,
-      (CARPET, new MaterialData(CARPET, 11.toByte)) -> BlueCarpet,
-      (CARPET, new MaterialData(CARPET, 12.toByte)) -> BrownCarpet,
-      (CARPET, new MaterialData(CARPET, 13.toByte)) -> GreenCarpet,
-      (CARPET, new MaterialData(CARPET, 14.toByte)) -> RedCarpet,
-      (CARPET, new MaterialData(CARPET, 15.toByte)) -> BlackCarpet,
-      (HARD_CLAY, nullMaterialData) -> HardenedClay,
-      (COAL_BLOCK, nullMaterialData) -> CoalBlock,
-      (PACKED_ICE, nullMaterialData) -> PackedIce,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 0.toByte)) -> DoublePlant,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 1.toByte)) -> Sunflower,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 2.toByte)) -> Lilac,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 3.toByte)) -> DoubleTallgrass,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 4.toByte)) -> LargeFern,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 5.toByte)) -> RoseBush,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 6.toByte)) -> Peony,
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, 7.toByte)) -> TopPlantHalf,
-      (STANDING_BANNER, nullMaterialData) -> StandingBanner,
-      (WALL_BANNER, nullMaterialData) -> WallBanner,
-      (DAYLIGHT_DETECTOR_INVERTED, nullMaterialData) -> InvertedDaylightSensor,
-      (RED_SANDSTONE, new MaterialData(RED_SANDSTONE, 0.toByte)) -> RedSandstone,
-      (RED_SANDSTONE, new MaterialData(RED_SANDSTONE, 1.toByte)) -> SmoothRedSandstone,
-      (RED_SANDSTONE, new MaterialData(RED_SANDSTONE, 2.toByte)) -> ChiseledRedSandstone,
-      (RED_SANDSTONE_STAIRS, nullMaterialData) -> RedSandstoneStairs,
-      (DOUBLE_STONE_SLAB2, nullMaterialData) -> RedSandstoneDoubleSlab,
-      (STONE_SLAB2, nullMaterialData) -> RedSandstoneSingleSlab,
-      (SPRUCE_FENCE_GATE, nullMaterialData) -> SpruceFenceGate,
-      (BIRCH_FENCE_GATE, nullMaterialData) -> BirchFenceGate,
-      (JUNGLE_FENCE_GATE, nullMaterialData) -> JungleFenceGate,
-      (DARK_OAK_FENCE_GATE, nullMaterialData) -> DarkOakFenceGate,
-      (ACACIA_FENCE_GATE, nullMaterialData) -> AcaciaFenceGate,
-      (SPRUCE_FENCE, nullMaterialData) -> SpruceFence,
-      (BIRCH_FENCE, nullMaterialData) -> BirchFence,
-      (JUNGLE_FENCE, nullMaterialData) -> JungleFence,
-      (DARK_OAK_FENCE, nullMaterialData) -> DarkOakFence,
-      (ACACIA_FENCE, nullMaterialData) -> AcaciaFence,
-      (SPRUCE_DOOR, nullMaterialData) -> SpruceDoor,
-      (BIRCH_DOOR, nullMaterialData) -> BirchDoor,
-      (JUNGLE_DOOR, nullMaterialData) -> JungleDoor,
-      (ACACIA_DOOR, nullMaterialData) -> AcaciaDoor,
-      (DARK_OAK_DOOR, nullMaterialData) -> DarkOakDoor,
-      (END_ROD, nullMaterialData) -> EndRod,
-      (CHORUS_PLANT, nullMaterialData) -> ChorusPlant,
-      (CHORUS_FLOWER, nullMaterialData) -> ChorusFlower,
-      (PURPUR_BLOCK, nullMaterialData) -> PurpurBlock,
-      (PURPUR_PILLAR, nullMaterialData) -> PurpurPillar,
-      (PURPUR_STAIRS, nullMaterialData) -> PurpurStairs,
-      (PURPUR_DOUBLE_SLAB, nullMaterialData) -> PurpurDoubleSlab,
-      (PURPUR_SLAB, nullMaterialData) -> PurpurSingleSlab,
-      (END_BRICKS, nullMaterialData) -> EndStoneBricks,
-      (BEETROOT_BLOCK, nullMaterialData) -> BeetrootPlantation,
-      (GRASS_PATH, nullMaterialData) -> GrassPath,
-      (END_GATEWAY, nullMaterialData) -> EndGateway,
-      (COMMAND_REPEATING, nullMaterialData) -> CommandRepeating,
-      (COMMAND_CHAIN, nullMaterialData) -> CommandChain,
-      (FROSTED_ICE, nullMaterialData) -> FrostedIce,
-      (MAGMA, nullMaterialData) -> Magma,
-      (NETHER_WART_BLOCK, nullMaterialData) -> NetherWartBlock,
-      (RED_NETHER_BRICK, nullMaterialData) -> RedNetherBrick,
-      (BONE_BLOCK, nullMaterialData) -> BoneBlock,
-      (STRUCTURE_VOID, nullMaterialData) -> StructureVoid,
-      (OBSERVER, nullMaterialData) -> Observer,
-      (WHITE_SHULKER_BOX, nullMaterialData) -> WhiteShulkerBox,
-      (ORANGE_SHULKER_BOX, nullMaterialData) -> OrangeShulkerBox,
-      (MAGENTA_SHULKER_BOX, nullMaterialData) -> MagentaShulkerBox,
-      (LIGHT_BLUE_SHULKER_BOX, nullMaterialData) -> LightBlueShulkerBox,
-      (YELLOW_SHULKER_BOX, nullMaterialData) -> YellowShulkerBox,
-      (LIME_SHULKER_BOX, nullMaterialData) -> LimeShulkerBox,
-      (PINK_SHULKER_BOX, nullMaterialData) -> PinkShulkerBox,
-      (GRAY_SHULKER_BOX, nullMaterialData) -> GrayShulkerBox,
-      (SILVER_SHULKER_BOX, nullMaterialData) -> LightGrayShulkerBox,
-      (CYAN_SHULKER_BOX, nullMaterialData) -> CyanShulkerBox,
-      (PURPLE_SHULKER_BOX, nullMaterialData) -> PurpleShulkerBox,
-      (BLUE_SHULKER_BOX, nullMaterialData) -> BlueShulkerBox,
-      (BROWN_SHULKER_BOX, nullMaterialData) -> BrownShulkerBox,
-      (GREEN_SHULKER_BOX, nullMaterialData) -> GreenShulkerBox,
-      (RED_SHULKER_BOX, nullMaterialData) -> RedShulkerBox,
-      (BLACK_SHULKER_BOX, nullMaterialData) -> BlackShulkerBox,
-      (STRUCTURE_BLOCK, new MaterialData(STRUCTURE_BLOCK, 0.toByte)) -> StructureSaveBlock,
-      (STRUCTURE_BLOCK, new MaterialData(STRUCTURE_BLOCK, 1.toByte)) -> StructureLoadBlock,
-      (STRUCTURE_BLOCK, new MaterialData(STRUCTURE_BLOCK, 2.toByte)) -> StructureCornerBlock,
-      (STRUCTURE_BLOCK, new MaterialData(STRUCTURE_BLOCK, 3.toByte)) -> StructureDataBlock,
-      (IRON_SPADE, nullMaterialData) -> IronShovel,
-      (IRON_PICKAXE, nullMaterialData) -> IronPickaxe,
-      (IRON_AXE, nullMaterialData) -> IronAxe,
-      (FLINT_AND_STEEL, nullMaterialData) -> FlintAndSteel,
-      (APPLE, nullMaterialData) -> Apple,
-      (BOW, nullMaterialData) -> Bow,
-      (ARROW, nullMaterialData) -> Arrow,
-      (COAL, new Coal(CoalType.COAL)) -> Coal,
-      (COAL, new Coal(CoalType.CHARCOAL)) -> Charcoal,
-      (DIAMOND, nullMaterialData) -> Diamond,
-      (IRON_INGOT, nullMaterialData) -> IronIngot,
-      (GOLD_INGOT, nullMaterialData) -> GoldIngot,
-      (IRON_SWORD, nullMaterialData) -> IronSword,
-      (WOOD_SWORD, nullMaterialData) -> WoodSword,
-      (WOOD_SPADE, nullMaterialData) -> WoodShovel,
-      (WOOD_PICKAXE, nullMaterialData) -> WoodPickaxe,
-      (WOOD_AXE, nullMaterialData) -> WoodAxe,
-      (STONE_SWORD, nullMaterialData) -> StoneSword,
-      (STONE_SPADE, nullMaterialData) -> StoneShovel,
-      (STONE_PICKAXE, nullMaterialData) -> StonePickaxe,
-      (STONE_AXE, nullMaterialData) -> StoneAxe,
-      (DIAMOND_SWORD, nullMaterialData) -> DiamondSword,
-      (DIAMOND_SPADE, nullMaterialData) -> DiamondShovel,
-      (DIAMOND_PICKAXE, nullMaterialData) -> DiamondPickaxe,
-      (DIAMOND_AXE, nullMaterialData) -> DiamondAxe,
-      (STICK, nullMaterialData) -> Stick,
-      (BOWL, nullMaterialData) -> Bowl,
-      (MUSHROOM_SOUP, nullMaterialData) -> MushroomStew,
-      (GOLD_SWORD, nullMaterialData) -> GoldSword,
-      (GOLD_SPADE, nullMaterialData) -> GoldShovel,
-      (GOLD_PICKAXE, nullMaterialData) -> GoldPickaxe,
-      (GOLD_AXE, nullMaterialData) -> GoldAxe,
-      (STRING, nullMaterialData) -> String,
-      (FEATHER, nullMaterialData) -> Feather,
-      (SULPHUR, nullMaterialData) -> GunPowder,
-      (WOOD_HOE, nullMaterialData) -> WoodHoe,
-      (STONE_HOE, nullMaterialData) -> StoneHoe,
-      (IRON_HOE, nullMaterialData) -> IronHoe,
-      (DIAMOND_HOE, nullMaterialData) -> DiamondHoe,
-      (GOLD_HOE, nullMaterialData) -> GoldHoe,
-      (SEEDS, nullMaterialData) -> Seeds,
-      (WHEAT, nullMaterialData) -> Wheat,
-      (BREAD, nullMaterialData) -> Bread,
-      (LEATHER_HELMET, nullMaterialData) -> LeatherHelmet,
-      (LEATHER_CHESTPLATE, nullMaterialData) -> LeatherChestplate,
-      (LEATHER_LEGGINGS, nullMaterialData) -> LeatherLeggings,
-      (LEATHER_BOOTS, nullMaterialData) -> LeatherBoots,
-      (CHAINMAIL_HELMET, nullMaterialData) -> ChainmailHelmet,
-      (CHAINMAIL_CHESTPLATE, nullMaterialData) -> ChainmailChestplate,
-      (CHAINMAIL_LEGGINGS, nullMaterialData) -> ChainmailLeggings,
-      (CHAINMAIL_BOOTS, nullMaterialData) -> ChainmailBoots,
-      (IRON_HELMET, nullMaterialData) -> IronHelmet,
-      (IRON_CHESTPLATE, nullMaterialData) -> IronChestplate,
-      (IRON_LEGGINGS, nullMaterialData) -> IronLeggings,
-      (IRON_BOOTS, nullMaterialData) -> IronBoots,
-      (DIAMOND_HELMET, nullMaterialData) -> DiamondHelmet,
-      (DIAMOND_CHESTPLATE, nullMaterialData) -> DiamondChestplate,
-      (DIAMOND_LEGGINGS, nullMaterialData) -> DiamondLeggings,
-      (DIAMOND_BOOTS, nullMaterialData) -> DiamondBoots,
-      (GOLD_HELMET, nullMaterialData) -> GoldHelmet,
-      (GOLD_CHESTPLATE, nullMaterialData) -> GoldChestplate,
-      (GOLD_LEGGINGS, nullMaterialData) -> GoldLeggings,
-      (GOLD_BOOTS, nullMaterialData) -> GoldBoots,
-      (FLINT, nullMaterialData) -> Flint,
-      (PORK, nullMaterialData) -> RawPorkchop,
-      (GRILLED_PORK, nullMaterialData) -> CookedPorkchop,
-      (PAINTING, nullMaterialData) -> Painting,
-      (GOLDEN_APPLE, new MaterialData(GOLDEN_APPLE, 0.toByte)) -> GoldenApple,
-      (GOLDEN_APPLE, new MaterialData(GOLDEN_APPLE, 1.toByte)) -> EnchantedGoldenApple,
-      (SIGN, nullMaterialData) -> Sign,
-      (WOOD_DOOR, nullMaterialData) -> OakDoorItem,
-      (BUCKET, nullMaterialData) -> Bucket,
-      (WATER_BUCKET, nullMaterialData) -> WaterBucket,
-      (LAVA_BUCKET, nullMaterialData) -> LavaBucket,
-      (MINECART, nullMaterialData) -> Minecart,
-      (SADDLE, nullMaterialData) -> Saddle,
-      (IRON_DOOR, nullMaterialData) -> IronDoor,
-      (REDSTONE, nullMaterialData) -> Redstone,
-      (SNOW_BALL, nullMaterialData) -> SnowBall,
-      (BOAT, nullMaterialData) -> OakBoat,
-      (LEATHER, nullMaterialData) -> Leather,
-      (MILK_BUCKET, nullMaterialData) -> MilkBucket,
-      (CLAY_BRICK, nullMaterialData) -> ClayBrick,
-      (CLAY_BALL, nullMaterialData) -> ClayBall,
-      (SUGAR_CANE, nullMaterialData) -> SugarCane,
-      (PAPER, nullMaterialData) -> Paper,
-      (BOOK, nullMaterialData) -> Book,
-      (SLIME_BALL, nullMaterialData) -> SlimeBall,
-      (STORAGE_MINECART, nullMaterialData) -> StorageMinecart,
-      (POWERED_MINECART, nullMaterialData) -> PoweredMinecart,
-      (EGG, nullMaterialData) -> Egg,
-      (COMPASS, nullMaterialData) -> Compass,
-      (FISHING_ROD, nullMaterialData) -> FishingRod,
-      (WATCH, nullMaterialData) -> Watch,
-      (GLOWSTONE_DUST, nullMaterialData) -> GlowstoneDust,
-      (RAW_FISH, new MaterialData(RAW_FISH, 0.toByte)) -> RawFish,
-      (RAW_FISH, new MaterialData(RAW_FISH, 1.toByte)) -> RawSalmon,
-      (RAW_FISH, new MaterialData(RAW_FISH, 2.toByte)) -> Clownfish,
-      (RAW_FISH, new MaterialData(RAW_FISH, 3.toByte)) -> Pufferfish,
-      (COOKED_FISH, new MaterialData(COOKED_FISH, 0.toByte)) -> CookedFish,
-      (COOKED_FISH, new MaterialData(COOKED_FISH, 1.toByte)) -> CookedSalmon,
-      (INK_SACK, new Dye(BLACK)) -> InkSack,
-      (INK_SACK, new Dye(RED)) -> RoseRed,
-      (INK_SACK, new Dye(GREEN)) -> CactusGreen,
-      (INK_SACK, new Dye(BROWN)) -> CocoaBeans,
-      (INK_SACK, new Dye(BLUE)) -> LapisLazuli,
-      (INK_SACK, new Dye(PURPLE)) -> PurpleDye,
-      (INK_SACK, new Dye(CYAN)) -> CyanDye,
-      (INK_SACK, new Dye(SILVER)) -> LightGrayDye,
-      (INK_SACK, new Dye(GRAY)) -> GrayDye,
-      (INK_SACK, new Dye(PINK)) -> PinkDye,
-      (INK_SACK, new Dye(LIME)) -> LimeDye,
-      (INK_SACK, new Dye(YELLOW)) -> DandelionYellow,
-      (INK_SACK, new Dye(LIGHT_BLUE)) -> LightBlueDye,
-      (INK_SACK, new Dye(MAGENTA)) -> MagentaDye,
-      (INK_SACK, new Dye(ORANGE)) -> OrangeDye,
-      (INK_SACK, new Dye(WHITE)) -> BoneMeal,
-      (BONE, nullMaterialData) -> Bone,
-      (SUGAR, nullMaterialData) -> Sugar,
-      (CAKE, nullMaterialData) -> Cake,
-      (BED, nullMaterialData) -> Bed,
-      (DIODE, nullMaterialData) -> RedstoneRepeater,
-      (COOKIE, nullMaterialData) -> Cookie,
-      (MAP, nullMaterialData) -> DrawnMap,
-      (SHEARS, nullMaterialData) -> Shears,
-      (MELON, nullMaterialData) -> Melon,
-      (PUMPKIN_SEEDS, nullMaterialData) -> PumpkinSeeds,
-      (MELON_SEEDS, nullMaterialData) -> MelonSeeds,
-      (RAW_BEEF, nullMaterialData) -> RawBeef,
-      (COOKED_BEEF, nullMaterialData) -> CookedBeef,
-      (RAW_CHICKEN, nullMaterialData) -> RawChicken,
-      (COOKED_CHICKEN, nullMaterialData) -> CookedChicken,
-      (ROTTEN_FLESH, nullMaterialData) -> RottenFlesh,
-      (ENDER_PEARL, nullMaterialData) -> EnderPearl,
-      (BLAZE_ROD, nullMaterialData) -> BlazeRod,
-      (GHAST_TEAR, nullMaterialData) -> GhastTear,
-      (GOLD_NUGGET, nullMaterialData) -> GoldNugget,
-      (NETHER_STALK, nullMaterialData) -> NetherWart,
-      (POTION, nullMaterialData) -> Potion,
-      (GLASS_BOTTLE, nullMaterialData) -> GlassBottle,
-      (SPIDER_EYE, nullMaterialData) -> SpiderEye,
-      (FERMENTED_SPIDER_EYE, nullMaterialData) -> FermentedSpiderEye,
-      (BLAZE_POWDER, nullMaterialData) -> BlazePowder,
-      (MAGMA_CREAM, nullMaterialData) -> MagmaCream,
-      (BREWING_STAND_ITEM, nullMaterialData) -> BrewingStandItem,
-      (CAULDRON_ITEM, nullMaterialData) -> CauldronItem,
-      (EYE_OF_ENDER, nullMaterialData) -> EyeOfEnder,
-      (SPECKLED_MELON, nullMaterialData) -> GlisteringMelon,
-      (MONSTER_EGG, nullMaterialData) -> MonsterEgg,
-      (EXP_BOTTLE, nullMaterialData) -> ExpBottle,
-      (FIREBALL, nullMaterialData) -> FireCharge,
-      (BOOK_AND_QUILL, nullMaterialData) -> BookAndQuill,
-      (WRITTEN_BOOK, nullMaterialData) -> WrittenBook,
-      (EMERALD, nullMaterialData) -> Emerald,
-      (ITEM_FRAME, nullMaterialData) -> ItemFrame,
-      (FLOWER_POT_ITEM, nullMaterialData) -> FlowerPotItem,
-      (CARROT_ITEM, nullMaterialData) -> CarrotItem,
-      (POTATO_ITEM, nullMaterialData) -> PotatoItem,
-      (BAKED_POTATO, nullMaterialData) -> BakedPotato,
-      (POISONOUS_POTATO, nullMaterialData) -> PoisonousPotato,
-      (EMPTY_MAP, nullMaterialData) -> EmptyMap,
-      (GOLDEN_CARROT, nullMaterialData) -> GoldenCarrot,
-      (SKULL_ITEM, new MaterialData(SKULL_ITEM, 0.toByte)) -> SkeletonHead,
-      (SKULL_ITEM, new MaterialData(SKULL_ITEM, 1.toByte)) -> WitherSkeletonHead,
-      (SKULL_ITEM, new MaterialData(SKULL_ITEM, 2.toByte)) -> ZombieHead,
-      (SKULL_ITEM, new MaterialData(SKULL_ITEM, 3.toByte)) -> PlayerHead,
-      (SKULL_ITEM, new MaterialData(SKULL_ITEM, 4.toByte)) -> CreeperHead,
-      (SKULL_ITEM, new MaterialData(SKULL_ITEM, 5.toByte)) -> DragonHead,
-      (CARROT_STICK, nullMaterialData) -> CarrotStick,
-      (NETHER_STAR, nullMaterialData) -> NetherStar,
-      (PUMPKIN_PIE, nullMaterialData) -> PumpkinPie,
-      (FIREWORK, nullMaterialData) -> FireworkRocket,
-      (FIREWORK_CHARGE, nullMaterialData) -> FireworkStar,
-      (ENCHANTED_BOOK, nullMaterialData) -> EnchantedBook,
-      (REDSTONE_COMPARATOR, nullMaterialData) -> RedstoneComparator,
-      (NETHER_BRICK_ITEM, nullMaterialData) -> NetherBrickItem,
-      (QUARTZ, nullMaterialData) -> Quartz,
-      (EXPLOSIVE_MINECART, nullMaterialData) -> ExplosiveMinecart,
-      (HOPPER_MINECART, nullMaterialData) -> HopperMinecart,
-      (PRISMARINE_SHARD, nullMaterialData) -> PrismarineShard,
-      (PRISMARINE_CRYSTALS, nullMaterialData) -> PrismarineCrystals,
-      (RABBIT, nullMaterialData) -> RawRabbit,
-      (COOKED_RABBIT, nullMaterialData) -> CookedRabbit,
-      (RABBIT_STEW, nullMaterialData) -> RabbitStew,
-      (RABBIT_FOOT, nullMaterialData) -> RabbitFoot,
-      (RABBIT_HIDE, nullMaterialData) -> RabbitHide,
-      (ARMOR_STAND, nullMaterialData) -> ArmorStand,
-      (IRON_BARDING, nullMaterialData) -> IronHorseArmor,
-      (GOLD_BARDING, nullMaterialData) -> GoldHorseArmor,
-      (DIAMOND_BARDING, nullMaterialData) -> DiamondHorseArmor,
-      (LEASH, nullMaterialData) -> Leash,
-      (NAME_TAG, nullMaterialData) -> NameTag,
-      (COMMAND_MINECART, nullMaterialData) -> CommandMinecart,
-      (MUTTON, nullMaterialData) -> RawMutton,
-      (COOKED_MUTTON, nullMaterialData) -> CookedMutton,
-      (BANNER, nullMaterialData) -> Banner,
-      (END_CRYSTAL, nullMaterialData) -> EndCrystal,
-      (SPRUCE_DOOR_ITEM, nullMaterialData) -> SpruceDoorItem,
-      (BIRCH_DOOR_ITEM, nullMaterialData) -> BirchDoorItem,
-      (JUNGLE_DOOR_ITEM, nullMaterialData) -> JungleDoorItem,
-      (ACACIA_DOOR_ITEM, nullMaterialData) -> AcaciaDoorItem,
-      (DARK_OAK_DOOR_ITEM, nullMaterialData) -> DarkOakDoorItem,
-      (CHORUS_FRUIT, nullMaterialData) -> ChorusFruit,
-      (CHORUS_FRUIT_POPPED, nullMaterialData) -> PoppedChorusFruit,
-      (BEETROOT, nullMaterialData) -> Beetroot,
-      (BEETROOT_SEEDS, nullMaterialData) -> BeetrootSeeds,
-      (BEETROOT_SOUP, nullMaterialData) -> BeetrootSoup,
-      (DRAGONS_BREATH, nullMaterialData) -> DragonsBreath,
-      (SPLASH_POTION, nullMaterialData) -> SplashPotion,
-      (SPECTRAL_ARROW, nullMaterialData) -> SpectralArrow,
-      (TIPPED_ARROW, nullMaterialData) -> TippedArrow,
-      (LINGERING_POTION, nullMaterialData) -> LingeringPotion,
-      (SHIELD, nullMaterialData) -> Shield,
-      (ELYTRA, nullMaterialData) -> Elytra,
-      (BOAT_SPRUCE, nullMaterialData) -> SpruceBoat,
-      (BOAT_BIRCH, nullMaterialData) -> BirchBoat,
-      (BOAT_JUNGLE, nullMaterialData) -> JungleBoat,
-      (BOAT_ACACIA, nullMaterialData) -> AcaciaBoat,
-      (BOAT_DARK_OAK, nullMaterialData) -> DarkOakBoat,
-      (TOTEM, nullMaterialData) -> TotemOfUndying,
-      (SHULKER_SHELL, nullMaterialData) -> ShulkerShell,
-      (IRON_NUGGET, nullMaterialData) -> IronNugget,
-      (GOLD_RECORD, nullMaterialData) -> GoldRecord,
-      (GREEN_RECORD, nullMaterialData) -> GreenRecord,
-      (RECORD_3, nullMaterialData) -> Record3,
-      (RECORD_4, nullMaterialData) -> Record4,
-      (RECORD_5, nullMaterialData) -> Record5,
-      (RECORD_6, nullMaterialData) -> Record6,
-      (RECORD_7, nullMaterialData) -> Record7,
-      (RECORD_8, nullMaterialData) -> Record8,
-      (RECORD_9, nullMaterialData) -> Record9,
-      (RECORD_10, nullMaterialData) -> Record10,
-      (RECORD_11, nullMaterialData) -> Record11,
-      (RECORD_12, nullMaterialData) -> Record12,
-      //These Lists are used by recipes that can take any of the types, not all are used but they were generated automaticaly
-      (STONE, new MaterialData(STONE, (-1).toByte)) -> Seq(Stone, Granite, PolishedGranite, Diorite, PolishedDiorite, Andesite, PolishedAndesite).minBy(_.energy),
-      (DIRT, new MaterialData(DIRT, (-1).toByte)) -> Seq(Dirt, CoarseDirt, Podzol).minBy(_.energy),
-      (WOOD, new MaterialData(WOOD, (-1).toByte)) -> Seq(OakWoodPlanks, SpruceWoodPlanks, BirchWoodPlanks, JungleWoodPlanks, AcaciaWoodPlanks, DarkOakWoodPlanks).minBy(_.energy),
-      (SAPLING, new MaterialData(SAPLING, (-1).toByte)) -> Seq(OakSapling, SpruceSapling, BirchSapling, JungleSapling, AcaciaSapling, DarkOakSapling).minBy(_.energy),
-      (LOG, new MaterialData(LOG, (-1).toByte)) -> Seq(OakLog, SpruceLog, BirchLog, JungleLog).minBy(_.energy),
-      (LEAVES, new MaterialData(LEAVES, (-1).toByte)) -> Seq(OakLeaves, SpruceLeaves, BirchLeaves, JungleLeaves).minBy(_.energy),
-      (SPONGE, new MaterialData(SPONGE, (-1).toByte)) -> Seq(Sponge, WetSponge).minBy(_.energy),
-      (SANDSTONE, new MaterialData(SANDSTONE, (-1).toByte)) -> Seq(Sandstone, SmoothSandstone, ChiseledSandstone).minBy(_.energy),
-      (LONG_GRASS, new MaterialData(LONG_GRASS, (-1).toByte)) -> Seq(Shrub, LongGrass, Fern).minBy(_.energy),
-      (WOOL, new MaterialData(WOOL, (-1).toByte)) -> Seq(WhiteWool, OrangeWool, MagentaWool, LightBlueWool, YellowWool, LimeWool, PinkWool, GrayWool, LightGrayWool, CyanWool, PurpleWool, BlueWool, BrownWool, GreenWool, RedWool, BlackWool).minBy(_.energy),
-      (RED_ROSE, new MaterialData(RED_ROSE, (-1).toByte)) -> Seq(Poppy, BlueOrchid, Allium, AzureBluet, RedTulip, OrangeTulip, WhiteTulip, PinkTulip, OxeyeDaisy).minBy(_.energy),
-      (DOUBLE_STEP, new MaterialData(DOUBLE_STEP, (-1).toByte)) -> Seq(StoneDoubleSlab, SandstoneDoubleSlab, OldWoodDoubleSlab, CobblestoneDoubleSlab, BrickDoubleSlab, StoneBrickDoubleSlab, NetherBrickDoubleSlab, QuartzDoubleSlab).minBy(_.energy),
-      (STEP, new MaterialData(STEP, (-1).toByte)) -> Seq(StoneSingleSlab, SandstoneSingleSlab, OldWoodSingleSlab, CobblestoneSingleSlab, BrickSingleSlab, StoneBrickSingleSlab, NetherBrickSingleSlab, QuartzSingleSlab).minBy(_.energy),
-      (STAINED_GLASS, new MaterialData(STAINED_GLASS, (-1).toByte)) -> Seq(WhiteGlass, OrangeGlass, MagentaGlass, LightBlueGlass, YellowGlass, LimeGlass, PinkGlass, GrayGlass, LightGrayGlass, CyanGlass, PurpleGlass, BlueGlass, BrownGlass, GreenGlass, RedGlass, BlackGlass).minBy(_.energy),
-      (SMOOTH_BRICK, new MaterialData(SMOOTH_BRICK, (-1).toByte)) -> Seq(StoneBrick, CrackedStoneBrick, MossyStoneBrick, ChiseledStoneBrick).minBy(_.energy),
-      (WOOD_DOUBLE_STEP, new MaterialData(WOOD_DOUBLE_STEP, (-1).toByte)) -> Seq(OakDoubleSlab, SpruceDoubleSlab, BirchDoubleSlab, JungleDoubleSlab, AcaciaDoubleSlab, DarkOakDoubleSlab).minBy(_.energy),
-      (WOOD_STEP, new MaterialData(WOOD_STEP, (-1).toByte)) -> Seq(OakSingleSlab, SpruceSingleSlab, BirchSingleSlab, JungleSingleSlab, AcaciaSingleSlab, DarkOakSingleSlab).minBy(_.energy),
-      (QUARTZ_BLOCK, new MaterialData(QUARTZ_BLOCK, (-1).toByte)) -> Seq(QuartzBlock, ChiseledQuartzBlock, PillarQuartzBlock).minBy(_.energy),
-      (STAINED_CLAY, new MaterialData(STAINED_CLAY, (-1).toByte)) -> Seq(WhiteHardenedClay, OrangeHardenedClay, MagentaHardenedClay, LightBlueHardenedClay, YellowHardenedClay, LimeHardenedClay, PinkHardenedClay, GrayHardenedClay, LightGrayHardenedClay, CyanHardenedClay, PurpleHardenedClay, BlueHardenedClay, BrownHardenedClay, GreenHardenedClay, RedHardenedClay, BlackHardenedClay).minBy(_.energy),
-      (STAINED_GLASS_PANE, new MaterialData(STAINED_GLASS_PANE, (-1).toByte)) -> Seq(WhiteGlassPane, OrangeGlassPane, MagentaGlassPane, LightBlueGlassPane, YellowGlassPane, LimeGlassPane, PinkGlassPane, GrayGlassPane, LightGrayGlassPane, CyanGlassPane, PurpleGlassPane, BlueGlassPane, BrownGlassPane, GreenGlassPane, RedGlassPane, BlackGlassPane).minBy(_.energy),
-      (LEAVES_2, new MaterialData(LEAVES_2, (-1).toByte)) -> Seq(AcaciaLeaves, DarkOakLeaves).minBy(_.energy),
-      (LOG_2, new MaterialData(LOG_2, (-1).toByte)) -> Seq(AcaciaLog, DarkOakLog).minBy(_.energy),
-      (PRISMARINE, new MaterialData(PRISMARINE, (-1).toByte)) -> Seq(Prismarine, PrismarineBrick, DarkPrismarine).minBy(_.energy),
-      (CARPET, new MaterialData(CARPET, (-1).toByte)) -> Seq(WhiteCarpet, OrangeCarpet, MagentaCarpet, LightBlueCarpet, YellowCarpet, LimeCarpet, PinkCarpet, GrayCarpet, LightGrayCarpet, CyanCarpet, PurpleCarpet, BlueCarpet, BrownCarpet, GreenCarpet, RedCarpet, BlackCarpet).minBy(_.energy),
-      (DOUBLE_PLANT, new MaterialData(DOUBLE_PLANT, (-1).toByte)) -> Seq(DoublePlant, Sunflower, Lilac, DoubleTallgrass, LargeFern, RoseBush, Peony, TopPlantHalf).minBy(_.energy),
-      (RED_SANDSTONE, new MaterialData(RED_SANDSTONE, (-1).toByte)) -> Seq(RedSandstone, SmoothRedSandstone, ChiseledRedSandstone).minBy(_.energy),
-      (STRUCTURE_BLOCK, new MaterialData(STRUCTURE_BLOCK, (-1).toByte)) -> Seq(StructureSaveBlock, StructureLoadBlock, StructureCornerBlock, StructureDataBlock).minBy(_.energy),
-      (COAL, new MaterialData(COAL, (-1).toByte)) -> Seq(Coal, Charcoal).minBy(_.energy),
-      (GOLDEN_APPLE, new MaterialData(GOLDEN_APPLE, (-1).toByte)) -> Seq(GoldenApple, EnchantedGoldenApple).minBy(_.energy),
-      (RAW_FISH, new MaterialData(RAW_FISH, (-1).toByte)) -> Seq(RawFish, RawSalmon, Clownfish, Pufferfish).minBy(_.energy),
-      (COOKED_FISH, new MaterialData(COOKED_FISH, (-1).toByte)) -> Seq(CookedFish, CookedSalmon).minBy(_.energy),
-      (INK_SACK, new MaterialData(INK_SACK, (-1).toByte)) -> Seq(InkSack, RoseRed, CactusGreen, CocoaBeans, LapisLazuli, PurpleDye, CyanDye, LightGrayDye, GrayDye, PinkDye, LimeDye, DandelionYellow, LightBlueDye, MagentaDye, OrangeDye, BoneMeal).minBy(_.energy),
-      (SKULL_ITEM, new MaterialData(SKULL_ITEM, (-1).toByte)) -> Seq(SkeletonHead, WitherSkeletonHead, ZombieHead, PlayerHead, CreeperHead, DragonHead).minBy(_.energy)
-    )
-    (materials.get((bMaterial, data)) orElse materials.get((bMaterial, nullMaterialData))).get
-    /*try {
-      bMaterial match {
-        case AIR => Air
-        case STONE => data.getData match {
-          case 0 => Stone
-          case 1 => Granite
-          case 2 => PolishedGranite
-          case 3 => Diorite
-          case 4 => PolishedDiorite
-          case 5 => Andesite
-          case 6 => PolishedAndesite
-          case _ => Seq(Stone, Granite, MossyStoneBrick, PolishedGranite, Diorite, PolishedDiorite, Andesite, PolishedAndesite).minBy(_.energy)
-        }
-        case GRASS => Grass
-        case DIRT => data.getData match {
-          case 0 => Dirt
-          case 1 => CoarseDirt
-          case 2 => Podzol
-          case _ => Seq(Dirt, CoarseDirt, Podzol).minBy(_.energy)
-        }
-        case COBBLESTONE => Cobblestone
-        case WOOD => data.asInstanceOf[Wood].getSpecies match {
-          case GENERIC => OakWoodPlanks
-          case REDWOOD => SpruceWoodPlanks
-          case BIRCH => BirchWoodPlanks
-          case JUNGLE => JungleWoodPlanks
-          case ACACIA => AcaciaWoodPlanks
-          case DARK_OAK => DarkOakWoodPlanks
-          case _ => Seq(OakWoodPlanks, SpruceWoodPlanks, BirchWoodPlanks, JungleWoodPlanks, AcaciaWoodPlanks, DarkOakWoodPlanks).minBy(_.energy)
-        }
-        case SAPLING => data.asInstanceOf[Sapling].getSpecies match {
-          case GENERIC => OakSapling
-          case REDWOOD => SpruceSapling
-          case BIRCH => BirchSapling
-          case JUNGLE => JungleSapling
-          case ACACIA => AcaciaSapling
-          case DARK_OAK => DarkOakSapling
-          case _ => Seq(OakSapling, SpruceSapling, BirchSapling, JungleSapling, AcaciaSapling, DarkOakSapling).minBy(_.energy)
-        }
-        case BEDROCK => Bedrock
-        case WATER => Water
-        case STATIONARY_WATER => StationaryWater
-        case LAVA => Lava
-        case STATIONARY_LAVA => StationaryLava
-        case SAND => Sand
-        case GRAVEL => Gravel
-        case GOLD_ORE => GoldOre
-        case IRON_ORE => IronOre
-        case COAL_ORE => CoalOre
-        case LOG => data.asInstanceOf[Tree].getSpecies match {
-          case GENERIC => OakLog
-          case REDWOOD => SpruceLog
-          case BIRCH => BirchLog
-          case JUNGLE => JungleLog
-          case _ => Seq(OakLog, SpruceLog, BirchLog, JungleLog).minBy(_.energy)
-        }
-        case LEAVES => data.asInstanceOf[Leaves].getSpecies match {
-          case GENERIC => OakLeaves
-          case REDWOOD => SpruceLeaves
-          case BIRCH => BirchLeaves
-          case JUNGLE => JungleLeaves
-          case _ => Seq(OakLeaves, SpruceLeaves, BirchLeaves, JungleLeaves).minBy(_.energy)
-        }
-        case SPONGE => data.getData match {
-          case 0 => Sponge
-          case 1 => WetSponge
-        }
-        case GLASS => Glass
-        case LAPIS_ORE => LapisLazuliOre
-        case LAPIS_BLOCK => LapisLazuliBlock
-        case DISPENSER => Dispenser
-        case SANDSTONE => data.asInstanceOf[Sandstone].getType match {
-          case CRACKED => Sandstone
-          case SMOOTH => SmoothSandstone
-          case GLYPHED => ChiseledSandstone
-          case _ => Seq(Sandstone, SmoothSandstone, ChiseledSandstone).minBy(_.energy)
-        }
-        case NOTE_BLOCK => NoteBlock
-        case BED_BLOCK => BedBlock
-        case POWERED_RAIL => PoweredRails
-        case DETECTOR_RAIL => DetectorRails
-        case PISTON_STICKY_BASE => StickyPiston
-        case WEB => Cobweb
-        case LONG_GRASS => data.asInstanceOf[LongGrass].getSpecies match {
-          case DEAD => Shrub
-          case NORMAL => LongGrass
-          case FERN_LIKE => Fern
-          case _ => Seq(Shrub, LongGrass, Fern).minBy(_.energy)
-        }
-        case DEAD_BUSH => DeadBush
-        case PISTON_BASE => Piston
-        case PISTON_EXTENSION => PistonExtension
-        case WOOL => data.asInstanceOf[Wool].getColor match {
-          case WHITE => WhiteWool
-          case ORANGE => OrangeWool
-          case MAGENTA => MagentaWool
-          case LIGHT_BLUE => LightBlueWool
-          case YELLOW => YellowWool
-          case LIME => LimeWool
-          case PINK => PinkWool
-          case GRAY => GrayWool
-          case SILVER => LightGrayWool
-          case CYAN => CyanWool
-          case PURPLE => PurpleWool
-          case BLUE => BlueWool
-          case BROWN => BrownWool
-          case GREEN => GreenWool
-          case RED => RedWool
-          case BLACK => BlackWool
-          case _ => Seq(WhiteWool, OrangeWool, MagentaWool, LightBlueWool, YellowWool, LimeWool, PinkWool, GrayWool, LightGrayWool, CyanWool, PurpleWool, BlueWool, BrownWool, GreenWool, RedWool, BlackWool).minBy(_.energy)
-        }
-        case PISTON_MOVING_PIECE => PistonMovingPiece
-        case YELLOW_FLOWER => Dandelion
-        case RED_ROSE => data.getData match {
-          case 0 => Poppy
-          case 1 => BlueOrchid
-          case 2 => Allium
-          case 3 => AzureBluet
-          case 4 => RedTulip
-          case 5 => OrangeTulip
-          case 6 => WhiteTulip
-          case 7 => PinkTulip
-          case 8 => OxeyeDaisy
-          case _ => Seq(Poppy, BlueOrchid, Allium, AzureBluet, RedTulip, OrangeTulip, WhiteTulip, PinkTulip, OxeyeDaisy).minBy(_.energy)
-        }
-        case BROWN_MUSHROOM => BrownMushroom
-        case RED_MUSHROOM => RedMushroom
-        case GOLD_BLOCK => GoldBlock
-        case IRON_BLOCK => IronBlock
-        case DOUBLE_STEP => data.getData match {
-          case 0 => StoneDoubleSlab
-          case 1 => SandstoneDoubleSlab
-          case 2 => OldWoodDoubleSlab
-          case 3 => CobblestoneDoubleSlab
-          case 4 => BrickDoubleSlab
-          case 5 => StoneBrickDoubleSlab
-          case 6 => NetherBrickDoubleSlab
-          case 7 => QuartzDoubleSlab
-          case _ => Seq(StoneDoubleSlab, SandstoneDoubleSlab, CobblestoneDoubleSlab, BrickDoubleSlab, StoneBrickDoubleSlab, NetherBrickDoubleSlab, QuartzDoubleSlab).minBy(_.energy)
-        }
-        case STEP => data.getData match {
-          case 0 | 8 => StoneSingleSlab
-          case 1 | 9 => SandstoneSingleSlab
-          case 2 | 10 => OldWoodSingleSlab
-          case 3 | 11 => CobblestoneSingleSlab
-          case 4 | 12 => BrickSingleSlab
-          case 5 | 13 => StoneBrickSingleSlab
-          case 6 | 14 => NetherBrickSingleSlab
-          case 7 | 15 => QuartzSingleSlab
-          case _ => Seq(StoneSingleSlab, SandstoneSingleSlab, CobblestoneSingleSlab, BrickSingleSlab, StoneBrickSingleSlab, NetherBrickSingleSlab, QuartzSingleSlab).minBy(_.energy)
-        }
-        case BRICK => BrickBlock
-        case BTNT => TNT
-        case BOOKSHELF => Bookshelf
-        case MOSSY_COBBLESTONE => MossyCobblestone
-        case OBSIDIAN => Obsidian
-        case TORCH => Torch
-        case FIRE => Fire
-        case MOB_SPAWNER => MobSpawner
-        case WOOD_STAIRS => OakStairs
-        case CHEST => Chest
-        case REDSTONE_WIRE => RedstoneWire
-        case DIAMOND_ORE => DiamondOre
-        case DIAMOND_BLOCK => DiamondBlock
-        case WORKBENCH => CraftingTable
-        case CROPS => Crops
-        case SOIL => Soil
-        case FURNACE => Furnace
-        case BURNING_FURNACE => BurningFurnace
-        case SIGN_POST => SignPost
-        case WOODEN_DOOR => OakDoor
-        case LADDER => Ladder
-        case RAILS => Rails
-        case COBBLESTONE_STAIRS => CobblestoneStairs
-        case WALL_SIGN => WallSign
-        case LEVER => Lever
-        case STONE_PLATE => StonePressurePlate
-        case IRON_DOOR_BLOCK => IronDoorBlock
-        case WOOD_PLATE => WoodPressurePlate
-        case REDSTONE_ORE => RedstoneOre
-        case GLOWING_REDSTONE_ORE => GlowingRedstoneOre
-        case REDSTONE_TORCH_OFF => RedstoneTorchOff
-        case REDSTONE_TORCH_ON => RedstoneTorchOn
-        case STONE_BUTTON => StoneButton
-        case SNOW => Snow
-        case ICE => Ice
-        case SNOW_BLOCK => SnowBlock
-        case CACTUS => Cactus
-        case CLAY => Clay
-        case SUGAR_CANE_BLOCK => SugarCaneBlock
-        case JUKEBOX => Jukebox
-        case FENCE => OakFence
-        case PUMPKIN => Pumpkin
-        case NETHERRACK => Netherrack
-        case SOUL_SAND => SoulSand
-        case GLOWSTONE => Glowstone
-        case PORTAL => Portal
-        case JACK_O_LANTERN => JackOLantern
-        case CAKE_BLOCK => CakeBlock
-        case DIODE_BLOCK_OFF => RedstoneRepeaterOff
-        case DIODE_BLOCK_ON => RedstoneRepeaterOn
-        case STAINED_GLASS => data.getData match {
-          case 0 => WhiteGlass
-          case 1 => OrangeGlass
-          case 2 => MagentaGlass
-          case 3 => LightBlueGlass
-          case 4 => YellowGlass
-          case 5 => LimeGlass
-          case 6 => PinkGlass
-          case 7 => GrayGlass
-          case 8 => LightGrayGlass
-          case 9 => CyanGlass
-          case 10 => PurpleGlass
-          case 11 => BlueGlass
-          case 12 => BrownGlass
-          case 13 => GreenGlass
-          case 14 => RedGlass
-          case 15 => BlackGlass
-          case _ => Seq(WhiteGlass, OrangeGlass, MagentaGlass, LightBlueGlass, YellowGlass, LimeGlass, PinkGlass, GrayGlass,
-                        LightGrayGlass, CyanGlass, PurpleGlass, BlueGlass, BrownGlass, GreenGlass, RedGlass, BlackGlass).minBy(_.energy)
-        }
-        case TRAP_DOOR => TrapDoor
-        case MONSTER_EGGS => MonsterEggs
-        case SMOOTH_BRICK => data.getData match {
-          case 0 => StoneBrick
-          case 1 => CrackedStoneBrick
-          case 2 => MossyStoneBrick
-          case 3 => ChiseledStoneBrick
-          case _ => Seq(StoneBrick, CrackedStoneBrick, MossyStoneBrick, ChiseledStoneBrick).minBy(_.energy)
-        }
-        case HUGE_MUSHROOM_1 => HugeMushroom1
-        case HUGE_MUSHROOM_2 => HugeMushroom2
-        case IRON_FENCE => IronFence
-        case THIN_GLASS => GlassPane
-        case MELON_BLOCK => MelonBlock
-        case PUMPKIN_STEM => PumpkinStem
-        case MELON_STEM => MelonStem
-        case VINE => Vine
-        case FENCE_GATE => OakFenceGate
-        case BRICK_STAIRS => BrickStairs
-        case SMOOTH_STAIRS => StoneBrickStairs
-        case MYCEL => Mycelium
-        case WATER_LILY => WaterLily
-        case NETHER_BRICK => NetherBrick
-        case NETHER_FENCE => NetherBrickFence
-        case NETHER_BRICK_STAIRS => NetherBrickStairs
-        case NETHER_WARTS => NetherWarts
-        case ENCHANTMENT_TABLE => EnchantmentTable
-        case BREWING_STAND => BrewingStand
-        case CAULDRON => Cauldron
-        case ENDER_PORTAL => EnderPortal
-        case ENDER_PORTAL_FRAME => EnderPortalFrame
-        case ENDER_STONE => EndStone
-        case DRAGON_EGG => DragonEgg
-        case REDSTONE_LAMP_OFF => RedstoneLampOff
-        case REDSTONE_LAMP_ON => RedstoneLampOn
-        case WOOD_DOUBLE_STEP => data.asInstanceOf[Wood].getSpecies match {
-          case GENERIC => OakDoubleSlab
-          case REDWOOD => SpruceDoubleSlab
-          case BIRCH => BirchDoubleSlab
-          case JUNGLE => JungleDoubleSlab
-          case ACACIA => AcaciaDoubleSlab
-          case DARK_OAK => DarkOakDoubleSlab
-          case _ => Seq(OakDoubleSlab, SpruceDoubleSlab, BirchDoubleSlab, JungleDoubleSlab, AcaciaDoubleSlab, DarkOakDoubleSlab).minBy(_.energy)
-        }
-        case WOOD_STEP => data.asInstanceOf[WoodenStep].getSpecies match {
-          case GENERIC => OakSingleSlab
-          case REDWOOD => SpruceSingleSlab
-          case BIRCH => BirchSingleSlab
-          case JUNGLE => JungleSingleSlab
-          case ACACIA => AcaciaSingleSlab
-          case DARK_OAK => DarkOakSingleSlab
-          case _ => Seq(OakDoubleSlab, SpruceDoubleSlab, BirchDoubleSlab, JungleDoubleSlab, AcaciaDoubleSlab, DarkOakDoubleSlab).minBy(_.energy)
-        }
-        case COCOA => Cocoa
-        case SANDSTONE_STAIRS => SandstoneStairs
-        case EMERALD_ORE => EmeraldOre
-        case ENDER_CHEST => EnderChest
-        case TRIPWIRE_HOOK => TripwireHook
-        case TRIPWIRE => Tripwire
-        case EMERALD_BLOCK => EmeraldBlock
-        case SPRUCE_WOOD_STAIRS => SpruceStairs
-        case BIRCH_WOOD_STAIRS => BirchStairs
-        case JUNGLE_WOOD_STAIRS => JungleStairs
-        case COMMAND => Command
-        case BEACON => Beacon
-        case COBBLE_WALL => CobblestoneWall
-        case FLOWER_POT => FlowerPot
-        case CARROT => Carrot
-        case POTATO => Potato
-        case WOOD_BUTTON => WoodButton
-        case SKULL => Skull
-        case ANVIL => Anvil
-        case TRAPPED_CHEST => TrappedChest
-        case GOLD_PLATE => GoldPressurePlate
-        case IRON_PLATE => IronPressurePlate
-        case REDSTONE_COMPARATOR_OFF => RedstoneComparatorOff
-        case REDSTONE_COMPARATOR_ON => RedstoneComparatorOn
-        case DAYLIGHT_DETECTOR => DaylightSensor
-        case REDSTONE_BLOCK => RedstoneBlock
-        case QUARTZ_ORE => QuartzOre
-        case HOPPER => Hopper
-        case QUARTZ_BLOCK => data.getData match {
-          case 0 => QuartzBlock
-          case 1 => ChiseledQuartzBlock
-          case 2 => PillarQuartzBlock
-          case _ => Seq(QuartzBlock, ChiseledQuartzBlock, PillarQuartzBlock).minBy(_.energy)
-        }
-        case QUARTZ_STAIRS => QuartzStairs
-        case ACTIVATOR_RAIL => ActivatorRails
-        case DROPPER => Dropper
-        case STAINED_CLAY => data.getData match {
-          case 0 => WhiteHardenedClay
-          case 1 => OrangeHardenedClay
-          case 2 => MagentaHardenedClay
-          case 3 => LightBlueHardenedClay
-          case 4 => YellowHardenedClay
-          case 5 => LimeHardenedClay
-          case 6 => PinkHardenedClay
-          case 7 => GrayHardenedClay
-          case 8 => LightGrayHardenedClay
-          case 9 => CyanHardenedClay
-          case 10 => PurpleHardenedClay
-          case 11 => BlueHardenedClay
-          case 12 => BrownHardenedClay
-          case 13 => GreenHardenedClay
-          case 14 => RedHardenedClay
-          case 15 => BlackHardenedClay
-          case _ => Seq(WhiteHardenedClay, OrangeHardenedClay, MagentaHardenedClay, LightBlueHardenedClay, YellowHardenedClay,
-                        LimeHardenedClay, PinkHardenedClay, GrayHardenedClay, LightGrayHardenedClay, CyanHardenedClay,
-                        PurpleHardenedClay, BlueHardenedClay, BrownHardenedClay, GreenHardenedClay, RedHardenedClay, BlackHardenedClay).minBy(_.energy)
-        }
-        case STAINED_GLASS_PANE => data.getData match {
-          case 0 => WhiteGlassPane
-          case 1 => OrangeGlassPane
-          case 2 => MagentaGlassPane
-          case 3 => LightBlueGlassPane
-          case 4 => YellowGlassPane
-          case 5 => LimeGlassPane
-          case 6 => PinkGlassPane
-          case 7 => GrayGlassPane
-          case 8 => LightGrayGlassPane
-          case 9 => CyanGlassPane
-          case 10 => PurpleGlassPane
-          case 11 => BlueGlassPane
-          case 12 => BrownGlassPane
-          case 13 => GreenGlassPane
-          case 14 => RedGlassPane
-          case 15 => BlackGlassPane
-          case _ => Seq(WhiteGlassPane, OrangeGlassPane, MagentaGlassPane, LightBlueGlassPane, YellowGlassPane,
-                    LimeGlassPane, PinkGlassPane, GrayGlassPane, LightGrayGlassPane, CyanGlassPane,
-                    PurpleGlassPane, BlueGlassPane, BrownGlassPane, GreenGlassPane, RedGlassPane, BlackGlassPane).minBy(_.energy)
-        }
-        case LEAVES_2 => data.asInstanceOf[Leaves].getSpecies match {
-          case ACACIA => AcaciaLeaves
-          case DARK_OAK => DarkOakLeaves
-          case _ => Seq(AcaciaLeaves, DarkOakLeaves).minBy(_.energy)
-        }
-        case LOG_2 => data.asInstanceOf[Tree].getSpecies match {
-          case ACACIA => AcaciaLog
-          case DARK_OAK => DarkOakLog
-          case _ => Seq(AcaciaLog, DarkOakLog).minBy(_.energy)
-        }
-        case ACACIA_STAIRS => AcaciaStairs
-        case DARK_OAK_STAIRS => DarkOakStairs
-        case SLIME_BLOCK => SlimeBlock
-        case BARRIER => Barrier
-        case IRON_TRAPDOOR => IronTrapdoor
-        case PRISMARINE => data.getData match {
-          case 0 => Prismarine
-          case 1 => PrismarineBrick
-          case 2 => DarkPrismarine
-          case _ => Seq(Prismarine, PrismarineBrick, DarkPrismarine).minBy(_.energy)
-        }
-        case SEA_LANTERN => SeaLantern
-        case HAY_BLOCK => HayBale
-        case CARPET => data.getData match {
-          case 0 => WhiteCarpet
-          case 1 => OrangeCarpet
-          case 2 => MagentaCarpet
-          case 3 => LightBlueCarpet
-          case 4 => YellowCarpet
-          case 5 => LimeCarpet
-          case 6 => PinkCarpet
-          case 7 => GrayCarpet
-          case 8 => LightGrayCarpet
-          case 9 => CyanCarpet
-          case 10 => PurpleCarpet
-          case 11 => BlueCarpet
-          case 12 => BrownCarpet
-          case 13 => GreenCarpet
-          case 14 => RedCarpet
-          case 15 => BlackCarpet
-          case _ => Seq(WhiteCarpet, OrangeCarpet, MagentaCarpet, LightBlueCarpet, YellowCarpet,
-            LimeCarpet, PinkCarpet, GrayCarpet, LightGrayCarpet, CyanCarpet,
-            PurpleCarpet, BlueCarpet, BrownCarpet, GreenCarpet, RedCarpet, BlackCarpet).minBy(_.energy)
-        }
-        case HARD_CLAY => HardenedClay
-        case COAL_BLOCK => CoalBlock
-        case PACKED_ICE => PackedIce
-        case DOUBLE_PLANT => data.getData match {
-          case 0 => DoublePlant
-          case 1 => Sunflower
-          case 2 => Lilac
-          case 3 => DoubleTallgrass
-          case 4 => LargeFern
-          case 5 => RoseBush
-          case 6 => Peony
-          case 7 => TopPlantHalf
-          case _ => Seq(DoublePlant, Sunflower, Lilac, DoubleTallgrass, LargeFern,
-            LargeFern, RoseBush, Peony, TopPlantHalf).minBy(_.energy)
-        }
-        case STANDING_BANNER => StandingBanner
-        case WALL_BANNER => WallBanner
-        case DAYLIGHT_DETECTOR_INVERTED => InvertedDaylightSensor
-        case RED_SANDSTONE => data.getData match {
-          case 0 => RedSandstone
-          case 1 => SmoothRedSandstone
-          case 2 => ChiseledRedSandstone
-          case _ => Seq(RedSandstone, SmoothRedSandstone, ChiseledRedSandstone).minBy(_.energy)
-        }
-        case RED_SANDSTONE_STAIRS => RedSandstoneStairs
-        case DOUBLE_STONE_SLAB2 => RedSandstoneDoubleSlab
-        case STONE_SLAB2 => RedSandstoneSingleSlab
-        case SPRUCE_FENCE_GATE => SpruceFenceGate
-        case BIRCH_FENCE_GATE => BirchFenceGate
-        case JUNGLE_FENCE_GATE => JungleFenceGate
-        case DARK_OAK_FENCE_GATE => DarkOakFenceGate
-        case ACACIA_FENCE_GATE => AcaciaFenceGate
-        case SPRUCE_FENCE => SpruceFence
-        case BIRCH_FENCE => BirchFence
-        case JUNGLE_FENCE => JungleFence
-        case DARK_OAK_FENCE => DarkOakFence
-        case ACACIA_FENCE => AcaciaFence
-        case SPRUCE_DOOR => SpruceDoor
-        case BIRCH_DOOR => BirchDoor
-        case JUNGLE_DOOR => JungleDoor
-        case ACACIA_DOOR => AcaciaDoor
-        case DARK_OAK_DOOR => DarkOakDoor
-        case END_ROD => EndRod
-        case CHORUS_PLANT => ChorusPlant
-        case CHORUS_FLOWER => ChorusFlower
-        case PURPUR_BLOCK => PurpurBlock
-        case PURPUR_PILLAR => PurpurPillar
-        case PURPUR_STAIRS => PurpurStairs
-        case PURPUR_DOUBLE_SLAB => PurpurDoubleSlab
-        case PURPUR_SLAB => PurpurSingleSlab
-        case END_BRICKS => EndStoneBricks
-        case BEETROOT_BLOCK => BeetrootPlantation
-        case GRASS_PATH => GrassPath
-        case END_GATEWAY => EndGateway
-        case COMMAND_REPEATING => CommandRepeating
-        case COMMAND_CHAIN => CommandChain
-        case FROSTED_ICE => FrostedIce
-        case MAGMA => Magma
-        case NETHER_WART_BLOCK => NetherWartBlock
-        case RED_NETHER_BRICK => RedNetherBrick
-        case BONE_BLOCK => BoneBlock
-        case STRUCTURE_VOID => StructureVoid
-        case OBSERVER => Observer
-        case WHITE_SHULKER_BOX => WhiteShulkerBox
-        case ORANGE_SHULKER_BOX => OrangeShulkerBox
-        case MAGENTA_SHULKER_BOX => MagentaShulkerBox
-        case LIGHT_BLUE_SHULKER_BOX => LightBlueShulkerBox
-        case YELLOW_SHULKER_BOX => YellowShulkerBox
-        case LIME_SHULKER_BOX => LimeShulkerBox
-        case PINK_SHULKER_BOX => PinkShulkerBox
-        case GRAY_SHULKER_BOX => GrayShulkerBox
-        case SILVER_SHULKER_BOX => LightGrayShulkerBox
-        case CYAN_SHULKER_BOX => CyanShulkerBox
-        case PURPLE_SHULKER_BOX => PurpleShulkerBox
-        case BLUE_SHULKER_BOX => BlueShulkerBox
-        case BROWN_SHULKER_BOX => BrownShulkerBox
-        case GREEN_SHULKER_BOX => GreenShulkerBox
-        case RED_SHULKER_BOX => RedShulkerBox
-        case BLACK_SHULKER_BOX => BlackShulkerBox
-        case STRUCTURE_BLOCK => data.getData match {
-          case 0 => StructureSaveBlock
-          case 1 => StructureLoadBlock
-          case 2 => StructureCornerBlock
-          case 3 => StructureDataBlock
-          case _ => Seq(StructureSaveBlock, StructureLoadBlock, StructureCornerBlock, StructureDataBlock).minBy(_.energy)
-        }
-        case IRON_SPADE => IronShovel
-        case IRON_PICKAXE => IronPickaxe
-        case IRON_AXE => IronAxe
-        case FLINT_AND_STEEL => FlintAndSteel
-        case APPLE => Apple
-        case BOW => Bow
-        case ARROW => Arrow
-        case COAL => data.asInstanceOf[Coal].getType match {
-          case CoalType.COAL => Coal
-          case CoalType.CHARCOAL => Charcoal
-          case _ => Seq(Coal, Charcoal).minBy(_.energy)
-        }
-        case DIAMOND => Diamond
-        case IRON_INGOT => IronIngot
-        case GOLD_INGOT => GoldIngot
-        case IRON_SWORD => IronSword
-        case WOOD_SWORD => WoodSword
-        case WOOD_SPADE => WoodShovel
-        case WOOD_PICKAXE => WoodPickaxe
-        case WOOD_AXE => WoodAxe
-        case STONE_SWORD => StoneSword
-        case STONE_SPADE => StoneShovel
-        case STONE_PICKAXE => StonePickaxe
-        case STONE_AXE => StoneAxe
-        case DIAMOND_SWORD => DiamondSword
-        case DIAMOND_SPADE => DiamondShovel
-        case DIAMOND_PICKAXE => DiamondPickaxe
-        case DIAMOND_AXE => DiamondAxe
-        case STICK => Stick
-        case BOWL => Bowl
-        case MUSHROOM_SOUP => MushroomStew
-        case GOLD_SWORD => GoldSword
-        case GOLD_SPADE => GoldShovel
-        case GOLD_PICKAXE => GoldPickaxe
-        case GOLD_AXE => GoldAxe
-        case STRING => String
-        case FEATHER => Feather
-        case SULPHUR => GunPowder
-        case WOOD_HOE => WoodHoe
-        case STONE_HOE => StoneHoe
-        case IRON_HOE => IronHoe
-        case DIAMOND_HOE => DiamondHoe
-        case GOLD_HOE => GoldHoe
-        case SEEDS => Seeds
-        case WHEAT => Wheat
-        case BREAD => Bread
-        case LEATHER_HELMET => LeatherHelmet
-        case LEATHER_CHESTPLATE => LeatherChestplate
-        case LEATHER_LEGGINGS => LeatherLeggings
-        case LEATHER_BOOTS => LeatherBoots
-        case CHAINMAIL_HELMET => ChainmailHelmet
-        case CHAINMAIL_CHESTPLATE => ChainmailChestplate
-        case CHAINMAIL_LEGGINGS => ChainmailLeggings
-        case CHAINMAIL_BOOTS => ChainmailBoots
-        case IRON_HELMET => IronHelmet
-        case IRON_CHESTPLATE => IronChestplate
-        case IRON_LEGGINGS => IronLeggings
-        case IRON_BOOTS => IronBoots
-        case DIAMOND_HELMET => DiamondHelmet
-        case DIAMOND_CHESTPLATE => DiamondChestplate
-        case DIAMOND_LEGGINGS => DiamondLeggings
-        case DIAMOND_BOOTS => DiamondBoots
-        case GOLD_HELMET => GoldHelmet
-        case GOLD_CHESTPLATE => GoldChestplate
-        case GOLD_LEGGINGS => GoldLeggings
-        case GOLD_BOOTS => GoldBoots
-        case FLINT => Flint
-        case PORK => RawPorkchop
-        case GRILLED_PORK => CookedPorkchop
-        case PAINTING => Painting
-        case GOLDEN_APPLE => data.getData match {
-          case 0 => GoldenApple
-          case 1 => EnchantedGoldenApple
-          case _ => Seq(GoldenApple, EnchantedGoldenApple).minBy(_.energy)
-        }
-        case SIGN => Sign
-        case WOOD_DOOR => OakDoorItem
-        case BUCKET => Bucket
-        case WATER_BUCKET => WaterBucket
-        case LAVA_BUCKET => LavaBucket
-        case MINECART => Minecart
-        case SADDLE => Saddle
-        case IRON_DOOR => IronDoor
-        case REDSTONE => Redstone
-        case SNOW_BALL => SnowBall
-        case BOAT => OakBoat
-        case LEATHER => Leather
-        case MILK_BUCKET => MilkBucket
-        case CLAY_BRICK => ClayBrick
-        case CLAY_BALL => ClayBall
-        case SUGAR_CANE => SugarCane
-        case PAPER => Paper
-        case BOOK => Book
-        case SLIME_BALL => SlimeBall
-        case STORAGE_MINECART => StorageMinecart
-        case POWERED_MINECART => PoweredMinecart
-        case EGG => Egg
-        case COMPASS => Compass
-        case FISHING_ROD => FishingRod
-        case WATCH => Watch
-        case GLOWSTONE_DUST => GlowstoneDust
-        case RAW_FISH => data.getData match {
-          case 0 => RawFish
-          case 1 => RawSalmon
-          case 2 => Clownfish
-          case 3 => Pufferfish
-          case _ => Seq(RawFish, RawSalmon, Clownfish, Pufferfish).minBy(_.energy)
-        }
-        case COOKED_FISH => data.getData match {
-          case 0 => CookedFish
-          case 1 => CookedSalmon
-          case _ => Seq(CookedFish, CookedSalmon).minBy(_.energy)
-        }
-        case INK_SACK => data.asInstanceOf[Dye].getColor match {
-          case BLACK => InkSack
-          case RED => RoseRed
-          case GREEN => CactusGreen
-          case BROWN => CocoaBeans
-          case BLUE => LapisLazuli
-          case PURPLE => PurpleDye
-          case CYAN => CyanDye
-          case SILVER => LightGrayDye
-          case GRAY => GrayDye
-          case PINK => PinkDye
-          case LIME => LimeDye
-          case YELLOW => DandelionYellow
-          case LIGHT_BLUE => LightBlueDye
-          case MAGENTA => MagentaDye
-          case ORANGE => OrangeDye
-          case WHITE => BoneMeal
-          case _ => Seq(InkSack, RoseRed, CactusGreen, CocoaBeans, LapisLazuli, PurpleDye, CyanDye, LightGrayDye, GrayDye, PinkDye, LimeDye, DandelionYellow, LightBlueDye, MagentaDye, OrangeDye, BoneMeal).minBy(_.energy)
-        }
-        case BONE => Bone
-        case SUGAR => Sugar
-        case CAKE => Cake
-        case BED => Bed
-        case DIODE => RedstoneRepeater
-        case COOKIE => Cookie
-        case MAP => DrawnMap
-        case SHEARS => Shears
-        case MELON => Melon
-        case PUMPKIN_SEEDS => PumpkinSeeds
-        case MELON_SEEDS => MelonSeeds
-        case RAW_BEEF => RawBeef
-        case COOKED_BEEF => CookedBeef
-        case RAW_CHICKEN => RawChicken
-        case COOKED_CHICKEN => CookedChicken
-        case ROTTEN_FLESH => RottenFlesh
-        case ENDER_PEARL => EnderPearl
-        case BLAZE_ROD => BlazeRod
-        case GHAST_TEAR => GhastTear
-        case GOLD_NUGGET => GoldNugget
-        case NETHER_STALK => NetherWart
-        case POTION => Potion
-        case GLASS_BOTTLE => GlassBottle
-        case SPIDER_EYE => SpiderEye
-        case FERMENTED_SPIDER_EYE => FermentedSpiderEye
-        case BLAZE_POWDER => BlazePowder
-        case MAGMA_CREAM => MagmaCream
-        case BREWING_STAND_ITEM => BrewingStandItem
-        case CAULDRON_ITEM => CauldronItem
-        case EYE_OF_ENDER => EyeOfEnder
-        case SPECKLED_MELON => GlisteringMelon
-        case MONSTER_EGG => MonsterEgg
-        case EXP_BOTTLE => ExpBottle
-        case FIREBALL => FireCharge
-        case BOOK_AND_QUILL => BookAndQuill
-        case WRITTEN_BOOK => WrittenBook
-        case EMERALD => Emerald
-        case ITEM_FRAME => ItemFrame
-        case FLOWER_POT_ITEM => FlowerPotItem
-        case CARROT_ITEM => CarrotItem
-        case POTATO_ITEM => PotatoItem
-        case BAKED_POTATO => BakedPotato
-        case POISONOUS_POTATO => PoisonousPotato
-        case EMPTY_MAP => EmptyMap
-        case GOLDEN_CARROT => GoldenCarrot
-        case SKULL_ITEM => data.getData match {
-          case 0 => SkeletonHead
-          case 1 => WitherSkeletonHead
-          case 2 => ZombieHead
-          case 3 => PlayerHead
-          case 4 => CreeperHead
-          case 5 => DragonHead
-          case _ => Seq(SkeletonHead, WitherSkeletonHead, ZombieHead, PlayerHead, CreeperHead, DragonHead).minBy(_.energy)
-        }
-        case CARROT_STICK => CarrotStick
-        case NETHER_STAR => NetherStar
-        case PUMPKIN_PIE => PumpkinPie
-        case FIREWORK => FireworkRocket
-        case FIREWORK_CHARGE => FireworkStar
-        case ENCHANTED_BOOK => EnchantedBook
-        case REDSTONE_COMPARATOR => RedstoneComparator
-        case NETHER_BRICK_ITEM => NetherBrickItem
-        case QUARTZ => Quartz
-        case EXPLOSIVE_MINECART => ExplosiveMinecart
-        case HOPPER_MINECART => HopperMinecart
-        case PRISMARINE_SHARD => PrismarineShard
-        case PRISMARINE_CRYSTALS => PrismarineCrystals
-        case RABBIT => RawRabbit
-        case COOKED_RABBIT => CookedRabbit
-        case RABBIT_STEW => RabbitStew
-        case RABBIT_FOOT => RabbitFoot
-        case RABBIT_HIDE => RabbitHide
-        case ARMOR_STAND => ArmorStand
-        case IRON_BARDING => IronHorseArmor
-        case GOLD_BARDING => GoldHorseArmor
-        case DIAMOND_BARDING => DiamondHorseArmor
-        case LEASH => Leash
-        case NAME_TAG => NameTag
-        case COMMAND_MINECART => CommandMinecart
-        case MUTTON => RawMutton
-        case COOKED_MUTTON => CookedMutton
-        case BANNER => Banner
-        case END_CRYSTAL => EndCrystal
-        case SPRUCE_DOOR_ITEM => SpruceDoorItem
-        case BIRCH_DOOR_ITEM => BirchDoorItem
-        case JUNGLE_DOOR_ITEM => JungleDoorItem
-        case ACACIA_DOOR_ITEM => AcaciaDoorItem
-        case DARK_OAK_DOOR_ITEM => DarkOakDoorItem
-        case CHORUS_FRUIT => ChorusFruit
-        case CHORUS_FRUIT_POPPED => PoppedChorusFruit
-        case BEETROOT => Beetroot
-        case BEETROOT_SEEDS => BeetrootSeeds
-        case BEETROOT_SOUP => BeetrootSoup
-        case DRAGONS_BREATH => DragonsBreath
-        case SPLASH_POTION => SplashPotion
-        case SPECTRAL_ARROW => SpectralArrow
-        case TIPPED_ARROW => TippedArrow
-        case LINGERING_POTION => LingeringPotion
-        case SHIELD => Shield
-        case ELYTRA => Elytra
-        case BOAT_SPRUCE => SpruceBoat
-        case BOAT_BIRCH => BirchBoat
-        case BOAT_JUNGLE => JungleBoat
-        case BOAT_ACACIA => AcaciaBoat
-        case BOAT_DARK_OAK => DarkOakBoat
-        case TOTEM => TotemOfUndying
-        case SHULKER_SHELL => ShulkerShell
-        case IRON_NUGGET => IronNugget
-        case GOLD_RECORD => GoldRecord
-        case GREEN_RECORD => GreenRecord
-        case RECORD_3 => Record3
-        case RECORD_4 => Record4
-        case RECORD_5 => Record5
-        case RECORD_6 => Record6
-        case RECORD_7 => Record7
-        case RECORD_8 => Record8
-        case RECORD_9 => Record9
-        case RECORD_10 => Record10
-        case RECORD_11 => Record11
-        case RECORD_12 => Record12
-      }
+  private val materialToMaterialData: Map[Material, MaterialData] = materialDataToMaterial.map(entry => entry._2 -> entry._1)
+
+  @silent implicit def materialData2Material(data: MaterialData): Material = {
+    try {
+      materialDataToMaterial(data)
     } catch {
-      case e: MatchError => throw new Exception(e.getMessage() +  s"Could not find Material for ${bMaterial.name}. Is it new?")
-    }*/
+      case _: NoSuchElementException if data.getData == -1 => materialDataToMaterial(new MaterialData(data.getItemType))
+    }
+  }
+
+  implicit def Material2MaterialData(material: Material): MaterialData = {
+    materialToMaterialData(material)
   }
 
   override def values: IndexedSeq[Material] = findValues
 
   //@formatter:off
-  object Air extends Material(energy = None) with Transparent with Crushable with Unconsumable
-  object Stone extends Material(energy = 1)
-  object Granite extends Material(energy = 1)
-  object PolishedGranite extends Material
-  object Diorite extends Material(energy = 1)
-  object PolishedDiorite extends Material
-  object Andesite extends Material(energy = 1)
-  object PolishedAndesite extends Material
-  object Grass extends Material(energy = 1)
-  object Dirt extends Material(energy = 1)
-  object CoarseDirt extends Material
-  object Podzol extends Material(energy = 1)
-  object Cobblestone extends Material(energy = 1)
+  object Air extends Material(energy = -1) with Transparent with Crushable with Unconsumable
+  object Stone extends Material(energy = 1) with Solid
+  object Granite extends Material(energy = 1) with Solid
+  object PolishedGranite extends Material with Solid
+  object Diorite extends Material(energy = 1) with Solid
+  object PolishedDiorite extends Material with Solid
+  object Andesite extends Material(energy = 1) with Solid
+  object PolishedAndesite extends Material with Solid
+  object Grass extends Material(energy = 1) with Solid
+  object Dirt extends Material(energy = 1) with Solid // Common on surface
+  object CoarseDirt extends Material with Solid
+  object Podzol extends Material(energy = 1) with Solid
+  object Cobblestone extends Material(energy = 1) with Solid
   object OakWoodPlanks extends Material with Solid with GenericPlank
   object SpruceWoodPlanks extends Material with Solid with GenericPlank
   object BirchWoodPlanks extends Material with Solid with GenericPlank
@@ -1493,16 +779,17 @@ object Material extends Enum[Material] {
   object JungleSapling extends Material(tierString = "T2") with Transparent with Attaches with Crushable with GenericSapling
   object AcaciaSapling extends Material(tierString = "T2") with Transparent with Attaches with Crushable with GenericSapling
   object DarkOakSapling extends Material(tierString = "T2") with Transparent with Attaches with Crushable with GenericSapling
-  object Bedrock extends Material(energy = None) with Solid with Unconsumable
+  object Bedrock extends Material(energy = -1) with Solid with Unconsumable
   object Water extends Material(energy = 14) with Transparent with Liquid
   object StationaryWater extends Material(energy = 14) with Transparent with Liquid
   object Lava extends Material(energy = 68) with Liquid
   object StationaryLava extends Material(energy = 68) with Liquid
   object Sand extends Material(energy = 1) with Solid with Gravity
+  object RedSand extends Material(energy = 1) with Solid with Gravity
   object Gravel extends Material(tierString = "T2") with Solid with Gravity
-  object GoldOre extends Material(energy = 1168)
-  object IronOre extends Material(tierString = "T3")
-  object CoalOre extends Material
+  object GoldOre extends Material(energy = 1168) with Solid
+  object IronOre extends Material(tierString = "T3") with Solid
+  object CoalOre extends Material with Solid
   object OakLog extends Material(tierString = "T2") with Solid with GenericLog
   object SpruceLog extends Material(tierString = "T2") with Solid with GenericLog
   object BirchLog extends Material(tierString = "T2") with Solid with GenericLog
@@ -1511,27 +798,27 @@ object Material extends Enum[Material] {
   object SpruceLeaves extends Material(tierString = "T2") with Solid with Crushable with GenericLeaves
   object BirchLeaves extends Material(tierString = "T2") with Solid with Crushable with GenericLeaves
   object JungleLeaves extends Material(tierString = "T2") with Solid with Crushable with GenericLeaves
-  object Sponge extends Material(energy = 210)
-  object WetSponge extends Material(energy = 18538)
+  object Sponge extends Material(energy = 210) with Solid
+  object WetSponge extends Material(energy = 18538) with Solid
   object Glass extends Material with Solid with GenericGlass
-  object LapisLazuliOre extends Material
-  object LapisLazuliBlock extends Material
+  object LapisLazuliOre extends Material with Solid
+  object LapisLazuliBlock extends Material with Solid
   object Dispenser extends Material with Solid with Rotates with Inventory
-  object Sandstone extends Material
-  object SmoothSandstone extends Material
-  object ChiseledSandstone extends Material
-  object NoteBlock extends Material
+  object Sandstone extends Material with Solid
+  object SmoothSandstone extends Material with Solid
+  object ChiseledSandstone extends Material with Solid
+  object NoteBlock extends Material with Solid // Same as crafted Item
   object BedBlock extends Material with Solid with Rotates
   object PoweredRails extends Material with Transparent with Attaches
   object DetectorRails extends Material with Transparent with Attaches
-  object StickyPiston extends Material
+  object StickyPiston extends Material with Solid
   object Cobweb extends Material(energy = 2279) with Transparent with Crushable
   object Shrub extends Material(energy = 1) with Transparent with Crushable
   object LongGrass extends Material(energy = 1) with Transparent with Crushable
   object Fern extends Material(energy = 1) with Transparent with Crushable
   object DeadBush extends Material(tierString = "T3") with Transparent with Crushable // Pretty rare and needs shears
-  object Piston extends Material
-  object PistonExtension extends Material(energy = None) with Solid with Unconsumable
+  object Piston extends Material with Solid
+  object PistonExtension extends Material(energy = -1) with Solid with Unconsumable
   object WhiteWool extends Material with Solid with GenericWool
   object OrangeWool extends Material with Solid with GenericWool
   object MagentaWool extends Material with Solid with GenericWool
@@ -1548,7 +835,7 @@ object Material extends Enum[Material] {
   object GreenWool extends Material with Solid with GenericWool
   object RedWool extends Material with Solid with GenericWool
   object BlackWool extends Material with Solid with GenericWool
-  object PistonMovingPiece extends Material(energy = None) with Solid with Unconsumable
+  object PistonMovingPiece extends Material(energy = -1) with Solid with Unconsumable
   object Dandelion extends Material(energy = 14) with Transparent with Attaches with Crushable
   object Poppy extends Material(energy = 14) with Transparent with Attaches with Crushable
   object BlueOrchid extends Material(energy = 14) with Transparent with Attaches with Crushable
@@ -1561,11 +848,11 @@ object Material extends Enum[Material] {
   object OxeyeDaisy extends Material(energy = 14) with Transparent with Attaches with Crushable
   object BrownMushroom extends Material(energy = 159) with Transparent with Attaches with Crushable // Same as pumpkin
   object RedMushroom extends Material(energy = 159) with Transparent with Attaches with Crushable // Same as pumpkin
-  object GoldBlock extends Material
-  object IronBlock extends Material
+  object GoldBlock extends Material with Solid
+  object IronBlock extends Material with Solid
   object StoneDoubleSlab extends Material with Solid with GenericDoubleSlab
   object SandstoneDoubleSlab extends Material with Solid with GenericDoubleSlab
-  object OldWoodDoubleSlab extends Material(energy = None) with Solid with Unconsumable with GenericDoubleSlab
+  object OldWoodDoubleSlab extends Material(energy = -1) with Solid with Unconsumable with GenericDoubleSlab
   object CobblestoneDoubleSlab extends Material with Solid with GenericDoubleSlab
   object BrickDoubleSlab extends Material with Solid with GenericDoubleSlab
   object StoneBrickDoubleSlab extends Material with Solid with GenericDoubleSlab
@@ -1573,28 +860,28 @@ object Material extends Enum[Material] {
   object QuartzDoubleSlab extends Material with Solid with GenericDoubleSlab
   object StoneSingleSlab extends Material with Solid with GenericSingleSlab
   object SandstoneSingleSlab extends Material with Solid with GenericSingleSlab
-  object OldWoodSingleSlab extends Material(energy = None) with Solid with Unconsumable with GenericSingleSlab
+  object OldWoodSingleSlab extends Material(energy = -1) with Solid with Unconsumable with GenericSingleSlab
   object CobblestoneSingleSlab extends Material with Solid with GenericSingleSlab
   object BrickSingleSlab extends Material with Solid with GenericSingleSlab
   object StoneBrickSingleSlab extends Material with Solid with GenericSingleSlab
   object NetherBrickSingleSlab extends Material with Solid with GenericSingleSlab
   object QuartzSingleSlab extends Material with Solid with GenericSingleSlab
-  object BrickBlock extends Material
-  object TNT extends Material
-  object Bookshelf extends Material
-  object MossyCobblestone extends Material
-  object Obsidian extends Material(energy = 68)
+  object BrickBlock extends Material with Solid
+  object TNT extends Material with Solid
+  object Bookshelf extends Material with Solid
+  object MossyCobblestone extends Material with Solid
+  object Obsidian extends Material(energy = 68) with Solid // Same as lava
   object Torch extends Material with Transparent with Attaches with Crushable with Rotates
   object Fire extends Material(tierString = "T3") with Transparent with Attaches with Crushable // flint and steel/durability
-  object MobSpawner extends Material(tierString = "T6")
+  object MobSpawner extends Material(tierString = "T6") with Solid // Kinda rare hard to use
   object OakStairs extends Material with Solid with Rotates with GenericStairs
   object Chest extends Material with Solid with Rotates with Inventory
   object RedstoneWire extends Material with Transparent with Attaches // Same as redstone
-  object DiamondOre extends Material
-  object DiamondBlock extends Material
-  object CraftingTable extends Material
+  object DiamondOre extends Material with Solid // should be diamond *1.5 due to being ore
+  object DiamondBlock extends Material with Solid
+  object CraftingTable extends Material with Solid
   object Crops extends Material(tierString = "T2") with Transparent with Attaches with Crushable // Same as seed
-  object Soil extends Material(energy = 1)
+  object Soil extends Material(energy = 1) with Solid
   object Furnace extends Material with Solid with Rotates with Inventory
   object BurningFurnace extends Material with Solid with Rotates with Inventory // Same as furnace
   object SignPost extends Material with Solid with Rotates // Same as sign
@@ -1607,25 +894,25 @@ object Material extends Enum[Material] {
   object StonePressurePlate extends Material with Transparent with Attaches
   object IronDoorBlock extends Material with Solid with Transparent with Attaches with Rotates with GenericDoor // same as iron door
   object WoodPressurePlate extends Material with Transparent with Attaches
-  object RedstoneOre extends Material
-  object GlowingRedstoneOre extends Material
+  object RedstoneOre extends Material with Solid // redstone*avarageDrop*1.5
+  object GlowingRedstoneOre extends Material with Solid // Same as redstoneOre
   object RedstoneTorchOff extends Material with Transparent with Attaches with Rotates // Same as redstone torch on
   object RedstoneTorchOn extends Material with Transparent with Attaches with Rotates // Same as item
   object StoneButton extends Material with Transparent with Attaches with Rotates
   object Snow extends Material(energy = 1) with Transparent with Attaches with Crushable
-  object Ice extends Material(energy = 1)
-  object SnowBlock extends Material(energy = 1)
+  object Ice extends Material(energy = 1) with Solid
+  object SnowBlock extends Material(energy = 1) with Solid
   object Cactus extends Material(tierString = "T3") with Solid with Attaches // Half pumpkin, Grows twice as slow
   object Clay extends Material with Solid with GenericClay
   object SugarCaneBlock extends Material(tierString = "T2") with Transparent with Attaches with Crushable // Same as wood, about as hard to farm
-  object Jukebox extends Material
+  object Jukebox extends Material with Solid
   object OakFence extends Material with Solid with Transparent with GenericFence
   object Pumpkin extends Material(tierString = "T3") with Solid with Rotates
-  object Netherrack extends Material(energy = 1)
-  object SoulSand extends Material
-  object Glowstone extends Material
-  object Portal extends Material(energy = None) with Transparent with Unconsumable
-  object JackOLantern extends Material
+  object Netherrack extends Material(energy = 1) with Solid
+  object SoulSand extends Material with Solid // Gold/2, As common as gold, but much easier to find and collect
+  object Glowstone extends Material with Solid
+  object Portal extends Material(energy = -1) with Transparent with Unconsumable
+  object JackOLantern extends Material with Solid
   object CakeBlock extends Material with Solid with Transparent with Food // cake is 6 shanks, bread is 2.5 shanks,
   object RedstoneRepeaterOff extends Material
   object RedstoneRepeaterOn extends Material
@@ -1646,37 +933,37 @@ object Material extends Enum[Material] {
   object RedGlass extends Material with Solid with Transparent with GenericGlass
   object BlackGlass extends Material with Solid with Transparent with GenericGlass
   object TrapDoor extends Material with Solid with Transparent with Rotates with GenericDoor
-  object MonsterEggs extends Material(tierString = "T6")
-  object StoneBrick extends Material(energy = 1)
-  object CrackedStoneBrick extends Material(tierString = "T5")
-  object MossyStoneBrick extends Material
-  object ChiseledStoneBrick extends Material
-  object HugeMushroom1 extends Material(tierString = "T3")
-  object HugeMushroom2 extends Material(tierString = "T3")
+  object MonsterEggs extends Material(tierString = "T6") with Solid
+  object StoneBrick extends Material(energy = 1) with Solid // Hard to use and not renewable
+  object CrackedStoneBrick extends Material(tierString = "T5") with Solid
+  object MossyStoneBrick extends Material with Solid
+  object ChiseledStoneBrick extends Material with Solid
+  object HugeMushroom1 extends Material(tierString = "T3") with Solid
+  object HugeMushroom2 extends Material(tierString = "T3") with Solid
   object IronFence extends Material with Solid with Transparent with GenericFence
   object GlassPane extends Material with Solid with Transparent with GenericGlass with GenericGlassPane
-  object MelonBlock extends Material
-  object PumpkinStem extends Material(energy = None) with Transparent with Attaches with Crushable with Rotates
-  object MelonStem extends Material(energy = None) with Transparent with Attaches with Crushable
+  object MelonBlock extends Material with Solid
+  object PumpkinStem extends Material(energy = -1) with Transparent with Attaches with Crushable with Rotates
+  object MelonStem extends Material(energy = -1) with Transparent with Attaches with Crushable
   object Vine extends Material(tierString = "T5") with Transparent with Crushable
   object OakFenceGate extends Material with Solid with Transparent with Rotates with GenericFence with GenericFenceGate
   object BrickStairs extends Material with Solid with Rotates with GenericStairs
   object StoneBrickStairs extends Material with Solid with Rotates with GenericStairs
-  object Mycelium extends Material(energy = 1)
+  object Mycelium extends Material(energy = 1) with Solid
   object WaterLily extends Material(tierString = "T5") with Transparent with Attaches with Liquid with Crushable
-  object NetherBrick extends Material
+  object NetherBrick extends Material with Solid
   object NetherBrickFence extends Material with Solid with GenericFence
   object NetherBrickStairs extends Material with Solid with Rotates with GenericStairs
   object NetherWarts extends Material(tierString = "T4") with Transparent with Attaches with Crushable // Hard to get at first but easy to farm
-  object EnchantmentTable extends Material
-  object BrewingStand extends Material
-  object Cauldron extends Material
-  object EnderPortal extends Material(energy = None) with Transparent with Unconsumable
-  object EnderPortalFrame extends Material(energy = None) with Solid with Unconsumable
-  object EndStone extends Material(energy = 1)
-  object DragonEgg extends Material(energy = 140369)
-  object RedstoneLampOff extends Material
-  object RedstoneLampOn extends Material
+  object EnchantmentTable extends Material with Solid
+  object BrewingStand extends Material with Solid
+  object Cauldron extends Material with Solid
+  object EnderPortal extends Material(energy = -1) with Transparent with Unconsumable
+  object EnderPortalFrame extends Material(energy = -1) with Solid with Unconsumable
+  object EndStone extends Material(energy = 1) with Solid
+  object DragonEgg extends Material(energy = 140369) with Solid
+  object RedstoneLampOff extends Material with Solid
+  object RedstoneLampOn extends Material with Solid
   object OakDoubleSlab extends Material with Solid with GenericDoubleSlab
   object SpruceDoubleSlab extends Material with Solid with GenericDoubleSlab
   object BirchDoubleSlab extends Material with Solid with GenericDoubleSlab
@@ -1691,35 +978,36 @@ object Material extends Enum[Material] {
   object DarkOakSingleSlab extends Material with Solid with GenericSingleSlab // 3 food
   object Cocoa extends Material(tierString = "T4") with Transparent with Attaches with Crushable // 1 food
   object SandstoneStairs extends Material with Solid with Rotates with GenericStairs // same as item
-  object EmeraldOre extends Material
+  object EmeraldOre extends Material with Solid
   object EnderChest extends Material with Solid with Rotates
   object TripwireHook extends Material with Transparent with Attaches with Rotates
   object Tripwire extends Material with Transparent with Attaches
-  object EmeraldBlock extends Material
+  object EmeraldBlock extends Material with Solid
   object SpruceStairs extends Material with Solid with Rotates with GenericStairs // same as item
   object BirchStairs extends Material with Solid with Rotates with GenericStairs // same as item
   object JungleStairs extends Material with Solid with Rotates with GenericStairs
-  object Command extends Material(energy = None) with Solid with Unconsumable
+  object Command extends Material(energy = -1) with Solid with Unconsumable
   object Beacon extends Material with Solid with Inventory // quartz*1.5
-  object CobblestoneWall extends Material
+  object CobblestoneWall extends Material with Solid
+  object MossyCobblestoneWall extends Material with Solid
   object FlowerPot extends Material with Transparent
   object Carrot extends Material(tierString = "T2") with Transparent with Attaches with Crushable
   object Potato extends Material(tierString = "T2") with Transparent with Attaches with Crushable
   object WoodButton extends Material with Transparent with Rotates
-  object Skull extends Material(energy = None) with Transparent with Attaches with Rotates with Unconsumable
+  object Skull extends Material(energy = -1) with Transparent with Attaches with Rotates with Unconsumable
   object Anvil extends Material with Solid with Transparent with Gravity with Inventory
   object TrappedChest extends Material with Solid with Rotates
-  object GoldPressurePlate extends Material
-  object IronPressurePlate extends Material
+  object GoldPressurePlate extends Material with Solid
+  object IronPressurePlate extends Material with Solid
   object RedstoneComparatorOff extends Material with Transparent with Attaches with Rotates
   object RedstoneComparatorOn extends Material with Transparent with Attaches with Rotates
-  object DaylightSensor extends Material
-  object RedstoneBlock extends Material
-  object QuartzOre extends Material
+  object DaylightSensor extends Material with Solid
+  object RedstoneBlock extends Material with Solid
+  object QuartzOre extends Material with Solid
   object Hopper extends Material with Solid with Inventory
-  object QuartzBlock extends Material
-  object ChiseledQuartzBlock extends Material
-  object PillarQuartzBlock extends Material
+  object QuartzBlock extends Material with Solid
+  object ChiseledQuartzBlock extends Material with Solid
+  object PillarQuartzBlock extends Material with Solid
   object QuartzStairs extends Material with Solid with GenericStairs
   object ActivatorRails extends Material with Transparent with Attaches
   object Dropper extends Material with Solid with Inventory
@@ -1761,14 +1049,14 @@ object Material extends Enum[Material] {
   object DarkOakLog extends Material(tierString = "T2") with Solid with GenericLog
   object AcaciaStairs extends Material with Solid with GenericStairs
   object DarkOakStairs extends Material with Solid with GenericStairs
-  object SlimeBlock extends Material
-  object Barrier extends Material(energy = None) with Solid with Unconsumable
-  object IronTrapdoor extends Material
-  object Prismarine extends Material
-  object PrismarineBrick extends Material
-  object DarkPrismarine extends Material
-  object SeaLantern extends Material
-  object HayBale extends Material
+  object SlimeBlock extends Material with Solid
+  object Barrier extends Material(energy = -1) with Solid with Unconsumable
+  object IronTrapdoor extends Material with Solid
+  object Prismarine extends Material with Solid
+  object PrismarineBrick extends Material with Solid
+  object DarkPrismarine extends Material with Solid
+  object SeaLantern extends Material with Solid
+  object HayBale extends Material with Solid
   object WhiteCarpet extends Material with Transparent with Attaches with GenericCarpet
   object OrangeCarpet extends Material with Transparent with Attaches with GenericCarpet
   object MagentaCarpet extends Material with Transparent with Attaches with GenericCarpet
@@ -1786,8 +1074,8 @@ object Material extends Enum[Material] {
   object RedCarpet extends Material with Transparent with Attaches with GenericCarpet
   object BlackCarpet extends Material with Transparent with Attaches with GenericCarpet
   object HardenedClay extends Material with Solid with GenericClay
-  object CoalBlock extends Material
-  object PackedIce extends Material(tierString = "T3")
+  object CoalBlock extends Material with Solid
+  object PackedIce extends Material(tierString = "T3") with Solid
   object DoublePlant extends Material(tierString = "T2") with Transparent
   object Sunflower extends Material(tierString = "T2") with Transparent
   object Lilac extends Material(tierString = "T2") with Transparent
@@ -1796,12 +1084,12 @@ object Material extends Enum[Material] {
   object RoseBush extends Material(tierString = "T2") with Transparent
   object Peony extends Material(tierString = "T2") with Transparent
   object TopPlantHalf extends Material(energy = 1) with Transparent
-  object StandingBanner extends Material with Transparent with Attaches
-  object WallBanner extends Material with Transparent with Attaches
-  object InvertedDaylightSensor extends Material
-  object RedSandstone extends Material
-  object SmoothRedSandstone extends Material
-  object ChiseledRedSandstone extends Material
+  object StandingBanner extends Material with Transparent with Attaches with GenericBanner
+  object WallBanner extends Material with Transparent with Attaches with GenericBanner
+  object InvertedDaylightSensor extends Material with Solid
+  object RedSandstone extends Material with Solid
+  object SmoothRedSandstone extends Material with Solid
+  object ChiseledRedSandstone extends Material with Solid
   object RedSandstoneStairs extends Material with Solid with GenericStairs
   object RedSandstoneDoubleSlab extends Material with Solid with GenericDoubleSlab
   object RedSandstoneSingleSlab extends Material with Solid with GenericSingleSlab
@@ -1821,26 +1109,26 @@ object Material extends Enum[Material] {
   object AcaciaDoor extends Material with Solid with Transparent with GenericDoor
   object DarkOakDoor extends Material with Solid with Transparent with GenericDoor
   object EndRod extends Material(tierString = "T5") with Solid with Transparent
-  object ChorusPlant extends Material(tierString = "T2")
+  object ChorusPlant extends Material(tierString = "T2") with Solid
   object ChorusFlower extends Material(tierString = "T2") with Solid with Crushable
-  object PurpurBlock extends Material(tierString = "T4")
-  object PurpurPillar extends Material(tierString = "T4")
+  object PurpurBlock extends Material(tierString = "T4") with Solid
+  object PurpurPillar extends Material(tierString = "T4") with Solid
   object PurpurStairs extends Material with Solid with GenericStairs
   object PurpurDoubleSlab extends Material with Solid with GenericDoubleSlab
   object PurpurSingleSlab extends Material with Solid with GenericSingleSlab
   object EndStoneBricks extends Material
-  object BeetrootPlantation extends Material
-  object GrassPath extends Material
-  object EndGateway extends Material(energy = None) with Solid with Unconsumable
-  object CommandRepeating extends Material(energy = None) with Solid with Unconsumable
-  object CommandChain extends Material(energy = None) with Solid with Unconsumable
-  object FrostedIce extends Material
-  object Magma extends Material
-  object NetherWartBlock extends Material
-  object RedNetherBrick extends Material
-  object BoneBlock extends Material
-  object StructureVoid extends Material(energy = None) with Solid with Unconsumable
-  object Observer extends Material(energy = None) with Solid with Unconsumable
+  object BeetrootPlantation extends Material with Solid
+  object GrassPath extends Material with Solid
+  object EndGateway extends Material(energy = -1) with Solid with Unconsumable
+  object CommandRepeating extends Material(energy = -1) with Solid with Unconsumable
+  object CommandChain extends Material(energy = -1) with Solid with Unconsumable
+  object FrostedIce extends Material with Solid
+  object Magma extends Material with Solid
+  object NetherWartBlock extends Material with Solid
+  object RedNetherBrick extends Material with Solid
+  object BoneBlock extends Material with Solid
+  object StructureVoid extends Material(energy = -1) with Solid with Unconsumable
+  object Observer extends Material(energy = -1) with Solid with Unconsumable
   object WhiteShulkerBox extends Material with Solid with Inventory
   object OrangeShulkerBox extends Material with Solid with Inventory
   object MagentaShulkerBox extends Material with Solid with Inventory
@@ -1857,10 +1145,10 @@ object Material extends Enum[Material] {
   object GreenShulkerBox extends Material with Solid with Inventory
   object RedShulkerBox extends Material with Solid with Inventory
   object BlackShulkerBox extends Material with Solid with Inventory
-  object StructureSaveBlock extends Material(energy = None) with Solid with Inventory with Unconsumable
-  object StructureLoadBlock extends Material(energy = None) with Unconsumable
-  object StructureCornerBlock extends Material(energy = None) with Unconsumable
-  object StructureDataBlock extends Material(energy = None) with Unconsumable
+  object StructureSaveBlock extends Material(energy = -1) with Solid with Inventory with Unconsumable
+  object StructureLoadBlock extends Material(energy = -1) with Unconsumable
+  object StructureCornerBlock extends Material(energy = -1) with Unconsumable
+  object StructureDataBlock extends Material(energy = -1) with Unconsumable
 
   object IronShovel extends Material with GenericShovel
   object IronPickaxe extends Material with GenericPickaxe
@@ -1985,7 +1273,7 @@ object Material extends Enum[Material] {
   object Bed extends Material
   object RedstoneRepeater extends Material
   object Cookie extends Material with Consumable
-  object DrawnMap extends Material(energy = None) with Unconsumable
+  object DrawnMap extends Material(energy = -1) with Unconsumable
   object Shears extends Material
   object Melon extends Material with Food
   object PumpkinSeeds extends Material
@@ -2000,7 +1288,7 @@ object Material extends Enum[Material] {
   object GhastTear extends Material(energy = 269)
   object GoldNugget extends Material(energy = 2490)
   object NetherWart extends Material(tierString = "T3")
-  object Potion extends Material(energy = None) with Consumable with Unconsumable
+  object Potion extends Material(energy = -1) with Consumable with Unconsumable
   object GlassBottle extends Material(energy = 35) with GenericGlass
   object SpiderEye extends Material(energy = 35) with Consumable with Food
   object FermentedSpiderEye extends Material
@@ -2010,11 +1298,11 @@ object Material extends Enum[Material] {
   object CauldronItem extends Material
   object EyeOfEnder extends Material
   object GlisteringMelon extends Material
-  object MonsterEgg extends Material(energy = None) with Consumable with Unconsumable
-  object ExpBottle extends Material(energy = None) with Consumable with Unconsumable
+  object MonsterEgg extends Material(energy = -1) with Consumable with Unconsumable
+  object ExpBottle extends Material(energy = -1) with Consumable with Unconsumable
   object FireCharge extends Material with Consumable
   object BookAndQuill extends Material with Usable
-  object WrittenBook extends Material(energy = None) with Usable with Unconsumable
+  object WrittenBook extends Material(energy = -1) with Usable with Unconsumable
   object Emerald extends Material(energy = 464)
   object ItemFrame extends Material
   object FlowerPotItem extends Material
@@ -2024,18 +1312,18 @@ object Material extends Enum[Material] {
   object PoisonousPotato extends Material with Consumable with Food
   object EmptyMap extends Material with Usable
   object GoldenCarrot extends Material with Consumable with Food
-  object SkeletonHead extends Material(energy = None) with Unconsumable
-  object WitherSkeletonHead extends Material(energy = None) with Unconsumable
-  object ZombieHead extends Material(energy = None) with Unconsumable
-  object PlayerHead extends Material(energy = None) with Unconsumable
-  object CreeperHead extends Material(energy = None) with Unconsumable
-  object DragonHead extends Material(energy = None) with Unconsumable
+  object SkeletonHead extends Material(energy = -1) with Unconsumable
+  object WitherSkeletonHead extends Material(energy = -1) with Unconsumable
+  object ZombieHead extends Material(energy = -1) with Unconsumable
+  object PlayerHead extends Material(energy = -1) with Unconsumable
+  object CreeperHead extends Material(energy = -1) with Unconsumable
+  object DragonHead extends Material(energy = -1) with Unconsumable
   object CarrotStick extends Material
   object NetherStar extends Material(energy = 62141)
   object PumpkinPie extends Material with Consumable with Food
-  object FireworkRocket extends Material with Consumable
-  object FireworkStar extends Material
-  object EnchantedBook extends Material(energy = None) with Unconsumable
+  object FireworkRocket extends Material(energy = -1) with Consumable with Unconsumable
+  object FireworkStar extends Material(energy = -1) with Unconsumable
+  object EnchantedBook extends Material(energy = -1) with Unconsumable
   object RedstoneComparator extends Material
   object NetherBrickItem extends Material
   object Quartz extends Material(tierString = "T3")
@@ -2054,10 +1342,25 @@ object Material extends Enum[Material] {
   object DiamondHorseArmor extends Material(tierString = "T5")
   object Leash extends Material
   object NameTag extends Material(tierString = "T4")
-  object CommandMinecart extends Material(energy = None) with Unconsumable
+  object CommandMinecart extends Material(energy = -1) with Unconsumable
   object RawMutton extends Material(energy = 1) with Consumable
   object CookedMutton extends Material with Consumable
-  object Banner extends Material
+  object WhiteBanner extends Material with GenericBanner
+  object OrangeBanner extends Material with GenericBanner
+  object MagentaBanner extends Material with GenericBanner
+  object LightBlueBanner extends Material with GenericBanner
+  object YellowBanner extends Material with GenericBanner
+  object LimeBanner extends Material with GenericBanner
+  object PinkBanner extends Material with GenericBanner
+  object GrayBanner extends Material with GenericBanner
+  object LightGrayBanner extends Material with GenericBanner
+  object CyanBanner extends Material with GenericBanner
+  object PurpleBanner extends Material with GenericBanner
+  object BlueBanner extends Material with GenericBanner
+  object BrownBanner extends Material with GenericBanner
+  object GreenBanner extends Material with GenericBanner
+  object RedBanner extends Material with GenericBanner
+  object BlackBanner extends Material with GenericBanner
   object EndCrystal extends Material
   object SpruceDoorItem extends Material with GenericDoor
   object BirchDoorItem extends Material with GenericDoor
@@ -2070,10 +1373,10 @@ object Material extends Enum[Material] {
   object BeetrootSeeds extends Material(tierString = "T2") with Consumable
   object BeetrootSoup extends Material with Consumable with Food
   object DragonsBreath extends Material(tierString = "T6")
-  object SplashPotion extends Material(energy = None) with Consumable with Unconsumable
-  object SpectralArrow extends Material(energy = None) with Unconsumable
-  object TippedArrow extends Material(energy = None) with Unconsumable
-  object LingeringPotion extends Material(energy = None) with Consumable with Unconsumable
+  object SplashPotion extends Material(energy = -1) with Consumable with Unconsumable
+  object SpectralArrow extends Material(energy = -1) with Unconsumable
+  object TippedArrow extends Material(energy = -1) with Unconsumable
+  object LingeringPotion extends Material(energy = -1) with Consumable with Unconsumable
   object Shield extends Material with Consumable
   object Elytra extends Material(tierString = "T6") with Consumable
   object SpruceBoat extends Material

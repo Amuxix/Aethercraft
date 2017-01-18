@@ -1,10 +1,11 @@
 package me.amuxix.material
 
+import com.github.ghik.silencer.silent
 import me.amuxix.Runecraft
-import me.amuxix.logging.Logger
-import me.amuxix.material.Material.{DiamondOre, EmeraldOre, GlowingRedstoneOre, QuartzOre, RedstoneOre, _}
-import org.bukkit.Material.AIR
+import me.amuxix.material.Material._
+import org.bukkit.Material.{AIR, BANNER}
 import org.bukkit.inventory._
+import org.bukkit.material.MaterialData
 
 import scala.collection.convert.ImplicitConversionsToScala._
 
@@ -13,8 +14,8 @@ import scala.collection.convert.ImplicitConversionsToScala._
   */
 class Tier {
   def makeRecipe(bukkitIngredients: Iterable[ItemStack], bukkitResult: ItemStack): Option[Recipe] = {
-    val ingredients: Iterable[(Material, Double)] = bukkitIngredients.filter(_.getType != AIR).map(stack => (bukkitStack2Material(stack), stack.getAmount.toDouble))
-    val result: (Material, Int) = (bukkitResult, bukkitResult.getAmount)
+    val ingredients: Iterable[(Material, Double)] = bukkitIngredients.filter(_.getType != AIR).map(stack => (materialData2Material(stack.getData), stack.getAmount.toDouble))
+    val result: (Material, Int) = (bukkitResult.getData, bukkitResult.getAmount)
     if (ingredients.nonEmpty && result._1 != Air) {
       Some(new Recipe(ingredients, result))
     } else {
@@ -22,7 +23,7 @@ class Tier {
     }
   }
 
-  private val recipes: Set[Recipe] = {
+  @silent private val recipes: Set[Recipe] = {
     var recipeSet: Set[Recipe] = Runecraft.server.recipeIterator.flatMap {
       case recipe: ShapedRecipe =>
         makeRecipe(recipe.getIngredientMap.values, recipe.getResult)
@@ -74,8 +75,8 @@ class Tier {
       new Recipe(RedstoneComparator, RedstoneComparatorOff),
       new Recipe(RedstoneComparator, RedstoneComparatorOn),
       new Recipe((Quartz, oreMult), QuartzOre),
-      new Recipe(Banner, StandingBanner),
-      new Recipe(Banner, WallBanner),
+      new Recipe(new MaterialData(BANNER, (-1).toByte), StandingBanner),
+      new Recipe(new MaterialData(BANNER, (-1).toByte), WallBanner),
       new Recipe(DaylightSensor, InvertedDaylightSensor),
       new Recipe(SpruceDoorItem, (SpruceDoor, 2)),
       new Recipe(BirchDoorItem, (BirchDoor, 2)),
@@ -149,7 +150,6 @@ class Tier {
   var changes = false
   do {
     changes = false
-    Logger.info("Changes")
     for (recipe <- recipes) {
       if (updateEnergyFromRecipe(recipe)) {
         changes = true

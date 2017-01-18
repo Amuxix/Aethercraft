@@ -1,10 +1,10 @@
 package me.amuxix.runes
 
 import me.amuxix.Runecraft
+import me.amuxix.material.Material.{Air, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Tiered
 import me.amuxix.util._
-import org.bukkit.Material.{AIR, GLASS}
 import org.bukkit.event.player.PlayerInteractEvent
 
 /**
@@ -13,9 +13,9 @@ import org.bukkit.event.player.PlayerInteractEvent
 object Compass extends RunePattern {
   val pattern: Pattern = Pattern(Compass.apply, width = 3)(
     ActivationLayer(
-      Tier, AIR, Tier,
-      AIR, Tier, AIR,
-      Tier, AIR, Tier
+      Tier, Air, Tier,
+      Air, Tier, Air,
+      Tier, Air, Tier
     )
   )
 }
@@ -32,7 +32,7 @@ Vector3[Int], pattern: Pattern)
 
   override def notifyActivator(): Unit = {
     super.notifyActivator()
-    if (tierType == GLASS) {
+    if (tierType == Glass) {
       //If player used glass show the current version.
       activator.sendMessage(Runecraft.self.getDescription.getFullName)
     }

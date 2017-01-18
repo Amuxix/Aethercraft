@@ -36,7 +36,7 @@ case class Waypoint(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]
     if (signatureIsEmpty) {
       throw RuneInitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
-      throw RuneInitializationException(tierType.name() + " can't be used on this rune because it is the same as the tier used in rune.")
+      throw RuneInitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
     } else if (Runecraft.waypoints.contains(signature)) {
       throw RuneInitializationException("Signature already in use.")
     }

@@ -1,5 +1,6 @@
 package me.amuxix.util
 
+import me.amuxix.material.Solid
 import org.bukkit.block.{Block => BBlock}
 import org.bukkit.entity.{Entity => BEntity}
 import org.bukkit.{World, Location => BLocation}
@@ -38,7 +39,7 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
     * Checks if this position and the position above this have blocks that players can be on, ie: the blocks are lava, or air, or reeds.
     * @return true if a player can fit
     */
-  def canFitPlayer(implicit ev: T =:= Int): Boolean = this.block.getType.isSolid == false && (this.asInstanceOf[Position[Int]] + Up).block.getType.isSolid == false
+  def canFitPlayer(implicit ev: T =:= Int): Boolean = this.block.material.isInstanceOf[Solid] == false && (this.asInstanceOf[Position[Int]] + Up).block.material.isInstanceOf[Solid] == false
 
   def distance(t: Position[T]): Double = {
     import Integral.Implicits._

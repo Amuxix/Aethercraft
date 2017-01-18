@@ -3,6 +3,7 @@ package me.amuxix
 import me.amuxix.IntegrityMonitor.checkIntegrityAfterBlockDestruction
 import me.amuxix.pattern.matching.Matcher
 import me.amuxix.runes.exceptions.RuneInitializationException
+import me.amuxix.util.Anonymous
 import me.amuxix.util.Player.bukkitPlayer2Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block._
@@ -47,14 +48,14 @@ object Listener extends org.bukkit.event.Listener {
   @EventHandler
   def onBlockBurnEvent(event: BlockBurnEvent): Unit = {
     if (event.isCancelled == false) {
-      checkIntegrityAfterBlockDestruction(event.getBlock)
+      checkIntegrityAfterBlockDestruction(event.getBlock, Anonymous)
     }
   }
 
   @EventHandler
   def onBlockFadeEvent(event: BlockFadeEvent): Unit = {
     if (event.isCancelled == false) {
-      checkIntegrityAfterBlockDestruction(event.getBlock)
+      checkIntegrityAfterBlockDestruction(event.getBlock, Anonymous)
     }
   }
 

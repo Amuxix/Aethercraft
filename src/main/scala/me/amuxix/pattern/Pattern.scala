@@ -1,6 +1,7 @@
 package me.amuxix.pattern
 
 import me.amuxix.logging.Logger.{severe, trace}
+import me.amuxix.material.{Material, Unconsumable}
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.Rune
 import me.amuxix.util.{Block, Matrix4, Vector3}
@@ -147,9 +148,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
       val rotatedPosition: Vector3[Int] = relativePosition.rotateAbout(rotationMatrix, boundingCube.center)
       trace("Relative Position: " + relativePosition)
       trace("Rotated Position: " + rotatedPosition)
-      val block1: Block = boundingCube.getBlock(rotatedPosition)
-      val blockMaterial: Material = block1.getType
-      trace("Absolute Block position: " + block1.location)
+      val blockMaterial: Material = boundingCube.getBlock(rotatedPosition).material
       trace("Block   Type: " + blockMaterial)
       trace("Pattern Type: " + elements(layer)(block)(line))
       //Having elements checked in layer > block > line makes the pattern top line be the northern most one
@@ -159,7 +158,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
           trace(ChatColor.RED + "Material does not match")
           return false
         case Tier =>
-          if ((patternMaterials contains blockMaterial)/* || blockMaterial.material == AIR*/) {
+          if (patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[Unconsumable]) {
             trace("This block cannot be used as a tier material as its a material used by the rune")
             //Air is tier 0 and therefore cannot be used generalize later for all T0
             return false

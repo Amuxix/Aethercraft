@@ -1,10 +1,10 @@
 package me.amuxix.runes.traits
 
+import me.amuxix.material.Material
+import me.amuxix.material.Material.Air
 import me.amuxix.pattern.Signature
 import me.amuxix.runes.Rune
 import me.amuxix.util.{Block, Player}
-import org.bukkit.Material
-import org.bukkit.Material.AIR
 
 /**
   * Created by Amuxix on 22/11/2016.
@@ -16,7 +16,7 @@ trait Linkable { this: Rune =>
   val signatureBlocks: Seq[Block] = specialBlocks(Signature)
 
   //This is true if the set only contains true, meaning all blocks are air
-  val signatureIsEmpty: Boolean = signatureBlocks.forall(_.material == AIR)
+  val signatureIsEmpty: Boolean = signatureBlocks.forall(_.material == Air)
 
   /**
     * Checks if the signature contains the material

@@ -1,9 +1,9 @@
 package me.amuxix.runes.traits
 
+import me.amuxix.material.Material
 import me.amuxix.pattern.Tier
 import me.amuxix.runes.Rune
 import me.amuxix.util.Block
-import org.bukkit.Material
 
 /**
   * Created by Amuxix on 22/11/2016.
@@ -14,7 +14,7 @@ import org.bukkit.Material
 trait Tiered { this: Rune =>
   val tierBlocks: Seq[Block] = specialBlocks(Tier)
 
-  val tierType: Material = tierBlocks.head.getType
+  val tierType: Material = tierBlocks.head.material
 
-	val tier: Integer = 4 // See xkcd about randomness
+	val tier: Int = tierType.tier.get
 }

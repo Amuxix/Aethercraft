@@ -7,11 +7,10 @@ import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
 import me.amuxix.material.Solid
 import me.amuxix.pattern._
 import me.amuxix.runes.exceptions.RuneInitializationException
-import me.amuxix.runes.teleports.WaypointTrait
 import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
+import me.amuxix.runes.waypoints.WaypointTrait
 import me.amuxix.util.Block.Location
 import me.amuxix.util._
-import org.bukkit.event.player.PlayerInteractEvent
 
 import scala.math.Numeric.DoubleAsIfIntegral
 
@@ -30,8 +29,8 @@ object Teleporter extends RunePattern {
   )
 }
 
-case class Teleporter(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int], pattern: Pattern)
-  extends Rune
+case class Teleporter(parameters: RuneParameters, pattern: Pattern)
+  extends Rune(parameters)
           with Tiered
           with Consumable
           with Linkable {

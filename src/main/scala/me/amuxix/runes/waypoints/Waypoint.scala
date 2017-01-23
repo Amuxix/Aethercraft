@@ -1,13 +1,12 @@
-package me.amuxix.runes.teleports
+package me.amuxix.runes.waypoints
 
 import me.amuxix.Runecraft
 import me.amuxix.pattern._
-import me.amuxix.runes.Rune
 import me.amuxix.runes.exceptions.RuneInitializationException
 import me.amuxix.runes.traits.{Linkable, Persistent}
+import me.amuxix.runes.{Rune, RuneParameters}
 import me.amuxix.util._
 import org.bukkit.ChatColor
-import org.bukkit.event.player.PlayerInteractEvent
 
 /**
   * Created by Amuxix on 03/01/2017.
@@ -24,8 +23,8 @@ object Waypoint extends RunePattern {
   )
 }
 
-case class Waypoint(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int], pattern: Pattern)
-  extends Rune
+case class Waypoint(parameters: RuneParameters, pattern: Pattern)
+  extends Rune(parameters)
           with WaypointTrait
           with Linkable
           with Persistent {

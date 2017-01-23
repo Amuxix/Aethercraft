@@ -1,8 +1,10 @@
 package me.amuxix.util
 
-import me.amuxix.material.Material
+import me.amuxix.Runecraft
 import me.amuxix.material.Material.{Air, Stone}
+import me.amuxix.material.{Crushable, Material}
 import me.amuxix.util.Block.Location
+import me.amuxix.util.events.{RunecraftBreakEvent, RunecraftPlaceEvent}
 import org.bukkit.block.{BlockState, Block => BukkitBlock}
 
 /**
@@ -15,6 +17,7 @@ object Block {
 
 case class Block(location: Location, material: Material, state: BlockState) {
   def setMaterial(material: Material): Unit = {
+    state.setType(material.getItemType)
     state.setData(material)
     state.update(true)
   }
@@ -25,9 +28,9 @@ case class Block(location: Location, material: Material, state: BlockState) {
     * @param displacementVector Vector that defines the move.
     * @return true if the move was successful, false otherwise.
     */
-  def move(displacementVector: Vector3[Int]): Boolean = {
+  def move(displacementVector: Vector3[Int], player: Player): Boolean = {
     val target: Location = location + displacementVector
-    moveTo(target)
+    moveTo(target, player)
   }
 
   /**
@@ -35,14 +38,19 @@ case class Block(location: Location, material: Material, state: BlockState) {
     * @param target Location where the block should be moved to.
     * @return true if the move was successful, false otherwise.
     */
-  def moveTo(target: Location): Boolean = {
-    if (target.block.material == Air) {
-      target.block.setMaterial(this.material)
-      setMaterial(Air)
-      true
-    } else {
-      false
+  def moveTo(target: Location, player: Player): Boolean = {
+    if (target.block.material.isInstanceOf[Crushable]) {
+      val placeEvent = RunecraftPlaceEvent(target, material, player)
+      val breakEvent = RunecraftBreakEvent(location, player)
+      Runecraft.server.getPluginManager.callEvent(placeEvent)
+      Runecraft.server.getPluginManager.callEvent(breakEvent)
+      if (breakEvent.isCancelled == false && placeEvent.isCancelled == false && placeEvent.canBuild) {
+        target.block.setMaterial(this.material)
+        setMaterial(Air)
+        return true
+      }
     }
+    false
   }
 
   /**

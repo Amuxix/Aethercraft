@@ -4,8 +4,8 @@ import java.util.logging.Logger
 
 import me.amuxix.material.Tier
 import me.amuxix.runes.Rune
-import me.amuxix.runes.teleports.WaypointTrait
 import me.amuxix.runes.traits.Persistent
+import me.amuxix.runes.waypoints.WaypointTrait
 import me.amuxix.util.Block.Location
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, Server}

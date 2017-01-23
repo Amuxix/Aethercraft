@@ -1,8 +1,7 @@
-package me.amuxix.runes.teleports
+package me.amuxix.runes.waypoints
 
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.Tiered
-import me.amuxix.util.CardinalPoint
 
 /**
   * Created by Amuxix on 02/01/2017.
@@ -11,6 +10,5 @@ import me.amuxix.util.CardinalPoint
   * This represents a point that can be targeted by a waypoint.
   */
 trait WaypointTrait extends Tiered { this: Rune =>
-  val direction: CardinalPoint = CardinalPoint.BlockFace2CardinalPoint(event.getBlockFace)
   val size: WaypointSize
 }

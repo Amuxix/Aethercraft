@@ -25,7 +25,7 @@ object Listener extends org.bukkit.event.Listener {
         } else {
           //Look for new runes
           //Cancel the interact event if a rune was found
-          val maybeRune = Matcher.lookForRunesAt(event)
+          val maybeRune = Matcher.lookForRunesAt(event.getClickedBlock, event.getPlayer, event.getBlockFace)
           if (maybeRune.isDefined) {
             maybeRune.get.notifyActivator()
             maybeRune.get.logRuneActivation()

@@ -5,32 +5,26 @@ import me.amuxix.pattern.Pattern
 import me.amuxix.util.Block.Location
 import me.amuxix.util.{Block, Vector3}
 
+import scala.collection.SortedSet
+
 
 /**
   * Created by Amuxix on 21/11/2016.
   */
-case class BoundingCube(centerLocation: Location, possiblePatterns: Set[Pattern]) {
-	/*val dimensions: Vector3 = possiblePatterns.foldLeft((0, 0, 0)) { case (acc, pattern) =>
-		maxByValue(acc, pattern.boundingCubeDimensions)
-	}*/
-  val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, patttern) => math.max(acc, patttern.largestDimension) }
-  private val vector: Vector3[Int] = Vector3(dimension, dimension, dimension)
-  val center: Vector3[Int] = vector / 2
+case class BoundingCube(centerLocation: Location, possiblePatterns: SortedSet[Pattern]) {
+  val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, pattern) => acc max pattern.largestDimension}
+  val center: Vector3[Int] = Vector3(dimension, dimension, dimension) / 2
   val cubeOrigin: Location = centerLocation - center
   trace("Center: " + centerLocation)
   trace("Cube Origin: " + cubeOrigin)
-	val blocks = Array.tabulate[Block](dimension, dimension, dimension){
+  trace("Cube size: " + dimension)
+	val blocks: Array[Array[Array[Block]]] = Array.tabulate[Block](dimension, dimension, dimension){
 		case (x, y, z) => (cubeOrigin + Vector3(x, y, z)).block
 	}
+  trace(s"Cube dimensions: (${blocks.length}, ${blocks.head.length}, ${blocks.head.head.length})")
 
-  def getBlock(position: Vector3[Int]): Block = {
-    trace("Getting block at: (" + position.x + ", " + position.y + ", " + position.z + ")")
+  def blockAt(position: Vector3[Int]): Block = {
+    trace(s"Bounding cube getting block at: (${position.x}, ${position.y}, ${position.z})")
     blocks(position.x)(position.y)(position.z)
   }
-
-	def maxByValue(a: (Int, Int, Int), b: (Int, Int, Int)): (Int, Int, Int) = {
-		val (ay, ax, az) = a
-		val (by, bx, bz) = b
-		(ay max by, ax max bx, az max bz)
-	}
 }

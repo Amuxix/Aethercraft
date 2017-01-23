@@ -1,0 +1,38 @@
+package me.amuxix.util.events
+
+import com.github.ghik.silencer.silent
+import me.amuxix.material.Material
+import me.amuxix.util.Block.Location
+import me.amuxix.util.Player
+import me.amuxix.util.events.RunecraftPlaceEvent._
+import org.bukkit.block.Block
+import org.bukkit.entity.{Player => BPlayer}
+import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.inventory.ItemStack
+
+/**
+  * Created by Amuxix on 19/01/2017.
+  */
+object RunecraftPlaceEvent {
+  def getPlacedBlock(target: Location, material: Material): Block = {
+    target.block.state.setData(material)
+    target.block.state.update(true)
+    target.block.state.getBlock
+  }
+
+  def getPlayer(runePlayer: Player): BPlayer = {
+    runePlayer.getPlayer match {
+      case Left(_) => null
+      case Right(p) => p
+    }
+  }
+
+  def getItemInHand(runePlayer: Player): ItemStack = {
+    runePlayer.getPlayer match {
+      case Left(_) => null
+      case Right(p) => p.getInventory.getItemInMainHand
+    }
+  }
+}
+@silent case class RunecraftPlaceEvent(target: Location, material: Material, runePlayer: Player)
+  extends BlockPlaceEvent(getPlacedBlock(target, material), target.block.state, target.block.state.getBlock, getItemInHand(runePlayer), getPlayer(runePlayer), true)

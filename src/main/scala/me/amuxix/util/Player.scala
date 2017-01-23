@@ -42,7 +42,7 @@ case class Player(uniqueID: UUID, pitch: Float, yaw: Float) extends Entity {
     case Right(player) => player.getName
   }
 
-  private def getPlayer: Either[OfflinePlayer, BPlayer] = {
+  protected[util] def getPlayer: Either[OfflinePlayer, BPlayer] = {
     val offlinePlayer = Runecraft.server.getOfflinePlayer(uniqueID)
     if (offlinePlayer.isOnline) {
       Right(offlinePlayer.getPlayer)

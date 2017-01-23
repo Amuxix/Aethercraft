@@ -11,7 +11,6 @@ import org.bukkit.GrassSpecies._
 import org.bukkit.Material.{TNT => BTNT, _}
 import org.bukkit.SandstoneType._
 import org.bukkit.TreeSpecies._
-import org.bukkit.block.{Block => BBlock}
 import org.bukkit.material._
 import org.bukkit.{CoalType, Material => BMaterial}
 
@@ -737,13 +736,15 @@ object Material extends Enum[Material] {
     new MaterialData(BANNER, (-1).toByte) -> Seq(WhiteBanner, OrangeBanner, MagentaBanner, LightBlueBanner, YellowBanner, LimeBanner, PinkBanner, GrayBanner, LightGrayBanner, CyanBanner, PurpleBanner, BlueBanner, BrownBanner, GreenBanner, RedBanner, BlackBanner).minBy(_.energy)
   )
 
-  private val materialToMaterialData: Map[Material, MaterialData] = materialDataToMaterial.map(entry => entry._2 -> entry._1)
+  private val materialToMaterialData: Map[Material, MaterialData] = materialDataToMaterial.map(_.swap)
 
   @silent implicit def materialData2Material(data: MaterialData): Material = {
     try {
       materialDataToMaterial(data)
     } catch {
-      case _: NoSuchElementException if data.getData == -1 => materialDataToMaterial(new MaterialData(data.getItemType))
+      case _: NoSuchElementException if data.getData == -1 => materialDataToMaterial(new MaterialData(data.getItemType)) //Recipe stuff(-1 can mean several different data)
+      case _: NoSuchElementException if data.isInstanceOf[Directional] || data.isInstanceOf[RedstoneWire] => materialDataToMaterial(new MaterialData(data.getItemType)) //Directional stuff
+      case _: NoSuchElementException if data.getItemType == PISTON_MOVING_PIECE => materialDataToMaterial(new MaterialData(data.getItemType)) //Special Types
     }
   }
 

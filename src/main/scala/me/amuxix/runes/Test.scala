@@ -3,8 +3,7 @@ package me.amuxix.runes
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
-import me.amuxix.util.{Block, Matrix4, Player, Vector3}
-import org.bukkit.event.player.PlayerInteractEvent
+import me.amuxix.util.Player
 
 /**
   * Created by Amuxix on 26/11/2016.
@@ -27,8 +26,8 @@ object Test extends RunePattern {
   )
 }
 
-case class Test(event: PlayerInteractEvent, blocks: Array[Array[Array[Block]]], rotation: Matrix4, rotationCenter: Vector3[Int], pattern: Pattern)
-  extends Rune
+case class Test(parameters: RuneParameters, pattern: Pattern)
+  extends Rune(parameters)
           with Tiered
           with Consumable
           with Linkable {

@@ -1,4 +1,4 @@
-package me.amuxix.runes.teleports
+package me.amuxix.runes.waypoints
 
 /**
   * Created by Amuxix on 03/01/2017.

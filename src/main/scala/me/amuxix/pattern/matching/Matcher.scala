@@ -1,10 +1,13 @@
 package me.amuxix.pattern.matching
 
+import me.amuxix.logging.Logger.trace
 import me.amuxix.pattern.{Pattern, RunePattern}
 import me.amuxix.runes._
-import me.amuxix.runes.teleports.Waypoint
-import me.amuxix.util.Matrix4
-import org.bukkit.event.player.PlayerInteractEvent
+import me.amuxix.runes.waypoints.Waypoint
+import me.amuxix.util.Block.Location
+import me.amuxix.util.{CardinalPoint, Matrix4, Player, Rotation}
+
+import scala.collection.SortedSet
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -12,27 +15,25 @@ import org.bukkit.event.player.PlayerInteractEvent
   */
 object Matcher {
 
-  private val patterns: Seq[RunePattern] = Seq(Test, Test2, Waypoint, Teleporter)
+  private val patterns: Seq[RunePattern] = Seq(Test, Test2, Waypoint, Teleporter, Compass)
 
   /**
     * Looks for runes at the given location
-    * @param location position to look for runes
+    * @param event Event that contains the location where to look for runes as well as some other useful parameters when activating the rune
     */
-  def lookForRunesAt(event: PlayerInteractEvent): Option[Rune] = {
-    val possiblePatterns: Set[Pattern] = patterns.map(_.pattern).toSet
-    matchRunes(event, possiblePatterns)
+  def lookForRunesAt(location: Location, activator: Player, direction: CardinalPoint): Option[Rune] = {
+    val possiblePatterns: SortedSet[Pattern] = SortedSet(patterns.map(_.pattern):_*)
+    matchRunes(location, activator, direction, possiblePatterns)
   }
 
-  def matchRunes(event: PlayerInteractEvent, possiblePatterns: Set[Pattern]): Option[Rune] = { //The pattern set needs to be sorted to allow some runes to have priority over others
-    val boundingCube = BoundingCube(event.getClickedBlock, possiblePatterns)
-    /*for {
-      pattern <- possiblePatterns if pattern.foundIn(boundingCube)
-    } yield pattern.createRune(center, activator, boundingCube, )*/
-
+  def matchRunes(location: Location, activator: Player, direction: CardinalPoint, possiblePatterns: SortedSet[Pattern]): Option[Rune] = {
+    trace(s"There are ${patterns.length} registered patterns.")
+    val boundingCube = BoundingCube(location, possiblePatterns)
     for (pattern <- possiblePatterns) {
       val maybeMatrix: Option[Matrix4] = pattern.foundIn(boundingCube)
       if (maybeMatrix.isDefined) {
-        return Some(pattern.createRune(event, pattern.getRuneBlocks(boundingCube), maybeMatrix.get, boundingCube.center))
+        val rotation = Rotation(maybeMatrix.get, boundingCube.center)
+        return Some(pattern.createRune(RuneParameters(pattern.getRuneBlocks(boundingCube, rotation), location, activator, direction)))
       }
     }
     None

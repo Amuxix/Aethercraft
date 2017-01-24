@@ -5,6 +5,7 @@ import me.amuxix.material.Material.{Air, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Tiered
 import me.amuxix.util._
+import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 02/01/2017.
@@ -24,15 +25,18 @@ case class Compass(parameters: RuneParameters, pattern: Pattern)
 
 
   //These lines below change the compass to make a sort of an arrow pointing north
-  (center - SouthEast).block.move(South, activator) //This moves the block at the NorthEast corner 1 block to the south
-  (center - SouthWest).block.move(South, activator) //This moves the block at the NorthWest corner 1 block to the south
-  center.block.move(North, activator) //This moves the center block 1 block to the north
+  val arrowForming: Map[Block, Vector3[Int]] = Map((center - SouthEast).block -> South, (center - SouthWest).block -> South, center.block -> North)
+  private val blocksMoved = BlockUtils.moveSeveralBy(arrowForming, activator)
 
   override def notifyActivator(): Unit = {
-    super.notifyActivator()
-    if (tierType == Glass) {
-      //If player used glass show the current version.
-      activator.sendMessage(Runecraft.self.getDescription.getFullName)
+    if (blocksMoved) {
+      super.notifyActivator()
+      if (tierType == Glass) {
+        //If player used glass show the current version.
+        activator.sendMessage(Runecraft.self.getDescription.getFullName)
+      }
+    } else {
+      activator.sendMessage(ChatColor.RED + "Something blocks you from activating this compass.")
     }
   }
 }

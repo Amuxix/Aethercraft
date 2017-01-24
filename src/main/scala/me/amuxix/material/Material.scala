@@ -744,7 +744,7 @@ object Material extends Enum[Material] {
     } catch {
       case _: NoSuchElementException if data.getData == -1 => materialDataToMaterial(new MaterialData(data.getItemType)) //Recipe stuff(-1 can mean several different data)
       case _: NoSuchElementException if data.isInstanceOf[Directional] || data.isInstanceOf[RedstoneWire] => materialDataToMaterial(new MaterialData(data.getItemType)) //Directional stuff
-      case _: NoSuchElementException if data.getItemType == ANVIL => materialDataToMaterial(new MaterialData(data.getItemType)) //Other stuff
+      case _: NoSuchElementException if data.getItemType == ANVIL || data.getItemType == FIRE => materialDataToMaterial(new MaterialData(data.getItemType)) //Other stuff
       case _: NoSuchElementException if data.getItemType == PISTON_MOVING_PIECE => materialDataToMaterial(new MaterialData(data.getItemType)) //Special Types
     }
   }

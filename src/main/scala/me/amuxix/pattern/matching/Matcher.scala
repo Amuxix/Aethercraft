@@ -23,7 +23,12 @@ object Matcher {
     */
   def lookForRunesAt(location: Location, activator: Player, direction: CardinalPoint): Option[Rune] = {
     val possiblePatterns: SortedSet[Pattern] = SortedSet(patterns.map(_.pattern):_*)
-    matchRunes(location, activator, direction, possiblePatterns)
+    val possibleRune = matchRunes(location, activator, direction, possiblePatterns)
+    if (possibleRune.isEmpty) {
+      matchRunes(location + direction, activator, direction, possiblePatterns)
+    } else {
+      possibleRune
+    }
   }
 
   def matchRunes(location: Location, activator: Player, direction: CardinalPoint, possiblePatterns: SortedSet[Pattern]): Option[Rune] = {

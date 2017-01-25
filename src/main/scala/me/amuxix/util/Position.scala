@@ -48,5 +48,12 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
 
   override def toString: String = {"[" + world.getName + "@" + coordinates.toString + "]"}
 
-  def equals(position: Position[T]): Boolean = world.getUID == position.world.getUID && coordinates.equals(position.coordinates)
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Position[T]]
+
+  override def equals(other: Any): Boolean = other match {
+    case position: Position[T] =>
+      (position canEqual this) &&
+        world.getUID == position.world.getUID && coordinates == position.coordinates
+    case _ => false
+  }
 }

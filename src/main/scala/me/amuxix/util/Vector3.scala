@@ -20,5 +20,12 @@ case class Vector3[T : Integral](x: T, y: T, z: T) {
 
   override def toString: String = "(" + x + ", " + y + ", " + z + ")"
 
-  def equals(vector: Vector3[T]): Boolean = x == vector.x && y == vector.y && y == vector.y
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Vector3[T]]
+
+  override def equals(other: Any): Boolean = other match {
+    case vector: Vector3[T] =>
+      (vector canEqual this) &&
+      vector.x == vector.x && y == vector.y && y == vector.y
+    case _ => false
+  }
 }

@@ -16,21 +16,27 @@ abstract class Rune(parameters: RuneParameters) {
   val pattern: Pattern
 
   def notifyActivator(): Unit = {
-    activator.sendMessage(getClass.getSimpleName + " activated")
+    activator.sendMessage(name + " activated")
   }
 
   def logRuneActivation(): Unit = {
-    info(activator.name + " activated " + getClass.getSimpleName + " in " + center)
+    info(s"${activator.name} activated $name in $center")
   }
 
-  def getKeyBlocks: Seq[Block] = specialBlocks(Key)
-
   protected def specialBlocks(element: Element): Seq[Block] = {
-    val vectors = pattern.specialBlocksVectors(element)
-    vectors.map(blockAt)
+    pattern.specialBlockVectors(element).map(blockAt)
+  }
+
+  protected def nonSpecialBlocks: Seq[Block] = {
+    pattern.nonSpecialBlockVectors.map(blockAt)
   }
 
   def blockAt(position: Vector3[Int]): Block = {
     blocks(position.x)(position.y)(position.z)
   }
+
+  /**
+    * @return Default name of the rune is its class name, may be overridden.
+    */
+  val name: String = getClass.getSimpleName
 }

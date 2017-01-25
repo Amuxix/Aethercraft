@@ -1,8 +1,10 @@
 package me.amuxix.runes.traits
 
+import me.amuxix.IntegrityMonitor
+import me.amuxix.pattern.NotInRune
 import me.amuxix.runes.Rune
 import me.amuxix.util.{Block, Player}
-import me.amuxix.{IntegrityMonitor, Runecraft}
+import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 26/11/2016.
@@ -12,9 +14,16 @@ import me.amuxix.{IntegrityMonitor, Runecraft}
   */
 trait Persistent {
   this: Rune =>
-  /** Blocks to be monitored in case of destruction
-    * Needs to be set as lazy to avoid not being defined when added to integrity monitor*/
-  val monitoredBlocks: Seq[Block]
+  /** Blocks to be monitored, if destroyed the rune breaks
+    */
+  lazy val monitoredDestroyBlocks: Seq[Block] = this match {
+    case tiered: Tiered => nonSpecialBlocks ++ tiered.tierBlocks
+    case _ => nonSpecialBlocks
+  }
+
+  /** Blocks to be monitored for building, if a material that is part of the rune is placed here the rune is destroyed
+    */
+  lazy val monitoredBuildBlocks: Seq[Block] = specialBlocks(NotInRune)
 
   /**
     * Destroys the rune effect. This should undo all lasting effects this rune introduced
@@ -28,8 +37,9 @@ trait Persistent {
     */
   def update(player: Player): Unit
 
+  val destroyMessage: String = ChatColor.RED + name + " destroyed!"
+
   /** Adds the list of given blocks to the list of monitored blocks, if any of this blocks is destroyed, the rune
     * they create is destroyed */
   IntegrityMonitor.addRune(this)
-  Runecraft.persistentRunes += center -> this
 }

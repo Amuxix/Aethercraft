@@ -29,7 +29,8 @@ case class Waypoint(parameters: RuneParameters, pattern: Pattern)
           with Linkable
           with Persistent {
 
-  override lazy val monitoredBlocks: Seq[Block] = tierBlocks
+  /*override lazy val monitoredDestroyBlocks: Seq[Block] = tierBlocks
+  override val monitoredBuildBlocks: Seq[Block] = specialBlocks(NotInRune)*/
 
   override def validateSignature(player: Player): Boolean = {
     if (signatureIsEmpty) {

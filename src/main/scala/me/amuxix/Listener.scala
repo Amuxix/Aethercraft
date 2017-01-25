@@ -1,6 +1,6 @@
 package me.amuxix
 
-import me.amuxix.IntegrityMonitor.checkIntegrityAfterBlockDestruction
+import me.amuxix.IntegrityMonitor.{checkIntegrityAfterBlockDestruction, checkIntegrityAfterBlockPlacement}
 import me.amuxix.pattern.matching.Matcher
 import me.amuxix.runes.exceptions.RuneInitializationException
 import me.amuxix.util.Anonymous
@@ -38,25 +38,34 @@ object Listener extends org.bukkit.event.Listener {
     }
   }
 
-  @EventHandler
+  /**
+    * Monitor priority is the last to be called, and should not change event outcome, at this point
+    * all other plugins should have done their thing.
+    * Having ignoredCanceled set to true means this event will NOT be called when the event is canceled
+    */
+  @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
   def onBlockBreakEvent(event: BlockBreakEvent): Unit = {
-    if (event.isCancelled == false) {
-      checkIntegrityAfterBlockDestruction(event.getBlock, event.getPlayer)
-    }
+    checkIntegrityAfterBlockDestruction(event.getBlock, event.getPlayer)
   }
 
-  @EventHandler
+  /**
+    * Monitor priority is the last to be called, and should not change event outcome, at this point
+    * all other plugins should have done their thing.
+    * Having ignoredCanceled set to true means this event will NOT be called when the event is canceled
+    */
+  @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
   def onBlockBurnEvent(event: BlockBurnEvent): Unit = {
-    if (event.isCancelled == false) {
-      checkIntegrityAfterBlockDestruction(event.getBlock, Anonymous)
-    }
+    checkIntegrityAfterBlockDestruction(event.getBlock, Anonymous)
   }
 
-  @EventHandler
+  /**
+    * Monitor priority is the last to be called, and should not change event outcome, at this point
+    * all other plugins should have done their thing.
+    * Having ignoredCanceled set to true means this event will NOT be called when the event is canceled
+    */
+  @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
   def onBlockFadeEvent(event: BlockFadeEvent): Unit = {
-    if (event.isCancelled == false) {
-      checkIntegrityAfterBlockDestruction(event.getBlock, Anonymous)
-    }
+    checkIntegrityAfterBlockDestruction(event.getBlock, Anonymous)
   }
 
   /*@EventHandler
@@ -65,4 +74,13 @@ object Listener extends org.bukkit.event.Listener {
 
   }*/
 
+  /**
+    * Monitor priority is the last to be called, and should not change event outcome, at this point
+    * all other plugins should have done their thing.
+    * Having ignoredCanceled set to true means this event will NOT be called when the event is canceled
+    */
+  @EventHandler(priority = org.bukkit.event.EventPriority.MONITOR, ignoreCancelled = true)
+  def onBlockPlaceEvent(event: BlockPlaceEvent): Unit = {
+    checkIntegrityAfterBlockPlacement(event.getBlockPlaced, event.getPlayer)
+  }
 }

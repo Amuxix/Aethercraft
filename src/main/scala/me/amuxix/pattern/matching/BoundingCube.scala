@@ -5,13 +5,10 @@ import me.amuxix.pattern.Pattern
 import me.amuxix.util.Block.Location
 import me.amuxix.util.{Block, Vector3}
 
-import scala.collection.SortedSet
-
-
 /**
   * Created by Amuxix on 21/11/2016.
   */
-case class BoundingCube(centerLocation: Location, possiblePatterns: SortedSet[Pattern]) {
+case class BoundingCube(centerLocation: Location, possiblePatterns: List[Pattern]) {
   val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, pattern) => acc max pattern.largestDimension}
   val center: Vector3[Int] = Vector3(dimension, dimension, dimension) / 2
   val cubeOrigin: Location = centerLocation - center

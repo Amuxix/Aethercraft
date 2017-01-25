@@ -74,5 +74,19 @@ case class Block(location: Location, material: Material, state: BlockState) {
     */
   def consume(player: Player): Unit = setMaterial(Stone)
 
-  def equals(block: Block): Boolean = location.equals(block.location)
+  override def toString: String = s"(${location.toString}, ${material.toString})"
+
+  def canEqual(other: Any): Boolean = other.isInstanceOf[Block]
+
+  override def equals(other: Any): Boolean = other match {
+    case that: Block =>
+      (that canEqual this) &&
+        location == that.location
+    case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(location)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
+  }
 }

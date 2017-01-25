@@ -54,14 +54,18 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
     val targetWP: Rune with WaypointTrait = possibleTargets.getOrElse(signature, throw RuneInitializationException("Can't find your destination."))
 
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */
-    val target: Location = {
-      (1 to maxDistance).find((dist) => {
+    def target: Location = {
+      for ( dist <- 1 to maxDistance) {
         val possibleTarget: Location = targetWP.center + targetWP.direction * dist
-        possibleTarget.block.material.isInstanceOf[Solid] == false && possibleTarget.canFitPlayer
-      }) match {
-        case Some(dist) => targetWP.center + targetWP.direction * dist
-        case None => throw RuneInitializationException("The way is barred on the other side!")
+        if (possibleTarget.block.material.isInstanceOf[Solid] == false) {
+          if (possibleTarget.canFitPlayer) {
+            return targetWP.center + targetWP.direction * dist
+          } else {
+            throw RuneInitializationException("The way is barred on the other side!")
+          }
+        }
       }
+      throw RuneInitializationException("The way is barred on the other side!")
     }
 
     val targetWPTier: Int = {

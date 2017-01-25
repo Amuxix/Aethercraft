@@ -5,7 +5,6 @@ import me.amuxix.material.{Material, Unconsumable}
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.{Rune, RuneParameters}
 import me.amuxix.util.{Block, Matrix4, Rotation, Vector3}
-import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -65,7 +64,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
 	private val highHeight: Int = height - activationLayer //Distance from the top layer to the activation layer EXCLUDING the activation layer
 	val largestDimension: Int = (((lowHeight max (highHeight - 1)) * 2) + 1) max width max depth
   val volume: Int = height * width * depth
-	private val patternMaterials: Set[Material] = elements.flatten.flatten.collect { case m: Material => m }.toSet //Set of materials the rune contains
+	val patternMaterials: Set[Material] = elements.flatten.flatten.collect { case m: Material => m }.toSet //Set of materials the rune contains
   /*
 	def verifyRuneIntegrity //Verifies if pattern is possible
     Width and depth must be odd(even dimensions won't have a center block)
@@ -113,7 +112,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     */
   def checkCenter(boundingCube: BoundingCube): Boolean = {
     val blockMaterial = boundingCube.blockAt(boundingCube.center).material
-    getCenterBlockType match {
+    centerBlockType match {
       case material: Material if blockMaterial != material => false
       case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[Unconsumable] => false
       case _ => true
@@ -139,13 +138,11 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     var firstTier: Option[Material] = None
     var signature = Set.empty[Material]
     var key = Set.empty[Material]
-    var none = Set.empty[Material]
-    val offsetVector: Vector3[Int] = getOffsetVectorFor(boundingCube)
+    var notInRune = Set.empty[Material]
+    val offsetVector: Vector3[Int] = offsetVectorFor(boundingCube)
     val rotation = Rotation(rotationMatrix, boundingCube.center)
     trace("Bounding cube dimension: " + boundingCube.dimension)
-    trace("Pattern Depth: " + depth)
-    trace("Pattern Height: " + height)
-    trace("Pattern Width: " + width)
+    trace(s"Pattern dimensions" + Vector3[Int](depth, height, width))
     trace("Offset Vector: " + offsetVector)
     trace("Rotation Matrix: " + rotationMatrix)
     //These offsets represent the difference in dimensions from the bounding cube to this pattern
@@ -160,20 +157,19 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
       trace("Relative Position: " + relativePosition)
       trace("Rotated Position: " + rotatedPosition)
       val blockMaterial: Material = boundingCube.blockAt(rotatedPosition).material
+      trace("Block position: " + boundingCube.blockAt(rotatedPosition).location)
       trace("Block   Type: " + blockMaterial)
       trace("Pattern Type: " + elements(layer)(block)(line))
       //Having elements checked in layer > block > line makes the pattern top line be the northern most one
       elements(layer)(block)(line) match {
         case material: Material if blockMaterial != material =>
           //Material different from pattern
-          trace(ChatColor.RED + "Material does not match")
+          trace("Material does not match")
+          return false
+        case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[Unconsumable] =>
+          trace("This block cannot be used as a tier material as its a material used by the rune or the material is unconsumable")
           return false
         case Tier =>
-          if (patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[Unconsumable]) {
-            //Unconsumable Blocks cannot be used by runes
-            trace("This block cannot be used as a tier material as its a material used by the rune")
-            return false
-          }
           if (firstTier.isDefined && blockMaterial != firstTier.get) {
             trace("All Tier blocks must be of same material")
             //All tier blocks must be the same material
@@ -182,11 +178,17 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
             firstTier = Some(blockMaterial)
             trace("Its a tier block")
           }
+        case Signature if firstTier.isDefined && firstTier.get == blockMaterial =>
+          trace("This block cannot be used as a signature as its a already material used by the rune or is being used as tier")
+          return false
+        case Key if firstTier.isDefined && firstTier.get == blockMaterial =>
+          trace("This block cannot be used as a key as its a material already used by the rune or is being used as tier")
+          return false
         case Signature => signature += blockMaterial
           trace("Its a Signature block")
         case Key => key += blockMaterial
           trace("Its a Key block")
-        case NotInRune => none += blockMaterial
+        case NotInRune => notInRune += blockMaterial
           trace("Its a NotInRune block")
         case _ =>
           trace("Material matches")
@@ -194,9 +196,9 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     }
 
     if (firstTier.isDefined) {
-      val specialBlocks: Set[Material] = signature ++ key ++ none
+      val specialBlocks: Set[Material] = signature ++ key ++ notInRune
       if (specialBlocks contains firstTier.get) {
-        //Signature, key and none can't be the same as tier or specific materials
+        //Signature, key and notInRune can't be the same as tier or specific materials
         return false
       }
       if (patternMaterials.exists((specialBlocks ++ firstTier).contains)) {
@@ -224,7 +226,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     * @param boundingCube Bounding cube that contains the rune
     * @return OffsetVector
     */
-  def getOffsetVectorFor(boundingCube: BoundingCube): Vector3[Int] = {
+  def offsetVectorFor(boundingCube: BoundingCube): Vector3[Int] = {
     Vector3(boundingCube.dimension - depth,  boundingCube.dimension - lowHeight, boundingCube.dimension - width) / 2
   }
 
@@ -233,15 +235,24 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     * @param boundingCube Cube this pattern fits in
     * @return Blocks that are inside the bounding cube that belong to this rune.
     */
-  def getRuneBlocks(boundingCube: BoundingCube, rotation: Rotation): Array[Array[Array[Block]]] = {
-    val offsetVector: Vector3[Int] = getOffsetVectorFor(boundingCube)
+  def runeBlocks(boundingCube: BoundingCube, rotation: Rotation): Array[Array[Array[Block]]] = {
+    val offsetVector: Vector3[Int] = offsetVectorFor(boundingCube)
     Array.tabulate(depth, height, width) {
       case (x, y, z) =>
         boundingCube.blockAt(rotation.rotate(offsetVector + Vector3(x, y, z)))
     }
   }
 
-  def specialBlocksVectors(element: Element): Seq[Vector3[Int]] = {
+  def nonSpecialBlockVectors: Seq[Vector3[Int]] = {
+    for {
+      layer <- 0 until height
+      line <- 0 until depth
+      block <- 0 until width
+      el = elements(layer)(block)(line) if el.isInstanceOf[Material]
+    } yield Vector3(line, layer, block)
+  }
+
+  def specialBlockVectors(element: Element): Seq[Vector3[Int]] = {
     for {
       layer <- 0 until height
       line <- 0 until depth
@@ -250,7 +261,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     } yield Vector3(line, layer, block)
   }
 
-  def allRuneBlocksVectors: Seq[Vector3[Int]] = {
+  def allRuneBlockVectors: Seq[Vector3[Int]] = {
     for {
       layer <- 0 until height
       line <- 0 until depth
@@ -259,7 +270,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     } yield Vector3(line, layer, block)
   }
 
-	def getCenterBlockType: Element = elements(activationLayer)(width / 2)(depth / 2)
+	def centerBlockType: Element = elements(activationLayer)(width / 2)(depth / 2)
 
   override def compare(that: Pattern): Int = this.volume.compare(that.volume) * -1
 }

@@ -1,17 +1,16 @@
-package me.amuxix.serialization
+package me.amuxix
 
-import java.io.{BufferedWriter, File, FileWriter}
+import java.io._
 
 import io.circe.parser._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder, Error}
-import me.amuxix.Runecraft
-import me.amuxix.logging.Logger
 import me.amuxix.logging.Logger.info
 import me.amuxix.runes.Rune
 import me.amuxix.runes.waypoints.{Waypoint, WaypointTrait}
 
 import scala.io.Source
+import scala.util.Try
 
 /**
   * Created by Amuxix on 27/01/2017.
@@ -58,36 +57,28 @@ object Serialization {
   def loadRunes(): Unit = {
     Runecraft.server.getWorlds.forEach(world => {
       val magicFolder = new File(world.getWorldFolder, runecraftMagicFileName)
-      if (magicFolder.exists()) {
+      if (magicFolder.exists() && magicFolder.isDirectory && magicFolder.listFiles().exists(f =>
+          f.isFile && (f.getName.endsWith(fileTermination) || f.getName.endsWith(backupTermination)))) {
         info("Loading runes in " + world.getName)
-        loadRunesInWorld(magicFolder, waypointsFileName, loadWaypoints)
+        loadWaypoints(magicFolder)
       } else {
         info("No runes found in " + world.getName)
       }
     })
   }
 
-  /**
-    * Loads the runes of a given type found in the magic folder
-    * @param magicFolder Folder that contains all rune files, default name is Runecraft v#, where # is version number
-    * @param fileName Name of the file that contains runes that the loader knows how to load
-    * @param loader Loader that knows how to load a specific type of rune
-    */
-  private def loadRunesInWorld(magicFolder: File, fileName: String, loader: (File) => Unit): Unit = {
+  private def runesInWorld[T](magicFolder: File, fileName: String)(implicit decoder: Decoder[Array[T]]): Option[Array[T]] = {
+    def decodeFromFile(file: File): Either[Throwable, Array[T]] = Try(Source.fromFile(file).mkString).toEither.flatMap(s => decode[Array[T]](s))
     val file = new File(magicFolder, fileName + fileTermination)
     val backupFile = new File(magicFolder, fileName + fileTermination + backupTermination)
-    try {
-      if (file.exists()) {
-        try {
-          loader(file)
-        } catch {
-          case _: Error => loader(backupFile)
-        }
-      } else if (backupFile.exists()) {
-        loader(backupFile)
+    decodeFromFile(file).toOption orElse {
+      decodeFromFile(backupFile) match {
+        case Right(r) =>
+          info(s"Using backup file for $fileName.")
+          Some(r)
+        case Left(_: FileNotFoundException) => None
+        case Left(e) => throw e
       }
-    } catch {
-      case _: Error => Logger.severe(s"Fail when loading ${fileName}s")
     }
   }
 
@@ -108,17 +99,15 @@ object Serialization {
   }
 
   /**
-    * Loads all waypoints from the given file
-    * @param waypointFile File that contains the waypoints
+    * Loads all waypoints from the given file and logs the number of waypoints loaded
+    * @param magicFile Folder that contains rune files
     * @throws Error is thrown when it fails to load
     */
-  private def loadWaypoints(waypointFile: File): Unit = {
-    val waypointsJSON = Source.fromFile(waypointFile).mkString
-    decode[Array[Rune with WaypointTrait]](waypointsJSON) match {
-      case Left(error) => throw error
-      case Right(waypoints) =>
-        Runecraft.waypoints ++= waypoints.map(w => w.signature -> w)
-        info(s"  - Loaded ${waypoints.length} Waypoints")
+  private def loadWaypoints(magicFile: File): Unit = {
+    val waypoints = runesInWorld[Rune with WaypointTrait](magicFile, waypointsFileName)
+    if (waypoints.isDefined) {
+      Runecraft.waypoints ++= waypoints.get.map(w => w.signature -> w)
+      info(s"  - Loaded ${waypoints.get.length} $waypointsFileName")
     }
   }
 }

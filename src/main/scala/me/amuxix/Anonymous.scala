@@ -1,10 +1,7 @@
-package me.amuxix.util
+package me.amuxix
 
 import java.util.UUID
 
-/**
-  * Created by Amuxix on 17/01/2017.
-  */
 /**
   * Represents an anonymous automation, the UID is randomly generated.
   */

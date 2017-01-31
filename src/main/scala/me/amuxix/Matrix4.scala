@@ -1,4 +1,4 @@
-package me.amuxix.util
+package me.amuxix
 
 import scala.math.{cos, sin}
 

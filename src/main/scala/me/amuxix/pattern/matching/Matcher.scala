@@ -1,11 +1,11 @@
 package me.amuxix.pattern.matching
 
+import me.amuxix.Block.Location
 import me.amuxix.logging.Logger.trace
 import me.amuxix.pattern.{Pattern, RunePattern}
 import me.amuxix.runes._
 import me.amuxix.runes.waypoints.Waypoint
-import me.amuxix.util.Block.Location
-import me.amuxix.util.{CardinalPoint, Matrix4, Player, Rotation}
+import me.amuxix.{Direction, Matrix4, Player, Rotation}
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -19,7 +19,7 @@ object Matcher {
     * Looks for runes at the given location
     * @param event Event that contains the location where to look for runes as well as some other useful parameters when activating the rune
     */
-  def lookForRunesAt(location: Location, activator: Player, direction: CardinalPoint): Option[Rune] = {
+  def lookForRunesAt(location: Location, activator: Player, direction: Direction): Option[Rune] = {
     val possiblePatterns: List[Pattern] = patterns.map(_.pattern).sorted
     //possiblePatterns.foreach(p => info(p.volume))
     val possibleRune = matchRunes(location, activator, direction, possiblePatterns)
@@ -31,7 +31,7 @@ object Matcher {
     }
   }
 
-  def matchRunes(location: Location, activator: Player, direction: CardinalPoint, possiblePatterns: List[Pattern]): Option[Rune] = {
+  def matchRunes(location: Location, activator: Player, direction: Direction, possiblePatterns: List[Pattern]): Option[Rune] = {
     trace(s"There are ${patterns.length} registered patterns.")
     val boundingCube = BoundingCube(location, possiblePatterns)
     for (pattern <- possiblePatterns) {

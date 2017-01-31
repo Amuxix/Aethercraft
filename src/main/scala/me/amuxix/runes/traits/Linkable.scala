@@ -1,10 +1,10 @@
 package me.amuxix.runes.traits
 
+import me.amuxix.Block
 import me.amuxix.material.Material
 import me.amuxix.material.Material.Air
 import me.amuxix.pattern.Signature
 import me.amuxix.runes.Rune
-import me.amuxix.util.Block
 
 /**
   * Created by Amuxix on 22/11/2016.

@@ -1,6 +1,6 @@
-package me.amuxix.util
+package me.amuxix
 
-import me.amuxix.util.Player.Location
+import me.amuxix.Player.Location
 
 /**
   * Created by Amuxix on 30/12/2016.

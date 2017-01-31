@@ -1,10 +1,9 @@
-package me.amuxix.util
+package me.amuxix
 
 import java.util.UUID
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
-import me.amuxix.Runecraft
 import org.bukkit.entity.{Player => BPlayer}
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN
 import org.bukkit.{ChatColor, OfflinePlayer}
@@ -56,7 +55,7 @@ case class Player(uniqueID: UUID) extends Entity {
     case Right(player) => player.getName
   }
 
-  protected[util] def getPlayer: Either[OfflinePlayer, BPlayer] = {
+  def getPlayer: Either[OfflinePlayer, BPlayer] = {
     val offlinePlayer = Runecraft.server.getOfflinePlayer(uniqueID)
     if (offlinePlayer.isOnline) {
       Right(offlinePlayer.getPlayer)

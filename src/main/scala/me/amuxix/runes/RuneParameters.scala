@@ -1,7 +1,7 @@
 package me.amuxix.runes
 
-import me.amuxix.util.Block.Location
-import me.amuxix.util._
+import me.amuxix.Block.Location
+import me.amuxix.{Block, Direction, Player}
 
 /**
   * Created by Amuxix on 23/01/2017.
@@ -9,4 +9,4 @@ import me.amuxix.util._
 /**
   * This is a container for the parameters a rune takes
   */
-case class RuneParameters(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: CardinalPoint)
+case class RuneParameters(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: Direction)

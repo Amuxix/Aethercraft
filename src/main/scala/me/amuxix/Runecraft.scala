@@ -2,12 +2,11 @@ package me.amuxix
 
 import java.util.logging.Logger
 
+import me.amuxix.Block.Location
 import me.amuxix.material.Tier
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.Persistent
 import me.amuxix.runes.waypoints.WaypointTrait
-import me.amuxix.serialization.Serialization
-import me.amuxix.util.Block.Location
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, Server}
 

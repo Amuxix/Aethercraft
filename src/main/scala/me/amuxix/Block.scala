@@ -1,11 +1,10 @@
-package me.amuxix.util
+package me.amuxix
 
 import io.circe.{Encoder, _}
-import me.amuxix.Runecraft
+import me.amuxix.Block.Location
+import me.amuxix.events.{RunecraftBreakEvent, RunecraftPlaceEvent}
 import me.amuxix.material.Material.{Air, Stone}
 import me.amuxix.material.{Crushable, Material}
-import me.amuxix.util.Block.Location
-import me.amuxix.util.events.{RunecraftBreakEvent, RunecraftPlaceEvent}
 import org.bukkit.block.{BlockState, Block => BukkitBlock}
 
 /**

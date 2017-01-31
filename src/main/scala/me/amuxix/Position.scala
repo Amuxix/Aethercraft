@@ -1,10 +1,9 @@
-package me.amuxix.util
+package me.amuxix
 
 import java.util.UUID
 
 import io.circe.generic.auto._
 import io.circe.{Decoder, Encoder}
-import me.amuxix.Runecraft
 import me.amuxix.material.Solid
 import org.bukkit.block.{Block => BBlock}
 import org.bukkit.entity.{Entity => BEntity}

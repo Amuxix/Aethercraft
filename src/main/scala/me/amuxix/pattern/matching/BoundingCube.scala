@@ -1,9 +1,9 @@
 package me.amuxix.pattern.matching
 
+import me.amuxix.Block.Location
 import me.amuxix.logging.Logger.trace
 import me.amuxix.pattern.Pattern
-import me.amuxix.util.Block.Location
-import me.amuxix.util.{Block, Vector3}
+import me.amuxix.{Block, Vector3}
 
 /**
   * Created by Amuxix on 21/11/2016.

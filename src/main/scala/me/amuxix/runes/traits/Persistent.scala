@@ -1,9 +1,8 @@
 package me.amuxix.runes.traits
 
-import me.amuxix.IntegrityMonitor
 import me.amuxix.pattern.NotInRune
 import me.amuxix.runes.Rune
-import me.amuxix.util.{Block, Player}
+import me.amuxix.{Block, IntegrityMonitor, Player}
 import org.bukkit.ChatColor
 
 /**

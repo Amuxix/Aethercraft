@@ -2,7 +2,6 @@ package me.amuxix
 
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.{Persistent, Tiered}
-import me.amuxix.util.{Block, Player}
 
 import scala.collection.immutable.HashMap
 

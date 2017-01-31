@@ -1,16 +1,15 @@
 package me.amuxix.runes
 
+import me.amuxix.Block.Location
 import me.amuxix.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
-import me.amuxix.Runecraft
+import me.amuxix._
+import me.amuxix.exceptions.InitializationException
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
 import me.amuxix.material.Solid
 import me.amuxix.pattern._
-import me.amuxix.runes.exceptions.RuneInitializationException
 import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
 import me.amuxix.runes.waypoints.WaypointTrait
-import me.amuxix.util.Block.Location
-import me.amuxix.util._
 
 import scala.math.Numeric.DoubleAsIfIntegral
 
@@ -18,7 +17,7 @@ import scala.math.Numeric.DoubleAsIfIntegral
   * Created by Amuxix on 03/01/2017.
   */
 object Teleporter extends RunePattern {
-  val pattern: Pattern = Pattern(Teleporter.apply, width = 5, verticality = true)(
+  val pattern: Pattern = Pattern(Teleporter.apply, verticality = true)(
     ActivationLayer(
       NotInRune, Tier, Signature, Tier, NotInRune,
       Tier, Tier, Tier, Tier, Tier,
@@ -38,9 +37,9 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
 
   override def validateSignature(): Boolean = {
     if (signatureIsEmpty) {
-      throw RuneInitializationException("Signature is empty!")
+      throw InitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
-      throw RuneInitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
+      throw InitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
     }
     true
   }
@@ -51,7 +50,7 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
 
   override protected def innerActivate(): Unit = {
     val possibleTargets: Map[Int, Rune with WaypointTrait] = Runecraft.waypoints
-    val targetWP: Rune with WaypointTrait = possibleTargets.getOrElse(signature, throw RuneInitializationException("Can't find your destination."))
+    val targetWP: Rune with WaypointTrait = possibleTargets.getOrElse(signature, throw InitializationException("Can't find your destination."))
 
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */
     def target: Location = {
@@ -61,11 +60,11 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
           if (possibleTarget.canFitPlayer) {
             return targetWP.center + targetWP.direction * dist
           } else {
-            throw RuneInitializationException("The way is barred on the other side!")
+            throw InitializationException("The way is barred on the other side!")
           }
         }
       }
-      throw RuneInitializationException("The way is barred on the other side!")
+      throw InitializationException("The way is barred on the other side!")
     }
 
     val targetWPTier: Int = {
@@ -75,7 +74,7 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
     }
 
     if (targetWPTier > tier && (tierType != ChorusPlant || tierType != ChorusFlower)) {
-      throw RuneInitializationException("This teleporter is not powerful enough to reach the destination.")
+      throw InitializationException("This teleporter is not powerful enough to reach the destination.")
     } else {
       val blockCenterOffset: Vector3[Double] = {
         targetWP.direction match {

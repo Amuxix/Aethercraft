@@ -1,7 +1,7 @@
-package me.amuxix.util.events
+package me.amuxix.events
 
-import me.amuxix.util.Block.Location
-import me.amuxix.util.Player
+import me.amuxix.Block.Location
+import me.amuxix.Player
 import org.bukkit.event.block.BlockBreakEvent
 
 /**

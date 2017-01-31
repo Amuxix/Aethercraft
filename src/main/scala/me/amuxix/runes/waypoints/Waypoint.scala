@@ -1,19 +1,18 @@
 package me.amuxix.runes.waypoints
 
-import me.amuxix.Runecraft
+import me.amuxix.Block.Location
+import me.amuxix.exceptions.InitializationException
 import me.amuxix.pattern._
-import me.amuxix.runes.exceptions.RuneInitializationException
 import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.{Rune, RuneParameters}
-import me.amuxix.util.Block.Location
-import me.amuxix.util._
+import me.amuxix.{Block, Direction, Player, Runecraft}
 import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 03/01/2017.
   */
 object Waypoint extends RunePattern {
-  val pattern: Pattern = Pattern(Waypoint.apply, width = 5, verticality = true)(
+  val pattern: Pattern = Pattern(Waypoint.apply, verticality = true)(
     ActivationLayer(
       NotInRune, Tier,      Tier,      Tier,      NotInRune,
       Tier,      Tier,      Signature, Tier,      Tier,
@@ -32,7 +31,7 @@ object Waypoint extends RunePattern {
     * @param signature Signature of the waypoint
     * @return A waypoint instance with the given parameters.
     */
-  def deserialize(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: CardinalPoint, signature: Int): Waypoint = {
+  def deserialize(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: Direction, signature: Int): Waypoint = {
     val parameters: RuneParameters = RuneParameters(blocks, center, activator, direction)
     val waypoint = Waypoint(parameters, pattern)
     waypoint.signature = signature
@@ -49,11 +48,11 @@ case class Waypoint(parameters: RuneParameters, pattern: Pattern)
 
   override def validateSignature(): Boolean = {
     if (signatureIsEmpty) {
-      throw RuneInitializationException("Signature is empty!")
+      throw InitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
-      throw RuneInitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
+      throw InitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
     } else if (Runecraft.waypoints.contains(signature)) {
-      throw RuneInitializationException("Signature already in use.")
+      throw InitializationException("Signature already in use.")
     }
     true
   }
@@ -75,7 +74,7 @@ case class Waypoint(parameters: RuneParameters, pattern: Pattern)
     */
   override def update(player: Player): Unit = {
     if (signature == calculateSignature()) {
-      throw RuneInitializationException("This " + getClass.getSimpleName + " is already active.")
+      throw InitializationException("This " + getClass.getSimpleName + " is already active.")
     } else {
       if (validateSignature()) {
         signature = calculateSignature()

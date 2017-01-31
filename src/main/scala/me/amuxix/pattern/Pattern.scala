@@ -4,7 +4,7 @@ import me.amuxix.logging.Logger.{severe, trace}
 import me.amuxix.material.{Material, Unconsumable}
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.{Rune, RuneParameters}
-import me.amuxix.util.{Block, Matrix4, Rotation, Vector3}
+import me.amuxix.{Block, Matrix4, Rotation, Vector3}
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -21,7 +21,7 @@ object ActivationLayer {
 class ActivationLayer(_elements: Element*) extends Layer(_elements:_*)
 
 object Pattern {
-  def apply[R <: Rune](creator: (RuneParameters, Pattern) => R, width: Int,
+  def apply[R <: Rune](creator: (RuneParameters, Pattern) => R, width: Int = 5,
             numberOfMirroredAxis: Boolean = true, verticality: Boolean = false, directional: Boolean = false,
             canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])

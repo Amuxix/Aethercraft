@@ -1,10 +1,9 @@
 package me.amuxix.runes
 
-import me.amuxix.Runecraft
+import me.amuxix._
 import me.amuxix.material.Material.{Air, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Tiered
-import me.amuxix.util._
 import org.bukkit.ChatColor
 
 /**

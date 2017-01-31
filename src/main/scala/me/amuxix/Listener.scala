@@ -1,10 +1,9 @@
 package me.amuxix
 
 import me.amuxix.IntegrityMonitor.{checkIntegrityAfterBlockDestruction, checkIntegrityAfterBlockPlacement}
+import me.amuxix.Player.bukkitPlayer2Player
+import me.amuxix.exceptions.InitializationException
 import me.amuxix.pattern.matching.Matcher
-import me.amuxix.runes.exceptions.RuneInitializationException
-import me.amuxix.util.Player.bukkitPlayer2Player
-import me.amuxix.util.{Anonymous, Player}
 import org.bukkit.event.EventHandler
 import org.bukkit.event.block._
 import org.bukkit.event.player.PlayerInteractEvent
@@ -34,7 +33,7 @@ object Listener extends org.bukkit.event.Listener {
           }
         }
       } catch {
-        case ex: RuneInitializationException => player.sendMessage(ChatColor.RED + ex.textError)
+        case ex: InitializationException => player.sendMessage(ChatColor.RED + ex.textError)
       }
     }
   }

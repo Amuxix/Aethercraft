@@ -1,6 +1,6 @@
-package me.amuxix.util
+package me.amuxix
 
-import me.amuxix.util.Block.Location
+import me.amuxix.Block.Location
 
 /**
   * Created by Amuxix on 24/01/2017.

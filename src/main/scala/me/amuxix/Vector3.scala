@@ -1,4 +1,4 @@
-package me.amuxix.util
+package me.amuxix
 
 object Vector3 {
   import scala.math.Numeric.DoubleAsIfIntegral

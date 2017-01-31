@@ -1,4 +1,4 @@
-package me.amuxix.util
+package me.amuxix
 
 /**
   * Created by Amuxix on 23/01/2017.

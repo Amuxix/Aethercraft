@@ -1,10 +1,10 @@
-package me.amuxix.util.events
+package me.amuxix.events
 
 import com.github.ghik.silencer.silent
+import me.amuxix.Block.Location
+import me.amuxix.Player
+import me.amuxix.events.RunecraftPlaceEvent._
 import me.amuxix.material.Material
-import me.amuxix.util.Block.Location
-import me.amuxix.util.Player
-import me.amuxix.util.events.RunecraftPlaceEvent._
 import org.bukkit.block.Block
 import org.bukkit.entity.{Player => BPlayer}
 import org.bukkit.event.block.BlockPlaceEvent

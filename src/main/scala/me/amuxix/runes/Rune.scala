@@ -1,9 +1,9 @@
 package me.amuxix.runes
 
+import me.amuxix.Block.Location
 import me.amuxix.logging.Logger.info
 import me.amuxix.pattern._
-import me.amuxix.util.Block.Location
-import me.amuxix.util._
+import me.amuxix.{Block, Direction, Player, Vector3}
 
 /**
   * Created by Amuxix on 22/11/2016.
@@ -12,7 +12,7 @@ abstract class Rune(parameters: RuneParameters) {
   val blocks: Array[Array[Array[Block]]] = parameters.blocks
   val center: Location = parameters.center
   val activator: Player = parameters.activator
-  val direction: CardinalPoint = parameters.direction
+  val direction: Direction = parameters.direction
   val pattern: Pattern
 
   /**

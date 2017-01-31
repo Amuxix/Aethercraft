@@ -10,6 +10,4 @@ object Entity {
 }
 abstract class Entity {
   def location: Option[Location]
-  def pitch: Float
-  def yaw: Float
 }

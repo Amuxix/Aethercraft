@@ -4,7 +4,7 @@ import me.amuxix.material.Material
 import me.amuxix.material.Material.Air
 import me.amuxix.pattern.Signature
 import me.amuxix.runes.Rune
-import me.amuxix.util.{Block, Player}
+import me.amuxix.util.Block
 
 /**
   * Created by Amuxix on 22/11/2016.
@@ -12,11 +12,11 @@ import me.amuxix.util.{Block, Player}
 /**
   * Defines a trait for runes that use signature blocks to link to other stuff: ie: Teleports, Waypoints
   */
-trait Linkable { this: Rune =>
+trait Linkable extends Rune {
   val signatureBlocks: Seq[Block] = specialBlocks(Signature)
 
   //This is true if the set only contains true, meaning all blocks are air
-  val signatureIsEmpty: Boolean = signatureBlocks.forall(_.material == Air)
+  def signatureIsEmpty: Boolean = signatureBlocks.forall(_.material == Air)
 
   /**
     * Checks if the signature contains the material
@@ -32,14 +32,21 @@ trait Linkable { this: Rune =>
     * @return The signature
     */
   def calculateSignature(): Int = specialBlocks(Signature).map(_.material.name).sorted.hashCode
+
   var signature: Int = calculateSignature()
 
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
-    * @param player player to be notified in case of signature being invalid
     * @return true if signature is valid, false otherwise
     */
-  def validateSignature(player: Player): Boolean
+  def validateSignature(): Boolean
 
-  validateSignature(activator)
+  /**
+    * This is where the rune effects when the rune is first activated go.
+    * This must always be extended when overriding,
+    */
+  override def activate(): Unit = {
+    calculateSignature()
+    super.activate()
+  }
 }

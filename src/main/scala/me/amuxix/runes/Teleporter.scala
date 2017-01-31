@@ -36,7 +36,7 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
           with Linkable {
   implicit val doubleAsIfIntegral = DoubleAsIfIntegral
 
-  override def validateSignature(player: Player): Boolean = {
+  override def validateSignature(): Boolean = {
     if (signatureIsEmpty) {
       throw RuneInitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
@@ -45,11 +45,11 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
     true
   }
 
-  override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
-
   var finalTarget: Position[Double] = _
 
-  if (validateSignature(activator)) {
+  override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
+
+  override protected def innerActivate(): Unit = {
     val possibleTargets: Map[Int, Rune with WaypointTrait] = Runecraft.waypoints
     val targetWP: Rune with WaypointTrait = possibleTargets.getOrElse(signature, throw RuneInitializationException("Can't find your destination."))
 
@@ -87,6 +87,6 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
       }
       finalTarget = Position[Double](target.world, Vector3[Double](target.x, target.y, target.z) + blockCenterOffset)
     }
+    activator.teleport(finalTarget, activator.pitch, activator.yaw)
   }
-  activator.teleport(finalTarget, activator.pitch, activator.yaw)
 }

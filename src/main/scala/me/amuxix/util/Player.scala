@@ -2,6 +2,8 @@ package me.amuxix.util
 
 import java.util.UUID
 
+import io.circe.generic.semiauto._
+import io.circe.{Decoder, Encoder}
 import me.amuxix.Runecraft
 import org.bukkit.entity.{Player => BPlayer}
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN
@@ -12,11 +14,13 @@ import org.bukkit.{ChatColor, OfflinePlayer}
   */
 object Player {
   implicit def bukkitPlayer2Player(bukkitPlayer: BPlayer): Player = {
-    Player(bukkitPlayer.getUniqueId, bukkitPlayer.getLocation.getPitch, bukkitPlayer.getLocation.getYaw)
+    Player(bukkitPlayer.getUniqueId)
   }
   type Location = Position[Double]
+  implicit val encodePlayer: Encoder[Player] = deriveEncoder
+  implicit val decodePlayer: Decoder[Player] = deriveDecoder
 }
-case class Player(uniqueID: UUID, pitch: Float, yaw: Float) extends Entity {
+case class Player(uniqueID: UUID) extends Entity {
   def teleport[T : Integral](target: Position[T], pitch: Float, yaw: Float): Unit = getPlayer match {
     case Left(_) =>
     case Right(player) =>
@@ -24,6 +28,16 @@ case class Player(uniqueID: UUID, pitch: Float, yaw: Float) extends Entity {
       val y: java.lang.Double = new java.lang.Double(target.y.toString)
       val z: java.lang.Double = new java.lang.Double(target.z.toString)
       player.teleport(new org.bukkit.Location(target.world, x, y, z, float2Float(yaw), float2Float(pitch)), PLUGIN)
+  }
+
+  def pitch: Float = getPlayer match {
+    case Left(_) => 0
+    case Right(player) => player.getLocation.getPitch
+  }
+
+  def yaw: Float = getPlayer match {
+    case Left(_) => 0
+    case Right(player) => player.getLocation.getYaw
   }
 
   /**

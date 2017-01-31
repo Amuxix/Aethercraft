@@ -1,13 +1,21 @@
 package me.amuxix.util
 
+import io.circe.generic.auto._
+import io.circe.{Decoder, Encoder}
 import org.bukkit.block.BlockFace
 
 /**
   * Created by Amuxix on 03/01/2017.
   */
+/**
+  * These represent a cardinal direction or a mix of several directions.
+  */
 object CardinalPoint {
   implicit def BlockFace2CardinalPoint(blockFace: BlockFace): CardinalPoint = {
-    Vector3[Int](blockFace.getModX, blockFace.getModY, blockFace.getModZ) match {
+    vector3Int2CardinalPoint(Vector3[Int](blockFace.getModX, blockFace.getModY, blockFace.getModZ))
+  }
+  private def vector3Int2CardinalPoint(vector: Vector3[Int]): CardinalPoint = {
+    vector match {
       case Self.vector => Self
       case North.vector => North
       case South.vector => South
@@ -30,11 +38,14 @@ object CardinalPoint {
       case _ => throw new Exception("Cardinal point with this vector does not exist")
     }
   }
+
   implicit def CardinalPoint2Vector3Int(cardinalPoint: CardinalPoint): Vector3[Int] = cardinalPoint.vector
+  implicit val cardinalPointEncoder: Encoder[CardinalPoint] = Encoder.forProduct1("cardinalPoint")(_.vector)
+  implicit val cardinalPointDecoder: Decoder[CardinalPoint] = Decoder.forProduct1("cardinalPoint")(vector3Int2CardinalPoint)
 }
 
 sealed abstract class CardinalPoint(val vector: Vector3[Int]) {
-  def +(cardinalPoint: CardinalPoint): Vector3[Int] = vector + cardinalPoint.vector
+def +(cardinalPoint: CardinalPoint): Vector3[Int] = vector + cardinalPoint.vector
 }
 
 case object Self extends CardinalPoint((0, 0, 0))
@@ -60,8 +71,8 @@ case object DownNorth extends CardinalPoint(Down + North)
 case object DownSouth extends CardinalPoint(Down + South)
 
 /*
-  To generate this follow these steps:
-    - Fill a line with: "case object DownSouth extends CardinalPoint", replacing DownSouth with the new direction(Capital letters matter)
-    - Search for "(case object (\w[a-z]+)(\w[a-z]+).+)"
-    - Replace with "$1 \{val vector = $2 \+ $3\}"
- */
+To generate this follow these steps:
+  - Fill a line with: "case object DownSouth extends CardinalPoint", replacing DownSouth with the new direction(Capital letters matter)
+  - Search for "(case object (\w[a-z]+)(\w[a-z]+).+)"
+  - Replace with "$1 \{val vector = $2 \+ $3\}"
+*/

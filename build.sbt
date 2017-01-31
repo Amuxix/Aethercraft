@@ -23,9 +23,17 @@ addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "0.5")
 libraryDependencies ++= Seq(
   "org.bukkit" % "bukkit" % "1.11.2-R0.1-SNAPSHOT",
   "com.beachape" %% "enumeratum" % "1.5.6",
+  "com.beachape" %% "enumeratum-circe" % "1.5.6",
   "com.github.ghik" %% "silencer-lib" % "0.5",
   "org.scalatest" % "scalatest_2.11" % "3.0.1" % Test
 )
+val circeVersion = "0.7.0"
+
+libraryDependencies ++= Seq(
+  "io.circe" %% "circe-core",
+  "io.circe" %% "circe-generic",
+  "io.circe" %% "circe-parser"
+).map(_ % circeVersion)
 
 artifactName := { (sv: ScalaVersion, module: ModuleID, artifact: Artifact) =>
   name.value + "-" + version.value + "." + artifact.extension

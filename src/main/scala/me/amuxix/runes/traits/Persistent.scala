@@ -12,8 +12,7 @@ import org.bukkit.ChatColor
 /**
   * Rune that has some persistent world effect that should be serialized
   */
-trait Persistent {
-  this: Rune =>
+trait Persistent extends Rune {
   /** Blocks to be monitored, if destroyed the rune breaks
     */
   lazy val monitoredDestroyBlocks: Seq[Block] = this match {
@@ -37,6 +36,9 @@ trait Persistent {
     */
   def update(player: Player): Unit
 
+  /**
+    * Default message when a rune is destroyed.
+    */
   val destroyMessage: String = ChatColor.RED + name + " destroyed!"
 
   /** Adds the list of given blocks to the list of monitored blocks, if any of this blocks is destroyed, the rune

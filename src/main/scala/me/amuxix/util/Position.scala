@@ -1,5 +1,10 @@
 package me.amuxix.util
 
+import java.util.UUID
+
+import io.circe.generic.auto._
+import io.circe.{Decoder, Encoder}
+import me.amuxix.Runecraft
 import me.amuxix.material.Solid
 import org.bukkit.block.{Block => BBlock}
 import org.bukkit.entity.{Entity => BEntity}
@@ -13,6 +18,7 @@ import scala.math.{pow, sqrt}
 object Position {
   import scala.math.Numeric.DoubleAsIfIntegral
   implicit val doubleAsIfIntegral = DoubleAsIfIntegral //Allows this method to be implicitly used by bukkitEntity2Position
+
   implicit def bukkitEntity2Position(bukkitEntity: BEntity): Position[Double] = {
     val location: BLocation = bukkitEntity.getLocation
     Position(bukkitEntity.getWorld, Vector3(location.getX, location.getY ,location.getZ))
@@ -22,6 +28,15 @@ object Position {
     val location: BLocation = bukkitBlock.getLocation
     Position(bukkitBlock.getWorld, Vector3(location.getBlockX, location.getBlockY ,location.getBlockZ))
   }
+
+  implicit val encodePositionInt: Encoder[Position[Int]] = Encoder.forProduct2("world", "coordinates")(r =>
+    (r.world.getUID, r.coordinates) //This works, intelliJ just doesn't know it.
+  )
+
+  implicit val decodePositionInt: Decoder[Position[Int]] = Decoder.forProduct2("world", "coordinates")((worldID: UUID, coordinates: Vector3[Int]) => {
+    val world = Runecraft.server.getWorld(worldID)
+    Position[Int](world, coordinates)
+  })
 }
 case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
   def x: T = coordinates.x
@@ -53,7 +68,12 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
   override def equals(other: Any): Boolean = other match {
     case position: Position[T] =>
       (position canEqual this) &&
-        world.getUID == position.world.getUID && coordinates == position.coordinates
+        world.getUID == position.world.getUID && coordinates.equals(position.coordinates)
     case _ => false
+  }
+
+  override def hashCode(): Int = {
+    val state = Seq(world.getUID, coordinates)
+    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }
 }

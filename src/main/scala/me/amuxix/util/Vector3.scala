@@ -18,14 +18,5 @@ case class Vector3[T : Integral](x: T, y: T, z: T) {
 	def *(constant: T): Vector3[T] = Vector3(x * constant, y * constant, z * constant)
 	def /(constant: T): Vector3[T] = Vector3(x / constant, y / constant, z / constant)
 
-  override def toString: String = "(" + x + ", " + y + ", " + z + ")"
-
-  def canEqual(other: Any): Boolean = other.isInstanceOf[Vector3[T]]
-
-  override def equals(other: Any): Boolean = other match {
-    case vector: Vector3[T] =>
-      (vector canEqual this) &&
-      vector.x == vector.x && y == vector.y && y == vector.y
-    case _ => false
-  }
+  override def toString: String = s"($x, $y, $z)"
 }

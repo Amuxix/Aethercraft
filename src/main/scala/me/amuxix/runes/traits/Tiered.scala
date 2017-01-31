@@ -11,7 +11,7 @@ import me.amuxix.util.Block
 /**
   * Used by runes that have a tier associated with them
   */
-trait Tiered { this: Rune =>
+trait Tiered extends Rune {
   val tierBlocks: Seq[Block] = specialBlocks(Tier)
 
   val tierType: Material = tierBlocks.head.material

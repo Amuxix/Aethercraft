@@ -22,21 +22,22 @@ object Compass extends RunePattern {
 
 case class Compass(parameters: RuneParameters, pattern: Pattern)
   extends Rune(parameters) with Tiered {
-
-
-  //These lines below change the compass to make a sort of an arrow pointing north
-  val arrowForming: Map[Block, Vector3[Int]] = Map((center - SouthEast).block -> South, (center - SouthWest).block -> South, center.block -> North)
-  private val blocksMoved = BlockUtils.moveSeveralBy(arrowForming, activator)
-
-  override def notifyActivator(): Unit = {
+  private var blocksMoved = false
+  override protected def notifyActivator(): Unit = {
     if (blocksMoved) {
       super.notifyActivator()
       if (tierType == Glass) {
         //If player used glass show the current version.
-        activator.sendMessage(Runecraft.self.getDescription.getFullName)
+        activator.sendMessage(Runecraft.fullVersion)
       }
     } else {
       activator.sendMessage(ChatColor.RED + "Something blocks you from activating this compass.")
     }
+  }
+
+  override protected def innerActivate(): Unit = {
+    //These lines below change the compass to make a sort of an arrow pointing north
+    val arrowForming: Map[Block, Vector3[Int]] = Map((center - SouthEast).block -> South, (center - SouthWest).block -> South, center.block -> North)
+    blocksMoved = BlockUtils.moveSeveralBy(arrowForming, activator)
   }
 }

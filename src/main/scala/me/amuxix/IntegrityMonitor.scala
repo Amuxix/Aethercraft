@@ -1,6 +1,5 @@
 package me.amuxix
 
-import me.amuxix.logging.Logger.info
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.{Persistent, Tiered}
 import me.amuxix.util.{Block, Player}
@@ -25,6 +24,10 @@ object IntegrityMonitor {
     Runecraft.persistentRunes += rune.center -> rune
   }
 
+  /**
+    * Removes a rune from the monitored runes.
+    * @param rune Rune we are removing.
+    */
   def removeRune(rune: Rune with Persistent): Unit = {
     rune.destroyRune()
     destructionBlocks --= rune.monitoredDestroyBlocks
@@ -47,10 +50,10 @@ object IntegrityMonitor {
 
   /**
     * Checks if a block placement would destroy a rune by making its pattern invalid
-    * @param block
+    * @param block block that was placed.
+    * @param player Player that placed the block.
     */
   def checkIntegrityAfterBlockPlacement(block: Block, player: Player): Unit = {
-    buildBlocks.keys.foreach(b => info(b.toString + " " + b.hashCode()))
     if (buildBlocks.contains(block)) {
       val rune: Rune with Persistent = buildBlocks(block)
       val runeMaterials = rune match {

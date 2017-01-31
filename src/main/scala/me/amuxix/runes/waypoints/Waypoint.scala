@@ -5,6 +5,7 @@ import me.amuxix.pattern._
 import me.amuxix.runes.exceptions.RuneInitializationException
 import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.{Rune, RuneParameters}
+import me.amuxix.util.Block.Location
 import me.amuxix.util._
 import org.bukkit.ChatColor
 
@@ -21,6 +22,22 @@ object Waypoint extends RunePattern {
       NotInRune, Tier,      Tier,      Tier,      NotInRune
     )
   )
+
+  /**
+    * This knows how to load a waypoint with the given parameters.
+    * @param blocks Blocks that make up the rune
+    * @param center Center of the rune
+    * @param activator Who owns this rune
+    * @param direction Activation this teleport will teleport to
+    * @param signature Signature of the waypoint
+    * @return A waypoint instance with the given parameters.
+    */
+  def deserialize(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: CardinalPoint, signature: Int): Waypoint = {
+    val parameters: RuneParameters = RuneParameters(blocks, center, activator, direction)
+    val waypoint = Waypoint(parameters, pattern)
+    waypoint.signature = signature
+    waypoint
+  }
 }
 
 case class Waypoint(parameters: RuneParameters, pattern: Pattern)
@@ -28,11 +45,9 @@ case class Waypoint(parameters: RuneParameters, pattern: Pattern)
           with WaypointTrait
           with Linkable
           with Persistent {
+  override val size: WaypointSize = Medium
 
-  /*override lazy val monitoredDestroyBlocks: Seq[Block] = tierBlocks
-  override val monitoredBuildBlocks: Seq[Block] = specialBlocks(NotInRune)*/
-
-  override def validateSignature(player: Player): Boolean = {
+  override def validateSignature(): Boolean = {
     if (signatureIsEmpty) {
       throw RuneInitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
@@ -62,7 +77,7 @@ case class Waypoint(parameters: RuneParameters, pattern: Pattern)
     if (signature == calculateSignature()) {
       throw RuneInitializationException("This " + getClass.getSimpleName + " is already active.")
     } else {
-      if (validateSignature(player)) {
+      if (validateSignature()) {
         signature = calculateSignature()
         player.sendMessage("Signature updated.")
         if (player.uniqueID != activator.uniqueID) {
@@ -73,11 +88,11 @@ case class Waypoint(parameters: RuneParameters, pattern: Pattern)
   }
 
   /**
-    * Destroys the rune effect. This should undo all lasting effects this rune introduced
+    * Destroys the rune effect. This should undo all lasting effects this rune introduced.
     */
   override def destroyRune(): Unit = Runecraft.waypoints -= signature
 
-  override val size: WaypointSize = Medium
-
-  Runecraft.waypoints += signature -> this
+  override protected def innerActivate(): Unit = {
+    Runecraft.waypoints += signature -> this
+  }
 }

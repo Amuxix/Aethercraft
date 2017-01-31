@@ -3,7 +3,6 @@ package me.amuxix.runes
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
-import me.amuxix.util.Player
 
 /**
   * Created by Amuxix on 26/11/2016.
@@ -31,12 +30,13 @@ case class Test(parameters: RuneParameters, pattern: Pattern)
           with Tiered
           with Consumable
           with Linkable {
-
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     *
     * @param player player to be notified in case of signature being invalid
     * @return true if signature is valid, false otherwise
     */
-  override def validateSignature(player: Player): Boolean = true
+  override def validateSignature(): Boolean = true
+
+  override protected def innerActivate(): Unit = Unit
 }

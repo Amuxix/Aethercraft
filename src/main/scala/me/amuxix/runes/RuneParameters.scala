@@ -9,8 +9,4 @@ import me.amuxix.util._
 /**
   * This is a container for the parameters a rune takes
   */
-case class RuneParameters(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: CardinalPoint) {
-  /*val center: Location = event.getClickedBlock
-  val activator: Player = event.getPlayer
-  val direction: CardinalPoint = CardinalPoint.BlockFace2CardinalPoint(blockFace)*/
-}
+case class RuneParameters(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: CardinalPoint)

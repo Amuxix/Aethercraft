@@ -1,5 +1,6 @@
 package me.amuxix.util
 
+import io.circe.{Encoder, _}
 import me.amuxix.Runecraft
 import me.amuxix.material.Material.{Air, Stone}
 import me.amuxix.material.{Crushable, Material}
@@ -11,11 +12,17 @@ import org.bukkit.block.{BlockState, Block => BukkitBlock}
   * Created by Amuxix on 22/11/2016.
   */
 object Block {
-  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitBlock, bukkitBlock.getState.getData, bukkitBlock.getState)
+  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitBlock, bukkitBlock.getState.getData)
   type Location = Position[Int]
+
+  implicit val encodeBlock: Encoder[Block] = Encoder.forProduct2("location", "material")(b =>
+    (b.location, b.material) //This works, intelliJ just doesn't know it.
+  )
+  implicit val decodeBlock: Decoder[Block] = Decoder.forProduct2("location", "material")(Block.apply)
 }
 
-case class Block(location: Location, material: Material, state: BlockState) {
+case class Block(location: Location, material: Material) {
+  val state: BlockState = location.world.getBlockAt(location.x, location.y, location.z).getState
   def setMaterial(material: Material): Unit = {
     state.setType(material.getItemType)
     state.setData(material)
@@ -81,7 +88,7 @@ case class Block(location: Location, material: Material, state: BlockState) {
   override def equals(other: Any): Boolean = other match {
     case that: Block =>
       (that canEqual this) &&
-        location == that.location
+        location.equals(that.location)
     case _ => false
   }
 

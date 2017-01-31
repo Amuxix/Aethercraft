@@ -1,13 +1,11 @@
-import scala.collection.immutable.TreeMap
-import scala.math.{E, log, pow}
+import io.circe.parser._
+import io.circe.syntax._
+import me.amuxix.material.Material
+import me.amuxix.material.Material.Air
 
-val cenas = (1 to pow(2 * E, 8).toInt)
-  .map(e => ((log(e) / log(E * 2)).round.toInt, e))
-  .filter(_._1 < 8)
-  .groupBy(_._1)
-  .mapValues(_.map(_._2))
-
-TreeMap(cenas.toArray:_*)
-  .map(e => s"Tier ${e._1} -> ${e._2.head} to ${e._2.last}")
-  .mkString("\n")
-
+val a: Material = Air
+val json = a.asJson
+decode[Material](a.asJson.spaces2) match {
+  case Left(_) => None
+  case Right(material)
+}

@@ -22,4 +22,5 @@ object Test2 extends RunePattern {
 case class Test2(parameters: RuneParameters, pattern: Pattern)
   extends Rune(parameters)
           with Consumable {
+  override protected def innerActivate(): Unit = Unit
 }

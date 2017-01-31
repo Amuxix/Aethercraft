@@ -51,7 +51,9 @@ sealed abstract case class Material(var energy: Option[Int] = None) extends Enum
 
 //TODO: Add Potions
 
-object Material extends Enum[Material] {
+object Material extends CirceEnum[Material] with Enum[Material] {
+  /*implicit val encodeMaterial: Encoder[Material] = Encoder.forProduct1("material")(m => m.hashCode())
+  implicit val decodeMaterial: Encoder[Material] = Decoder.forProduct1("material")(m => m.hashCode())*/
 
   @silent private val materialDataToMaterial: Map[MaterialData, Material] = HashMap(
     new MaterialData(AIR) -> Air,

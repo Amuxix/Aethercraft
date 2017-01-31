@@ -15,11 +15,26 @@ abstract class Rune(parameters: RuneParameters) {
   val direction: CardinalPoint = parameters.direction
   val pattern: Pattern
 
-  def notifyActivator(): Unit = {
+  /**
+    * This is where the rune effects when the rune is first activated go.
+    * This must always be extended when overriding,
+    */
+  def activate(): Unit = {
+    innerActivate()
+    logRuneActivation()
+    notifyActivator()
+  }
+
+  /**
+    * Internal activate method that should contain all code to activate a rune.
+    */
+  protected def innerActivate(): Unit
+
+  protected def notifyActivator(): Unit = {
     activator.sendMessage(name + " activated")
   }
 
-  def logRuneActivation(): Unit = {
+  protected def logRuneActivation(): Unit = {
     info(s"${activator.name} activated $name in $center")
   }
 

@@ -6,19 +6,29 @@ import me.amuxix.material.Tier
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.Persistent
 import me.amuxix.runes.waypoints.WaypointTrait
+import me.amuxix.serialization.Serialization
 import me.amuxix.util.Block.Location
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, Server}
 
-object Runecraft{
+import scala.collection.immutable.HashMap
+
+object Runecraft {
   var logger: Logger = _
   var server: Server = _
   var self: Runecraft = _
 
+  var persistentRunes = HashMap.empty[Location, Rune with Persistent]
+
+  /**
+    *                                                   PERSISTENT RUNES
+    * Lists of persistent runes that will be serialized
+    */
   /** The map key is the [[me.amuxix.runes.traits.Linkable.signature]] of the waypoint */
   var waypoints = Map.empty[Int, Rune with WaypointTrait]
 
-  var persistentRunes = Map.empty[Location, Persistent]
+  lazy val fullVersion: String = Runecraft.self.getDescription.getFullName
+  lazy val simpleVersion: String = Runecraft.self.getDescription.getFullName.split("-").head
 }
 
 /**
@@ -34,5 +44,10 @@ class Runecraft extends JavaPlugin {
     Runecraft.server = getServer
     Runecraft.self = this
     new Tier()
+    Serialization.loadRunes()
 	}
+
+  override def onDisable(): Unit = {
+    Serialization.saveRunes()
+  }
 }

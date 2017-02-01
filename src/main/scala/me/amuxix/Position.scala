@@ -18,15 +18,10 @@ object Position {
   import scala.math.Numeric.DoubleAsIfIntegral
   implicit val doubleAsIfIntegral = DoubleAsIfIntegral //Allows this method to be implicitly used by bukkitEntity2Position
 
-  implicit def bukkitEntity2Position(bukkitEntity: BEntity): Position[Double] = {
-    val location: BLocation = bukkitEntity.getLocation
-    Position(bukkitEntity.getWorld, Vector3(location.getX, location.getY ,location.getZ))
-  }
+  implicit def bukkitLocation2Position(location: BLocation): Position[Double] =
+    Position(location.getWorld, Vector3(location.getX, location.getY, location.getZ))
 
-  implicit def bukkitBlock2Position(bukkitBlock: BBlock): Position[Int] = {
-    val location: BLocation = bukkitBlock.getLocation
-    Position(bukkitBlock.getWorld, Vector3(location.getBlockX, location.getBlockY ,location.getBlockZ))
-  }
+  implicit def doublePosition2IntPosition(position: Position[Double]): Position[Int] = position.toIntPosition
 
   implicit val encodePositionInt: Encoder[Position[Int]] = Encoder.forProduct2("world", "coordinates")(r =>
     (r.world.getUID, r.coordinates) //This works, intelliJ just doesn't know it.
@@ -41,6 +36,8 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
   def x: T = coordinates.x
   def y: T = coordinates.y
   def z: T = coordinates.z
+
+  def toIntPosition(implicit ev: T =:= Double): Position[Int] = Position[Int](world, coordinates.toIntVector)
 
   def +(vector: Vector3[T]): Position[T] = Position(world, coordinates + vector)
   def -(vector: Vector3[T]): Position[T] = Position(world, coordinates - vector)

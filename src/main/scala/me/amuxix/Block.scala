@@ -2,6 +2,7 @@ package me.amuxix
 
 import io.circe.{Encoder, _}
 import me.amuxix.Block.Location
+import me.amuxix.Position._
 import me.amuxix.events.{RunecraftBreakEvent, RunecraftPlaceEvent}
 import me.amuxix.material.Material.{Air, Stone}
 import me.amuxix.material.{Crushable, Material}
@@ -11,7 +12,7 @@ import org.bukkit.block.{BlockState, Block => BukkitBlock}
   * Created by Amuxix on 22/11/2016.
   */
 object Block {
-  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitBlock, bukkitBlock.getState.getData)
+  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitLocation2Position(bukkitBlock.getLocation), bukkitBlock.getState.getData)
   type Location = Position[Int]
 
   implicit val encodeBlock: Encoder[Block] = Encoder.forProduct2("location", "material")(b =>

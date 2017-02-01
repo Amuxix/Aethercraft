@@ -4,6 +4,7 @@ import java.util.UUID
 
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
+import me.amuxix.Player.Location
 import org.bukkit.entity.{Player => BPlayer}
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN
 import org.bukkit.{ChatColor, OfflinePlayer}
@@ -45,9 +46,9 @@ case class Player(uniqueID: UUID) extends Entity {
     */
   def sendMessage(text: String): Unit = getPlayer.toOption.foreach(_.sendMessage(ChatColor.GREEN + text))
 
-  def location: Option[Player.Location] = getPlayer match {
+  def location: Option[Location] = getPlayer match {
     case Left(_) => None
-    case Right(player) => Some(player)
+    case Right(player) => Some(player.getLocation)
   }
 
   def name: String = getPlayer match {

@@ -5,6 +5,4 @@ import me.amuxix.material.Armor
 /**
   * Created by Amuxix on 06/01/2017.
   */
-trait GenericLeggings extends Armor {
-
-}
+trait GenericLeggings extends Armor

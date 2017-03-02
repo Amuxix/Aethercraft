@@ -8,7 +8,7 @@ import me.amuxix.{Block, Vector3}
 /**
   * Created by Amuxix on 21/11/2016.
   */
-case class BoundingCube(centerLocation: Location, possiblePatterns: List[Pattern]) {
+case class BoundingCube(centerLocation: Location, possiblePatterns: Seq[Pattern]) {
   val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, pattern) => acc max pattern.largestDimension}
   val center: Vector3[Int] = Vector3(dimension, dimension, dimension) / 2
   val cubeOrigin: Location = centerLocation - center

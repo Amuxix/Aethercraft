@@ -1,19 +1,11 @@
 package me.amuxix.material
 
-import java.util.NoSuchElementException
-
 import com.github.ghik.silencer.silent
 import enumeratum._
 import me.amuxix.Named
-import me.amuxix.material.generics._
 import me.amuxix.pattern.Element
-import org.bukkit.DyeColor._
-import org.bukkit.GrassSpecies._
-import org.bukkit.Material.{TNT => BTNT, _}
-import org.bukkit.SandstoneType._
-import org.bukkit.TreeSpecies._
-import org.bukkit.material._
-import org.bukkit.{CoalType, Material => BMaterial}
+import org.bukkit.Material.{TNT => BTNT}
+import org.bukkit.{Material => BMaterial}
 
 import scala.collection.immutable.{HashMap, IndexedSeq}
 import scala.math.{E, log}
@@ -52,7 +44,7 @@ sealed abstract case class Material(var energy: Option[Int] = None) extends Enum
 
 object Material extends CirceEnum[Material] with Enum[Material] {
 
-  @silent private val materialDataToMaterial: Map[MaterialData, Material] = HashMap(
+  @silent protected[material] val materialDataToMaterial: Map[MaterialData, Material] = HashMap(
     new MaterialData(AIR) -> Air,
     new MaterialData(STONE) -> Stone,
     new MaterialData(STONE, 1.toByte) -> Granite,
@@ -696,7 +688,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(RECORD_9) -> Record9,
     new MaterialData(RECORD_10) -> Record10,
     new MaterialData(RECORD_11) -> Record11,
-    new MaterialData(RECORD_12) -> Record12,
+    new MaterialData(RECORD_12) -> Record12/*,
     new MaterialData(STONE, (-1).toByte) -> Seq(Stone, Granite, PolishedGranite, Diorite, PolishedDiorite, Andesite, PolishedAndesite).minBy(_.energy),
     new MaterialData(DIRT, (-1).toByte) -> Seq(Dirt, CoarseDirt, Podzol).minBy(_.energy),
     new MaterialData(WOOD, (-1).toByte) -> Seq(OakWoodPlanks, SpruceWoodPlanks, BirchWoodPlanks, JungleWoodPlanks, AcaciaWoodPlanks, DarkOakWoodPlanks).minBy(_.energy),
@@ -732,21 +724,27 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(INK_SACK, (-1).toByte) -> Seq(InkSack, RoseRed, CactusGreen, CocoaBeans, LapisLazuli, PurpleDye, CyanDye, LightGrayDye, GrayDye, PinkDye, LimeDye, DandelionYellow, LightBlueDye, MagentaDye, OrangeDye, BoneMeal).minBy(_.energy),
     new MaterialData(SKULL_ITEM, (-1).toByte) -> Seq(SkeletonHead, WitherSkeletonHead, ZombieHead, PlayerHead, CreeperHead, DragonHead).minBy(_.energy),
     new MaterialData(SAND, (-1).toByte) -> Seq(Sand, RedSand).minBy(_.energy),
-    new MaterialData(BANNER, (-1).toByte) -> Seq(WhiteBanner, OrangeBanner, MagentaBanner, LightBlueBanner, YellowBanner, LimeBanner, PinkBanner, GrayBanner, LightGrayBanner, CyanBanner, PurpleBanner, BlueBanner, BrownBanner, GreenBanner, RedBanner, BlackBanner).minBy(_.energy)
+    new MaterialData(BANNER, (-1).toByte) -> Seq(WhiteBanner, OrangeBanner, MagentaBanner, LightBlueBanner, YellowBanner, LimeBanner, PinkBanner, GrayBanner, LightGrayBanner, CyanBanner, PurpleBanner, BlueBanner, BrownBanner, GreenBanner, RedBanner, BlackBanner).minBy(_.energy)*/
   )
 
   private val materialToMaterialData: Map[Material, MaterialData] = materialDataToMaterial.map(_.swap)
 
   @silent implicit def materialData2Material(data: MaterialData): Material = {
-    try {
-      materialDataToMaterial(data)
-    } catch {
-      case _: NoSuchElementException if data.getData == -1 => materialDataToMaterial(new MaterialData(data.getItemType)) //Recipe stuff(-1 can mean several different data)
-      case _: NoSuchElementException if data.isInstanceOf[Directional] || data.isInstanceOf[RedstoneWire] => materialDataToMaterial(new MaterialData(data.getItemType)) //Directional stuff
-      case _: NoSuchElementException if data.getItemType.isBlock == false && data.getData == 3 => materialDataToMaterial(new MaterialData(data.getItemType)) //This is all kind of wierd stuff on your inventory, for instance, air(which is used to represent empty slots.
-      case _: NoSuchElementException if data.getItemType == ANVIL || data.getItemType == FIRE => materialDataToMaterial(new MaterialData(data.getItemType)) //Other stuff
-      case _: NoSuchElementException if data.getItemType == PISTON_MOVING_PIECE || data.getItemType == AIR => materialDataToMaterial(new MaterialData(data.getItemType)) //Special Types
+
+    def isSpecialCase(data: MaterialData): Boolean = {
+      //Directional stuff
+      data.isInstanceOf[Directional] || data.isInstanceOf[RedstoneWire] ||
+        //This is all kind of wierd stuff on your inventory, for instance, air(which is used to represent empty slots.
+        data.getItemType.isBlock == false && data.getData == 3 ||
+        //Materials with durability
+        data.getItemType.getMaxDurability.toInt > 0 ||
+        //Other stuff
+        data.getItemType == ANVIL || data.getItemType == FIRE ||
+        //Special Types
+        data.getItemType == PISTON_MOVING_PIECE || data.getItemType == AIR
     }
+
+    materialDataToMaterial(if (isSpecialCase(data)) new MaterialData(data.getItemType) else data)
   }
 
   implicit def Material2MaterialData(material: Material): MaterialData = {
@@ -765,7 +763,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object Andesite extends Material(energy = 1) with Solid
   object PolishedAndesite extends Material with Solid
   object Grass extends Material(energy = 1) with Solid
-  object Dirt extends Material(energy = 1) with Solid // Common on surface
+  object Dirt extends Material(energy = 1) with Solid
   object CoarseDirt extends Material with Solid
   object Podzol extends Material(energy = 1) with Solid
   object Cobblestone extends Material(energy = 1) with Solid
@@ -809,7 +807,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object Sandstone extends Material with Solid
   object SmoothSandstone extends Material with Solid
   object ChiseledSandstone extends Material with Solid
-  object NoteBlock extends Material with Solid // Same as crafted Item
+  object NoteBlock extends Material with Solid
   object BedBlock extends Material with Solid with Rotates
   object PoweredRails extends Material with GenericRails
   object DetectorRails extends Material with GenericRails
@@ -878,55 +876,55 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object MobSpawner extends Material(tierString = "T6") with Solid
   object OakStairs extends Material with GenericStairs
   object Chest extends Material with Solid with Rotates with Inventory
-  object RedstoneWire extends Material with Transparent with Attaches // Same as redstone
-  object DiamondOre extends Material with Solid // should be diamond *1.5 due to being ore
+  object RedstoneWire extends Material with Transparent with Attaches
+  object DiamondOre extends Material with Solid
   object DiamondBlock extends Material with Solid
   object CraftingTable extends Material with Solid
   object Crops extends Material(tierString = "T2") with GenericPlant
   object Soil extends Material(energy = 1) with Solid
   object Furnace extends Material with Solid with Rotates with Inventory
-  object BurningFurnace extends Material with Solid with Rotates with Inventory // Same as furnace
-  object SignPost extends Material with Solid with Rotates // Same as sign
+  object BurningFurnace extends Material with Solid with Rotates with Inventory
+  object SignPost extends Material with Solid with Rotates
   object OakDoor extends Material with Solid with Rotates with GenericDoor
   object Ladder extends Material with Transparent with Attaches with Rotates
   object Rails extends Material with GenericRails
   object CobblestoneStairs extends Material with GenericStairs
-  object WallSign extends Material with Transparent with Rotates // Same as sign
+  object WallSign extends Material with Transparent with Rotates
   object Lever extends Material with Transparent with Attaches with Rotates
   object StonePressurePlate extends Material with Transparent with Attaches
-  object IronDoorBlock extends Material with Solid with Transparent with Attaches with Rotates with GenericDoor // same as iron door
+  object IronDoorBlock extends Material with Solid with Transparent with Attaches with Rotates with GenericDoor
   object WoodPressurePlate extends Material with Transparent with Attaches
-  object RedstoneOre extends Material with Solid // redstone*avarageDrop*1.5
-  object GlowingRedstoneOre extends Material with Solid // Same as redstoneOre
+  object RedstoneOre extends Material with Solid
+  object GlowingRedstoneOre extends Material with Solid
   object RedstoneTorchOff extends Material with GenericTorch
   object RedstoneTorchOn extends Material with GenericTorch
   object StoneButton extends Material with Transparent with Attaches with Rotates
   object Snow extends Material(energy = 1) with Transparent with Attaches with Crushable
   object Ice extends Material(energy = 1) with Solid
   object SnowBlock extends Material(energy = 1) with Solid
-  object Cactus extends Material(tierString = "T3") with Solid with Attaches // Half pumpkin, Grows twice as slow
+  object Cactus extends Material(tierString = "T3") with Solid with Attaches
   object Clay extends Material with Solid with GenericClayBlock
-  object SugarCaneBlock extends Material(tierString = "T2") with Transparent with Attaches with Crushable // Same as wood, about as hard to farm
+  object SugarCaneBlock extends Material(tierString = "T2") with Transparent with Attaches with Crushable
   object Jukebox extends Material with Solid
   object OakFence extends Material with GenericFence
   object Pumpkin extends Material(tierString = "T3") with Solid with Rotates
   object Netherrack extends Material(energy = 1) with Solid
-  object SoulSand extends Material with Solid // Gold/2, As common as gold, but much easier to find and collect
+  object SoulSand extends Material with Solid
   object Glowstone extends Material with Solid
   object Portal extends Material(energy = -1) with Transparent with Unconsumable
   object JackOLantern extends Material with Solid
-  object CakeBlock extends Material with Solid with Transparent with Food // cake is 6 shanks, bread is 2.5 shanks,
+  object CakeBlock extends Material with Solid with Transparent with Food
   object RedstoneRepeaterOff extends Material
   object RedstoneRepeaterOn extends Material
   object WhiteGlass extends Material with GenericGlass
   object OrangeGlass extends Material with GenericGlass
-  object MagentaGlass extends Material with GenericGlass // Hard to locate and use
+  object MagentaGlass extends Material with GenericGlass
   object LightBlueGlass extends Material with GenericGlass
   object YellowGlass extends Material with GenericGlass
   object LimeGlass extends Material with GenericGlass
   object PinkGlass extends Material with GenericGlass
-  object GrayGlass extends Material with GenericGlass // Same as mushroom
-  object LightGrayGlass extends Material with GenericGlass // Same as mushroom
+  object GrayGlass extends Material with GenericGlass
+  object LightGrayGlass extends Material with GenericGlass
   object CyanGlass extends Material with GenericGlass
   object PurpleGlass extends Material with GenericGlass
   object BlueGlass extends Material with GenericGlass
@@ -936,7 +934,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object BlackGlass extends Material with GenericGlass
   object TrapDoor extends Material with Solid with Transparent with Rotates with GenericDoor
   object MonsterEggs extends Material(tierString = "T6") with Solid
-  object StoneBrick extends Material(energy = 1) with Solid // Hard to use and not renewable
+  object StoneBrick extends Material(energy = 1) with Solid
   object CrackedStoneBrick extends Material(tierString = "T5") with Solid
   object MossyStoneBrick extends Material with Solid
   object ChiseledStoneBrick extends Material with Solid
@@ -977,19 +975,19 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object BirchSingleSlab extends Material with GenericSingleSlab
   object JungleSingleSlab extends Material with GenericSingleSlab
   object AcaciaSingleSlab extends Material with GenericSingleSlab
-  object DarkOakSingleSlab extends Material with GenericSingleSlab // 3 food
+  object DarkOakSingleSlab extends Material with GenericSingleSlab
   object Cocoa extends Material(tierString = "T4") with GenericPlant
-  object SandstoneStairs extends Material with GenericStairs // same as item
+  object SandstoneStairs extends Material with GenericStairs
   object EmeraldOre extends Material with Solid
   object EnderChest extends Material with Solid with Rotates
   object TripwireHook extends Material with Transparent with Attaches with Rotates
   object Tripwire extends Material with Transparent with Attaches
   object EmeraldBlock extends Material with Solid
-  object SpruceStairs extends Material with GenericStairs // same as item
-  object BirchStairs extends Material with GenericStairs // same as item
+  object SpruceStairs extends Material with GenericStairs
+  object BirchStairs extends Material with GenericStairs
   object JungleStairs extends Material with GenericStairs
   object Command extends Material(energy = -1) with Solid with Unconsumable
-  object Beacon extends Material with Solid with Inventory // quartz*1.5
+  object Beacon extends Material with Solid
   object CobblestoneWall extends Material with Solid
   object MossyCobblestoneWall extends Material with Solid
   object FlowerPot extends Material with Transparent
@@ -1156,14 +1154,14 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object IronPickaxe extends Material with GenericPickaxe
   object IronAxe extends Material(energy = 48052) with GenericAxe
   object FlintAndSteel extends Material with Consumable
-  object Apple extends Material with Consumable with Food // 3 food
+  object Apple extends Material with Consumable with Food
   object Bow extends Material(energy = 118) with Consumable
   object Arrow extends Material(energy = 5)
   object Coal extends Material(energy = 72)
   object Charcoal extends Material
   object Diamond extends Material(energy = 2869)
   object IronIngot extends Material(energy = 459)
-  object GoldIngot extends Material(energy = 90551)
+  object GoldIngot extends Material
   object IronSword extends Material with Usable with GenericSword
   object WoodSword extends Material with Usable with GenericSword
   object WoodShovel extends Material with GenericShovel

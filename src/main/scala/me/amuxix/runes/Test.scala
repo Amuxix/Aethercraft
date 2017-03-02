@@ -1,5 +1,6 @@
 package me.amuxix.runes
 
+import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
@@ -12,7 +13,7 @@ import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
   */
 
 object Test extends RunePattern {
-  val pattern: Pattern = Pattern(Test.apply, width = 3, numberOfMirroredAxis = false, verticality = true)(
+  val pattern: Pattern = Pattern(Test.apply, width = 3, verticality = true)(
     ActivationLayer(
       EndStone, NotInRune, EndStone,
       NotInRune, EndStone, NotInRune,
@@ -25,7 +26,7 @@ object Test extends RunePattern {
   )
 }
 
-case class Test(parameters: RuneParameters, pattern: Pattern)
+case class Test(parameters: Parameters, pattern: Pattern)
   extends Rune(parameters)
           with Tiered
           with Consumable
@@ -38,5 +39,10 @@ case class Test(parameters: RuneParameters, pattern: Pattern)
     */
   override def validateSignature(): Boolean = true
 
-  override protected def innerActivate(): Unit = Unit
+  override protected def innerActivate(activationItem: Item): Unit = Unit
+
+  /**
+    * Should this rune use a true name if the activator is wearing one?
+    */
+  override val shouldUseTrueName: Boolean = false
 }

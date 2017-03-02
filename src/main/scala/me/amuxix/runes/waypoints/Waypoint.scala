@@ -2,11 +2,11 @@ package me.amuxix.runes.waypoints
 
 import me.amuxix.Block.Location
 import me.amuxix.exceptions.InitializationException
+import me.amuxix.inventory.Item
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Linkable, Persistent}
-import me.amuxix.runes.{Rune, RuneParameters}
+import me.amuxix.runes.{Parameters, Rune}
 import me.amuxix.{Block, Direction, Player, Runecraft}
-import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 03/01/2017.
@@ -32,14 +32,14 @@ object Waypoint extends RunePattern {
     * @return A waypoint instance with the given parameters.
     */
   def deserialize(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: Direction, signature: Int): Waypoint = {
-    val parameters: RuneParameters = RuneParameters(blocks, center, activator, direction)
+    val parameters: Parameters = Parameters(blocks, center, activator, direction)
     val waypoint = Waypoint(parameters, pattern)
     waypoint.signature = signature
     waypoint
   }
 }
 
-case class Waypoint(parameters: RuneParameters, pattern: Pattern)
+case class Waypoint(parameters: Parameters, pattern: Pattern)
   extends Rune(parameters)
           with WaypointTrait
           with Linkable
@@ -91,7 +91,12 @@ case class Waypoint(parameters: RuneParameters, pattern: Pattern)
     */
   override def destroyRune(): Unit = Runecraft.waypoints -= signature
 
-  override protected def innerActivate(): Unit = {
+  override protected def innerActivate(activationItem: Item): Unit = {
     Runecraft.waypoints += signature -> this
   }
+
+  /**
+    * Should this rune use a true name if the activator is wearing one?
+    */
+  override val shouldUseTrueName: Boolean = false
 }

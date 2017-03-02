@@ -4,6 +4,7 @@ import me.amuxix.Block.Location
 import me.amuxix.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
 import me.amuxix._
 import me.amuxix.exceptions.InitializationException
+import me.amuxix.inventory.Item
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
 import me.amuxix.material.Solid
@@ -28,7 +29,7 @@ object Teleporter extends RunePattern {
   )
 }
 
-case class Teleporter(parameters: RuneParameters, pattern: Pattern)
+case class Teleporter(parameters: Parameters, pattern: Pattern)
   extends Rune(parameters)
           with Tiered
           with Consumable
@@ -48,7 +49,7 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
 
   override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
 
-  override protected def innerActivate(): Unit = {
+  override protected def innerActivate(activationItem: Item): Unit = {
     val possibleTargets: Map[Int, Rune with WaypointTrait] = Runecraft.waypoints
     val targetWP: Rune with WaypointTrait = possibleTargets.getOrElse(signature, throw InitializationException("Can't find your destination."))
 
@@ -88,4 +89,9 @@ case class Teleporter(parameters: RuneParameters, pattern: Pattern)
     }
     activator.teleport(finalTarget, activator.pitch, activator.yaw)
   }
+
+  /**
+    * Should this rune use a true name if the activator is wearing one?
+    */
+  override val shouldUseTrueName: Boolean = true
 }

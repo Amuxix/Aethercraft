@@ -1,9 +1,10 @@
 package me.amuxix.pattern
 
-import me.amuxix.logging.Logger.{severe, trace}
-import me.amuxix.material.{Material, Unconsumable}
+import me.amuxix.exceptions.InitializationException
+import me.amuxix.logging.Logger.trace
+import me.amuxix.material.{Material, Unconsumable, Block => MBlock}
 import me.amuxix.pattern.matching.BoundingCube
-import me.amuxix.runes.{Rune, RuneParameters}
+import me.amuxix.runes.{Parameters, Rune}
 import me.amuxix.{Block, Matrix4, Rotation, Vector3}
 
 /**
@@ -21,15 +22,42 @@ object ActivationLayer {
 class ActivationLayer(_elements: Element*) extends Layer(_elements:_*)
 
 object Pattern {
-  def apply[R <: Rune](creator: (RuneParameters, Pattern) => R, width: Int = 5,
-            numberOfMirroredAxis: Boolean = true, verticality: Boolean = false, directional: Boolean = false,
-            canBeBuiltOnCeiling: Boolean = true)(layers: Layer*): Pattern = {
+  def isMirrored(layer: Layer, width: Int): Boolean = {
+    val layerArray: Seq[Seq[Element]] = layer.toElementsArray(width)
+    val height = layerArray.size
+    (for {
+      i <- 0 until Math.ceil(width / 2).toInt
+      j <- 0 until Math.ceil(height / 2).toInt
+      w <- 0 until width
+      h <- 0 until height
+    } yield layerArray(j)(w) == layerArray(width - j - 1)(w) && layerArray(h)(i) == layerArray(h)(height - i - 1)).forall(identity)
+  }
+
+  def apply[R <: Rune](creator: (Parameters, Pattern) => R, width: Int = 0, verticality: Boolean = false,
+                       directional: Boolean = false, buildableOnCeiling: Boolean = true,
+                       activatesWith: PartialFunction[Material, Boolean] = { case m if !m.isInstanceOf[MBlock] => true })
+                      (layers: Layer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
-    if (width % 2 == 0) {
-      severe("Rune pattern has even width making it impossible to have a center!")
+    val finalWidth: Int = if (width == 0) {
+      val sqrt = Math.sqrt(layers.head.elements.size)
+      if (sqrt.isValidInt) {
+        sqrt.toInt
+      } else {
+        throw InitializationException("Rune has invalid width!")
+      }
+    } else {
+      if (width % 2 == 0) {
+        throw InitializationException("Rune width needs to be odd!")
+      }
+      width
     }
-    new Pattern(activationLayer, layers.map(_.toElementsArray(width)), numberOfMirroredAxis, verticality, directional, canBeBuiltOnCeiling) {
-      def createRune(parameters: RuneParameters): Rune = {
+    if (layers.forall(_.elements.size % finalWidth == 0) == false) {
+      throw InitializationException("At least a layer in the pattern does not form a rectangle!")
+    }
+    val hasTwoMirroredAxis = layers.forall(isMirrored(_, finalWidth))
+    val elements = layers.map(_.toElementsArray(finalWidth))
+    new Pattern(activationLayer, elements, hasTwoMirroredAxis, verticality, directional, buildableOnCeiling, activatesWith) {
+      def createRune(parameters: Parameters): Rune = {
         creator(parameters, this)
       }
     }
@@ -44,10 +72,10 @@ object Pattern {
   * @param hasTwoMirroredAxis 0 - no mirroring, 1 - mirrored vertically horizontally, 2 - mirrored in both axis.
   * @param verticality Whether the rune can be made vertically
   * @param directional True when the rune has to be built in a certain direction
-  * @param canBeBuiltOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
+  * @param buildableOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
   */
-abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], hasTwoMirroredAxis: Boolean, verticality: Boolean, directional: Boolean,
-                       canBeBuiltOnCeiling: Boolean) extends Ordered[Pattern] {
+abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], hasTwoMirroredAxis: Boolean, verticality: Boolean, directional: Boolean,
+                       buildableOnCeiling: Boolean, val activatesWith: PartialFunction[Material, Boolean]) extends Ordered[Pattern] {
 	/* IN GAME AXIS
 		 *          Y axis
 		 *          |
@@ -65,17 +93,11 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
 	val largestDimension: Int = (((lowHeight max (highHeight - 1)) * 2) + 1) max width max depth
   val volume: Int = height * width * depth
 	val patternMaterials: Set[Material] = elements.flatten.flatten.collect { case m: Material => m }.toSet //Set of materials the rune contains
-  /*
-	def verifyRuneIntegrity //Verifies if pattern is possible
-    Width and depth must be odd(even dimensions won't have a center block)
-    Runes 1 layer high can always be built on ceiling
-    Runes that implement Tiered must have tier blocks and vice versa
-   */
 
   /**
     * Attempts to create the rune, may fail.
     */
-  def createRune(parameters: RuneParameters): Rune
+  protected[pattern] def createRune(parameters: Parameters): Rune
 
   /**
     * Looks for this pattern in the given bounding cube
@@ -83,10 +105,6 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     * @return true if rune was found
     */
   def foundIn(boundingCube: BoundingCube): Option[Matrix4] = {
-    if (checkCenter(boundingCube) == false) {
-      trace("Center block does not match.")
-      return None
-    }
     val rotationMatrix = Matrix4.IDENTITY
     var possibleRotations = Seq(() => rotationMatrix)
     if (verticality) {
@@ -98,7 +116,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
         possibleRotations :+= (() => rotationMatrix.rotateZ(-90))
         possibleRotations :+= (() => rotationMatrix.rotateX(-90))
       }
-      if (canBeBuiltOnCeiling) {
+      if (buildableOnCeiling) {
         possibleRotations :+= (() => rotationMatrix.rotateX(180))
       }
     }
@@ -106,15 +124,14 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
   }
 
   /**
-    * Checks if the center block matches the cube, failing to match means the this pattern is not found in the boundingCube
-    * @param boundingCube Cube we are searching for runes in.
-    * @return true if the center block matches the pattern, false otherwise
+    * Checks if the center block can be the given material
+    * @param centerMaterial Material we are matching against
+    * @return true if this pattern can be made with the center of the given material
     */
-  def checkCenter(boundingCube: BoundingCube): Boolean = {
-    val blockMaterial = boundingCube.blockAt(boundingCube.center).material
-    centerBlockType match {
-      case material: Material if blockMaterial != material => false
-      case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[Unconsumable] => false
+  def centerCanBe(centerMaterial: Material): Boolean = {
+    centerElement match {
+      case material: Material if centerMaterial != material => false
+      case Tier if patternMaterials.contains(centerMaterial) || centerMaterial.isInstanceOf[Unconsumable] => false
       case _ => true
     }
   }
@@ -270,7 +287,7 @@ abstract class Pattern(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], h
     } yield Vector3(line, layer, block)
   }
 
-	def centerBlockType: Element = elements(activationLayer)(width / 2)(depth / 2)
+	def centerElement: Element = elements(activationLayer)(width / 2)(depth / 2)
 
   override def compare(that: Pattern): Int = this.volume.compare(that.volume) * -1
 }

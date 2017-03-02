@@ -2,12 +2,12 @@ package me.amuxix
 
 import java.util.UUID
 
+import com.github.ghik.silencer.silent
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import me.amuxix.Player.Location
+import me.amuxix.inventory.Item
 import org.bukkit.entity.{Player => BPlayer}
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN
-import org.bukkit.{ChatColor, OfflinePlayer}
 
 /**
   * Created by Amuxix on 22/11/2016.
@@ -16,9 +16,14 @@ object Player {
   implicit def bukkitPlayer2Player(bukkitPlayer: BPlayer): Player = {
     Player(bukkitPlayer.getUniqueId)
   }
+
   type Location = Position[Double]
   implicit val encodePlayer: Encoder[Player] = deriveEncoder
   implicit val decodePlayer: Decoder[Player] = deriveDecoder
+
+  @silent def named(name: String): Option[Player] = {
+    Option(Runecraft.server.getPlayer(name))
+  }
 }
 case class Player(uniqueID: UUID) extends Entity {
   def teleport[T : Integral](target: Position[T], pitch: Float, yaw: Float): Unit = getPlayer match {
@@ -56,6 +61,11 @@ case class Player(uniqueID: UUID) extends Entity {
     case Right(player) => player.getName
   }
 
+  def inventory: Option[PlayerInventory] = getPlayer match {
+    case Left(_) => None
+    case Right(player) => Some(player.getInventory)
+  }
+
   def getPlayer: Either[OfflinePlayer, BPlayer] = {
     val offlinePlayer = Runecraft.server.getOfflinePlayer(uniqueID)
     if (offlinePlayer.isOnline) {
@@ -63,5 +73,11 @@ case class Player(uniqueID: UUID) extends Entity {
     } else {
       Left(offlinePlayer)
     }
+  }
+
+  def helmet(): Option[Item] = if (inventory.isDefined && inventory.get.getHelmet != null) { //getHelmet can return null if not wearing any helmet
+    Some(inventory.get.getHelmet)
+  } else {
+    None
   }
 }

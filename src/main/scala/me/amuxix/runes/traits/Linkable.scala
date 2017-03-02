@@ -1,6 +1,7 @@
 package me.amuxix.runes.traits
 
 import me.amuxix.Block
+import me.amuxix.inventory.Item
 import me.amuxix.material.Material
 import me.amuxix.material.Material.Air
 import me.amuxix.pattern.Signature
@@ -45,8 +46,8 @@ trait Linkable extends Rune {
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  override def activate(): Unit = {
+  override def activate(activationItem: Item): Unit = {
     calculateSignature()
-    super.activate()
+    super.activate(activationItem)
   }
 }

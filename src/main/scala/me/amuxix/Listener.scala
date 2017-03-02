@@ -4,16 +4,11 @@ import java.util.UUID
 
 import me.amuxix.Block.Location
 import me.amuxix.IntegrityMonitor.{checkIntegrityAfterBlockDestruction, checkIntegrityAfterBlockPlacement}
-import me.amuxix.Player.bukkitPlayer2Player
 import me.amuxix.Position.bukkitLocation2Position
 import me.amuxix.exceptions.InitializationException
-import me.amuxix.material.{Material, Solid}
+import me.amuxix.inventory.Item
+import me.amuxix.material.Solid
 import me.amuxix.pattern.matching.Matcher
-import org.bukkit.ChatColor
-import org.bukkit.event.EventHandler
-import org.bukkit.event.block._
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.EquipmentSlot.{HAND, OFF_HAND}
 
 object Listener extends org.bukkit.event.Listener {
   /**
@@ -33,8 +28,8 @@ object Listener extends org.bukkit.event.Listener {
         event.setCancelled(true)
         return
       }
-      val itemInHand: Material = event.getPlayer.getInventory.getItemInMainHand.getData
-      if (event.getHand == HAND && itemInHand.isInstanceOf[Solid] == false) {
+      val itemInHand: Item = event.getPlayer.getInventory.getItemInMainHand
+      if (event.getHand == HAND && itemInHand.material.isInstanceOf[Solid] == false) {
         try {
           if (Runecraft.persistentRunes.contains(clickedBlockLocation)) {
             //There is a rune at this location, update it.
@@ -43,12 +38,12 @@ object Listener extends org.bukkit.event.Listener {
             Runecraft.persistentRunes(clickedBlockLocation).update(player) //This can throw initialization exceptions
           } else {
             //Look for new runes
-            val maybeRune = Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace)
+            val maybeRune = Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand.material)
             if (maybeRune.isDefined) {
               lastActivatedRune += (player.uniqueID -> clickedBlockLocation)
               val rune = maybeRune.get
               event.setCancelled(true) //Rune was found, cancel the original event.
-              rune.activate() //This can throw initialization exceptions
+              rune.activate(itemInHand) //This can throw initialization exceptions
             }
           }
         } catch {

@@ -12,6 +12,8 @@ import me.amuxix.runes.Rune
   * Used by runes that have a tier associated with them
   */
 trait Tiered extends Rune {
+  def consumeTierBlocks(): Unit = tierBlocks.foreach(_.consume(activator))
+
   val tierBlocks: Seq[Block] = specialBlocks(Tier)
 
   val tierType: Material = tierBlocks.head.material

@@ -5,9 +5,7 @@ import java.util.UUID
 import io.circe.generic.auto._
 import io.circe.{Decoder, Encoder}
 import me.amuxix.material.Solid
-import org.bukkit.block.{Block => BBlock}
-import org.bukkit.entity.{Entity => BEntity}
-import org.bukkit.{World, Location => BLocation}
+import org.bukkit.{Location => BLocation}
 
 import scala.math.{pow, sqrt}
 

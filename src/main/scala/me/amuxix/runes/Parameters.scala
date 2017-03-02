@@ -9,4 +9,4 @@ import me.amuxix.{Block, Direction, Player}
 /**
   * This is a container for the parameters a rune takes
   */
-case class RuneParameters(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: Direction)
+case class Parameters(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: Direction)

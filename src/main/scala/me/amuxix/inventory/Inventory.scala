@@ -1,6 +1,6 @@
 package me.amuxix.inventory
 
-import org.bukkit.inventory.{Inventory => BInventory}
+import org.bukkit.inventory.{PlayerInventory, Inventory => BInventory}
 
 /**
   * Created by Amuxix on 01/02/2017.

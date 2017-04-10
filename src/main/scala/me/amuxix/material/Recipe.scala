@@ -3,6 +3,7 @@ package me.amuxix.material
 import com.github.ghik.silencer.silent
 import me.amuxix.material.Ingredient.possibleDataByteFor
 import me.amuxix.material.Material.{materialData2Material, materialDataToMaterial}
+import org.bukkit.material.MaterialData
 import org.bukkit.{Material => BMaterial}
 
 import scala.annotation.tailrec

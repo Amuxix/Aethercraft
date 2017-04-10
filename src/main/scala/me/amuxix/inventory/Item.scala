@@ -4,6 +4,8 @@ import me.amuxix.inventory.items.PlayerHead
 import me.amuxix.material.Material
 import me.amuxix.material.Material.{materialData2Material, PlayerHead => PlayerHeadMaterial}
 import me.amuxix.runes.traits.Enchant
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.ItemMeta
 
 import scala.collection.JavaConverters._
 

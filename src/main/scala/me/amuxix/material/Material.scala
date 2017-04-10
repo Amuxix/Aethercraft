@@ -4,8 +4,13 @@ import com.github.ghik.silencer.silent
 import enumeratum._
 import me.amuxix.Named
 import me.amuxix.pattern.Element
-import org.bukkit.Material.{TNT => BTNT}
-import org.bukkit.{Material => BMaterial}
+import org.bukkit.CoalType
+import org.bukkit.DyeColor._
+import org.bukkit.GrassSpecies._
+import org.bukkit.Material.{TNT => BTNT, _}
+import org.bukkit.SandstoneType._
+import org.bukkit.TreeSpecies._
+import org.bukkit.material.{MaterialData, _}
 
 import scala.collection.immutable.{HashMap, IndexedSeq}
 import scala.math.{E, log}

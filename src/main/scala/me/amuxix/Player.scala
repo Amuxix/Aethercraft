@@ -8,6 +8,9 @@ import io.circe.{Decoder, Encoder}
 import me.amuxix.Player.Location
 import me.amuxix.inventory.Item
 import org.bukkit.entity.{Player => BPlayer}
+import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN
+import org.bukkit.inventory.PlayerInventory
+import org.bukkit.{ChatColor, OfflinePlayer}
 
 /**
   * Created by Amuxix on 22/11/2016.

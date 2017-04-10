@@ -5,7 +5,7 @@ import java.util.UUID
 import io.circe.generic.auto._
 import io.circe.{Decoder, Encoder}
 import me.amuxix.material.Solid
-import org.bukkit.{Location => BLocation}
+import org.bukkit.{World, Location => BLocation}
 
 import scala.math.{pow, sqrt}
 
@@ -22,7 +22,7 @@ object Position {
   implicit def doublePosition2IntPosition(position: Position[Double]): Position[Int] = position.toIntPosition
 
   implicit val encodePositionInt: Encoder[Position[Int]] = Encoder.forProduct2("world", "coordinates")(r =>
-    (r.world.getUID, r.coordinates) //This works, intelliJ just doesn't know it.
+    (r.world.getUID, r.coordinates)
   )
 
   implicit val decodePositionInt: Decoder[Position[Int]] = Decoder.forProduct2("world", "coordinates")((worldID: UUID, coordinates: Vector3[Int]) => {

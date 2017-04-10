@@ -2,6 +2,8 @@ package me.amuxix.inventory.items
 
 import me.amuxix.Player
 import me.amuxix.inventory.Item
+import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.SkullMeta
 
 /**
   * Created by Amuxix on 02/02/2017.

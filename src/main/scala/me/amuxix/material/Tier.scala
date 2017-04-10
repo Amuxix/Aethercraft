@@ -5,8 +5,11 @@ import me.amuxix.Runecraft
 import me.amuxix.logging.Logger
 import me.amuxix.material.Ingredient.possibleDataByteFor
 import me.amuxix.material.Material._
+import org.bukkit.Material.{AIR, BANNER, STICK}
+import org.bukkit.inventory.{FurnaceRecipe, ItemStack, ShapedRecipe, ShapelessRecipe}
+import org.bukkit.material.MaterialData
 
-
+import scala.collection.JavaConverters._
 
 
 class Tier {
@@ -58,11 +61,11 @@ class Tier {
 
 
   private val recipes: Set[Recipe] = {
-    var recipeSet: Set[Recipe] = Runecraft.server.recipeIterator.flatMap {
+    var recipeSet: Set[Recipe] = Runecraft.server.recipeIterator.asScala.flatMap {
       case recipe: ShapedRecipe =>
-        makeRecipes(recipe.getIngredientMap.values, recipe.getResult)
+        makeRecipes(recipe.getIngredientMap.values.asScala, recipe.getResult)
       case recipe: ShapelessRecipe =>
-        makeRecipes(recipe.getIngredientList, recipe.getResult)
+        makeRecipes(recipe.getIngredientList.asScala, recipe.getResult)
       case recipe: FurnaceRecipe =>
         //The stick is what we are using for a baseline fuel value.
         makeRecipes(Iterable(recipe.getInput, new ItemStack(STICK)), recipe.getResult)
@@ -78,7 +81,7 @@ class Tier {
     recipeSet ++= Set(Recipe((Coal, oreMult), CoalOre),
       Recipe((LapisLazuli, 6 * oreMult), LapisLazuliOre),
       Recipe(Bed, (BedBlock, 2)),
-      
+
       Recipe(StoneDoubleSlab, (StoneSingleSlab, 2)),
       Recipe(SandstoneDoubleSlab, (SandstoneSingleSlab, 2)),
       Recipe(OldWoodDoubleSlab, (OldWoodSingleSlab, 2)),
@@ -87,7 +90,7 @@ class Tier {
       Recipe(StoneBrickDoubleSlab, (StoneBrickSingleSlab, 2)),
       Recipe(NetherBrickDoubleSlab, (NetherBrickSingleSlab, 2)),
       Recipe(QuartzDoubleSlab, (QuartzSingleSlab, 2)),
-      
+
       Recipe(StoneDoubleSlab, OakWoodPlanks),
       //Recipe(SandstoneDoubleSlab, SandstoneSingleSlab),
       //Recipe(OldWoodDoubleSlab, OldWood),
@@ -96,7 +99,7 @@ class Tier {
       Recipe(StoneBrickDoubleSlab, StoneBrickSingleSlab),
       Recipe(NetherBrickDoubleSlab, NetherBrickSingleSlab),
       Recipe(QuartzDoubleSlab, QuartzSingleSlab),
-      
+
       Recipe(Redstone, RedstoneWire),
       Recipe((Diamond, oreMult), DiamondOre),
       Recipe(Furnace, BurningFurnace),

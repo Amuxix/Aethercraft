@@ -5,6 +5,7 @@ import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{Air, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Tiered
+import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 02/01/2017.

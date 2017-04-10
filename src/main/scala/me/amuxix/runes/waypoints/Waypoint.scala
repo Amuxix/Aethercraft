@@ -7,6 +7,7 @@ import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.{Parameters, Rune}
 import me.amuxix.{Block, Direction, Player, Runecraft}
+import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 03/01/2017.

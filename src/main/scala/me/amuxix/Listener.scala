@@ -9,6 +9,11 @@ import me.amuxix.exceptions.InitializationException
 import me.amuxix.inventory.Item
 import me.amuxix.material.Solid
 import me.amuxix.pattern.matching.Matcher
+import org.bukkit.ChatColor
+import org.bukkit.event.EventHandler
+import org.bukkit.event.block._
+import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.EquipmentSlot.{HAND, OFF_HAND}
 
 object Listener extends org.bukkit.event.Listener {
   /**

@@ -1128,7 +1128,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object CommandRepeating extends Material(energy = -1) with Solid with Unconsumable
   object CommandChain extends Material(energy = -1) with Solid with Unconsumable
   object FrostedIce extends Material with Solid
-  object Magma extends Material with Solid
+  object Magma extends Material(tierString = "T3") with Solid
   object NetherWartBlock extends Material with Solid
   object RedNetherBrick extends Material with Solid
   object BoneBlock extends Material with Solid

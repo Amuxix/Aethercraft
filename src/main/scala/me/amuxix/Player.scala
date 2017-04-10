@@ -49,10 +49,16 @@ case class Player(uniqueID: UUID) extends Entity {
   }
 
   /**
-    * Sends a message in green to the player.
-    * @param text text to send
+    * Shows a message in the action bar position for the player.
+    * @param text Message to be sent
     */
-  def sendMessage(text: String): Unit = getPlayer.toOption.foreach(_.sendMessage(ChatColor.GREEN + text))
+  def sendNotification(text: String): Unit = getPlayer.toOption.foreach(JSONMessage.create(text).color(ChatColor.GREEN).actionbar(_))
+
+  /**
+    * Sends a message to the player.
+    * @param text Message to be sent
+    */
+  def sendMessage(text: String): Unit = getPlayer.toOption.foreach(_.sendMessage(text))
 
   def location: Option[Location] = getPlayer match {
     case Left(_) => None

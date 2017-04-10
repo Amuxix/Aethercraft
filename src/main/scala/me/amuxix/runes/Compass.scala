@@ -28,10 +28,10 @@ case class Compass(parameters: Parameters, pattern: Pattern)
       super.notifyActivator()
       if (tierType == Glass) {
         //If player used glass show the current version.
-        activator.sendMessage(Runecraft.fullVersion)
+        activator.sendNotification(Runecraft.fullVersion)
       }
     } else {
-      activator.sendMessage(ChatColor.RED + "Something blocks you from activating this compass.")
+      activator.sendNotification(ChatColor.RED + "Something blocks you from activating this compass.")
     }
   }
 

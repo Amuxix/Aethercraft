@@ -52,7 +52,7 @@ object Listener extends org.bukkit.event.Listener {
             }
           }
         } catch {
-          case ex: InitializationException => player.sendMessage(ChatColor.RED + ex.textError)
+          case ex: InitializationException => player.sendNotification(ChatColor.RED + ex.textError)
         }
       }
     }

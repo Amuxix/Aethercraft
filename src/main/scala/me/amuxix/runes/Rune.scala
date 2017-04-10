@@ -46,7 +46,7 @@ abstract class Rune(parameters: Parameters) extends Named {
     } yield playerHead
     if (playerHead.isDefined && playerHead.get.hasOwner && playerHead.get.hasRuneEnchant(TrueName)) {
       playerHead.get.amount -= 1
-      realActivator.sendMessage(s"The magic of this rune is activated in ${playerHead.get.owner}'s name and the true name shatters")
+      realActivator.sendNotification(s"The magic of this rune is activated in ${playerHead.get.owner}'s name and the true name shatters")
     }
   }
 
@@ -67,7 +67,7 @@ abstract class Rune(parameters: Parameters) extends Named {
   protected def innerActivate(activationItem: Item): Unit
 
   protected def notifyActivator(): Unit = {
-    activator.sendMessage(name + " activated")
+    activator.sendNotification(name + " activated")
   }
 
   protected def logRuneActivation(): Unit = {

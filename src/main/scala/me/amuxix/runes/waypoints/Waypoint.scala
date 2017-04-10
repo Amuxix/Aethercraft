@@ -65,7 +65,7 @@ case class Waypoint(parameters: Parameters, pattern: Pattern)
     */
   override def notifyActivator(): Unit = {
     super.notifyActivator()
-    activator.sendMessage("Signature is no longer needed here.")
+    activator.sendNotification("Signature is no longer needed here.")
   }
 
   /**
@@ -79,9 +79,9 @@ case class Waypoint(parameters: Parameters, pattern: Pattern)
     } else {
       if (validateSignature()) {
         signature = calculateSignature()
-        player.sendMessage("Signature updated.")
+        player.sendNotification("Signature updated.")
         if (player.uniqueID != activator.uniqueID) {
-          activator.sendMessage(ChatColor.RED + "The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
+          activator.sendNotification(ChatColor.RED + "The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
         }
       }
     }

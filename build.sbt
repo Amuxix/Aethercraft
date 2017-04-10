@@ -21,7 +21,7 @@ scalacOptions ++= Seq(
 resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/groups/public/"
 addCompilerPlugin("com.github.ghik" %% "silencer-plugin" % "0.5")
 libraryDependencies ++= Seq(
-  "org.spigot" % "bukkit" % "1.11.2-R0.1-SNAPSHOT",
+  "org.bukkit" % "bukkit" % "1.11.2-R0.1-SNAPSHOT",
   "com.beachape" %% "enumeratum" % "1.5.6",
   "com.beachape" %% "enumeratum-circe" % "1.5.6",
   "com.github.ghik" %% "silencer-lib" % "0.5",

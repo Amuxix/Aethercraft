@@ -1,7 +1,7 @@
 package me.amuxix.inventory.items
 
 import com.github.ghik.silencer.silent
-import me.amuxix.Player
+import me.amuxix.{Player, Runecraft}
 import me.amuxix.inventory.Item
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
@@ -14,12 +14,15 @@ class PlayerHead protected[inventory] (itemStack: ItemStack) extends Item(itemSt
 
   def hasOwner: Boolean = skullMeta.hasOwner
 
-  @silent def owner: Option[Player] = Player.named(skullMeta.getOwner)
+  def owner: Option[Player] = skullMeta.getOwningPlayer match {
+    case null => None
+    case owner => Some(Player(owner.getUniqueId))
+  }
 
   @silent def owner_=(player: Player): Unit = {
     meta = {
       val newMeta = skullMeta
-      newMeta.setOwner(player.name)
+      newMeta.setOwningPlayer(Runecraft.server.getOfflinePlayer(player.uniqueID))
       newMeta
     }
   }

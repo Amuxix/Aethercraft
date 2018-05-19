@@ -23,19 +23,13 @@ object Player {
   type Location = Position[Double]
   implicit val encodePlayer: Encoder[Player] = deriveEncoder
   implicit val decodePlayer: Decoder[Player] = deriveDecoder
-
-  @silent def named(name: String): Option[Player] = {
-    Option(Runecraft.server.getPlayer(name))
-  }
 }
 case class Player(uniqueID: UUID) extends Entity {
-  def teleport[T : Integral](target: Position[T], pitch: Float, yaw: Float): Unit = getPlayer match {
-    case Left(_) =>
-    case Right(player) =>
-      val x: java.lang.Double = new java.lang.Double(target.x.toString)
-      val y: java.lang.Double = new java.lang.Double(target.y.toString)
-      val z: java.lang.Double = new java.lang.Double(target.z.toString)
-      player.teleport(new org.bukkit.Location(target.world, x, y, z, float2Float(yaw), float2Float(pitch)), PLUGIN)
+  def teleport[T : Integral](target: Position[T], pitch: Float, yaw: Float): Unit = getPlayer.toOption.foreach {
+    import Integral.Implicits._
+    val destination = new org.bukkit.Location(target.world, target.x.toDouble(), target.y.toDouble(), target.z.toDouble(), yaw, pitch)
+    _.teleport(destination)
+
   }
 
   def pitch: Float = getPlayer match {
@@ -60,22 +54,16 @@ case class Player(uniqueID: UUID) extends Entity {
     */
   def sendMessage(text: String): Unit = getPlayer.toOption.foreach(_.sendMessage(text))
 
-  def location: Option[Location] = getPlayer match {
-    case Left(_) => None
-    case Right(player) => Some(player.getLocation)
-  }
+  def location: Option[Location] = getPlayer.toOption.map(_.getLocation)
 
   def name: String = getPlayer match {
     case Left(player) => player.getName
     case Right(player) => player.getName
   }
 
-  def inventory: Option[PlayerInventory] = getPlayer match {
-    case Left(_) => None
-    case Right(player) => Some(player.getInventory)
-  }
+  def inventory: Option[PlayerInventory] = getPlayer.toOption.map(_.getInventory)
 
-  def getPlayer: Either[OfflinePlayer, BPlayer] = {
+  protected[events] def getPlayer: Either[OfflinePlayer, BPlayer] = {
     val offlinePlayer = Runecraft.server.getOfflinePlayer(uniqueID)
     if (offlinePlayer.isOnline) {
       Right(offlinePlayer.getPlayer)
@@ -84,9 +72,7 @@ case class Player(uniqueID: UUID) extends Entity {
     }
   }
 
-  def helmet(): Option[Item] = if (inventory.isDefined && inventory.get.getHelmet != null) { //getHelmet can return null if not wearing any helmet
-    Some(inventory.get.getHelmet)
-  } else {
-    None
+  def helmet(): Option[Item] = inventory collect {
+    case inventory if inventory.getHelmet != null => inventory.getHelmet
   }
 }

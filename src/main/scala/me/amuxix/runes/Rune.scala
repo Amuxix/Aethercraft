@@ -19,6 +19,18 @@ abstract class Rune(parameters: Parameters) extends Named {
   private val realActivator: Player = parameters.activator
   val direction: Direction = parameters.direction
   val pattern: Pattern
+
+  /**
+    * This is where the rune effects when the rune is first activated go.
+    * This must always be extended when overriding,
+    */
+  def activate(activationItem: Item): Unit = {
+    innerActivate(activationItem)
+    consumeTrueName()
+    logRuneActivation()
+    notifyActivator()
+  }
+
   /**
     * Should this rune use a true name if the activator is wearing one?
     */
@@ -39,7 +51,7 @@ abstract class Rune(parameters: Parameters) extends Named {
   /**
     * Consumes a true name on the real activator of this rune
     */
-  private def consumeTrueName() = {
+  private def consumeTrueName(): Unit = {
     val playerHead = for {
       possibleHelmet <- realActivator.helmet()
       playerHead = possibleHelmet.asInstanceOf[PlayerHead]
@@ -48,17 +60,6 @@ abstract class Rune(parameters: Parameters) extends Named {
       playerHead.get.amount -= 1
       realActivator.sendNotification(s"The magic of this rune is activated in ${playerHead.get.owner}'s name and the true name shatters")
     }
-  }
-
-  /**
-    * This is where the rune effects when the rune is first activated go.
-    * This must always be extended when overriding,
-    */
-  def activate(activationItem: Item): Unit = {
-    innerActivate(activationItem)
-    consumeTrueName()
-    logRuneActivation()
-    notifyActivator()
   }
 
   /**

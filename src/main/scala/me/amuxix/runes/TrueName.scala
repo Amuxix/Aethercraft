@@ -24,7 +24,7 @@ object TrueName extends RunePattern with Enchant {
 }
 
 case class TrueName(parameters: Parameters, pattern: Pattern)
-extends Rune(parameters) with Consumable {
+  extends Rune(parameters) with Consumable {
   override val shouldUseTrueName: Boolean = false
 
   def getTrueNameOf(player: Player): PlayerHead = {

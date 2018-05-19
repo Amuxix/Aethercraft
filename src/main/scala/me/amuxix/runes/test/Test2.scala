@@ -1,10 +1,11 @@
-package me.amuxix.runes
+package me.amuxix.runes.test
 
 import me.amuxix.inventory.Item
-import me.amuxix.material.Sword
 import me.amuxix.material.Material.{EndStone, Glass}
+import me.amuxix.material.Sword
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Consumable
+import me.amuxix.runes.{Parameters, Rune}
 
 /**
   * Created by Amuxix on 01/12/2016.

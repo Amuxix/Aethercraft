@@ -1,9 +1,10 @@
-package me.amuxix.runes
+package me.amuxix.runes.test
 
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
-import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
+import me.amuxix.runes.traits._
+import me.amuxix.runes.{Parameters, Rune}
 
 /**
   * Created by Amuxix on 26/11/2016.
@@ -34,7 +35,6 @@ case class Test(parameters: Parameters, pattern: Pattern)
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     *
-    * @param player player to be notified in case of signature being invalid
     * @return true if signature is valid, false otherwise
     */
   override def validateSignature(): Boolean = true

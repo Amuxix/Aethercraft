@@ -151,8 +151,6 @@ class Tier {
     */
   private def updateEnergyFromRecipe(recipe: Recipe): Boolean = recipe match {
     case Recipe(ingredients, _, _) if ingredients.exists(_.material.energy.isEmpty) => false
-    //case Recipe(ingredients, result, _) if result.material.isInstanceOf[NoEnergy] || ingredients.exists(_.material.energy.isEmpty) => false
-    //case Recipe(_, _, true) if Generic.cheapestFuel.energy.isEmpty => false //This never happens there are fuels with base energy
     case Recipe(ingredients, result, requiresFuel) =>
       val ingredientsEnergy = ingredients.flatMap(constituent => constituent.material.energy.map(_ * constituent.amountDouble)).sum
       val fuelEnergy = Generic.cheapestFuel.smeltEnergy.filter(_ => requiresFuel).getOrElse(0)
@@ -169,64 +167,4 @@ class Tier {
   while(recipes.count(updateEnergyFromRecipe) > 0) {
     //Keep updating energy from recipes while at least one energy value is changed.
   }
-
-  /*import com.github.ghik.silencer.silent
-  import org.bukkit.inventory.{ShapedRecipe, ShapelessRecipe, FurnaceRecipe}
-  import scala.collection.JavaConverters._
-  import me.amuxix.util.Mergeable.MergeableList
-  import me.amuxix.Runecraft
-  import me.amuxix.bukkit.bukkitStack2Constituent
-  import me.amuxix.util.Mergeable
-  implicit class MergeableItemStack(val itemStack: org.bukkit.inventory.ItemStack) extends Mergeable[MergeableItemStack] {
-    override def canMerge(that: MergeableItemStack): Boolean = (this.itemStack, that.itemStack) match {
-      case (_, null) | (null, _) => false
-      case _ => this.itemStack.isSimilar(that.itemStack)
-    }
-
-    override def merge(that: MergeableItemStack): MergeableItemStack =
-      new org.bukkit.inventory.ItemStack(itemStack.getType, itemStack.getAmount + that.itemStack.getAmount, itemStack.getData.getData: @silent)
-
-    override def toString: String = s"${itemStack.getType}(${itemStack.getData.getData: @silent}) x ${itemStack.getAmount}"
-  }
-
-  val brc = Runecraft.server.recipeIterator.asScala.map {
-    case recipe: ShapedRecipe =>
-      (recipe.getIngredientMap.values.asScala.toList, recipe.getResult, false)
-    case recipe: ShapelessRecipe =>
-      (recipe.getIngredientList.asScala, recipe.getResult, false)
-    case recipe: FurnaceRecipe =>
-      //The stick is what we are using for a baseline fuel value.
-      (List(recipe.getInput), recipe.getResult, true)
-  } collect {
-    case (ingredients, result, requiresFuel) if result != null && result.getType != org.bukkit.Material.AIR =>
-      (ingredients.toList.filter(stack => stack != null && result.getType != org.bukkit.Material.AIR).map(MergeableItemStack).merge, MergeableItemStack(result), requiresFuel)
-  } map {
-    case (ingredients, result, requiresFuel) =>
-      val recipe = Recipe(ingredients.map(i => bukkitStack2Constituent(i.itemStack)), result.itemStack, requiresFuel)
-      ((ingredients, result, requiresFuel), recipe, recipe.spread)
-  } filterNot {
-    case (_, Recipe(ingredients, result, _), _) if (ingredients :+ result).exists(_.material.isInstanceOf[NoEnergy]) => true
-    case (_, Recipe(List(ingredient), result, _), _) if ingredient == result => true
-    case _ => false
-  } map {
-    case ((ingredients, result, _), _, List(singleRecipe)) =>
-      s"""$result	<-	${ ingredients.mkString("\t") }
-         |$singleRecipe
-         |
-         |""".stripMargin
-    case ((ingredients, result, _), recipe, spreadRecipe) =>
-      s"""$result	<-	${ ingredients.mkString("\t") }
-         |$recipe
-         |
-         |${spreadRecipe.mkString("\n")}
-         |
-         |""".stripMargin
-  }
-
-  brc.foreach(Logger.info)*/
-
-  recipes.foreach(Logger.info)
-
-  Logger.info("Name\tTier\tEnergy")
-  Material.values/*.filter(_.isInstanceOf[NoEnergy] == false)*/.foreach(material => Logger.info(s"${material.name}\t${material.tier.getOrElse("None")}\t${material.energy.getOrElse("None")}"))
 }

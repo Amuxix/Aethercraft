@@ -23,6 +23,7 @@ object Block {
 
 case class Block(location: Location, material: Material) {
   val state: BlockState = location.world.getBlockAt(location.x, location.y, location.z).getState
+
   def setMaterial(material: Material): Unit = {
     state.setType(material.getItemType)
     state.setData(material)

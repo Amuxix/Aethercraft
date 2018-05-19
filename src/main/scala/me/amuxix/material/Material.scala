@@ -14,22 +14,30 @@ import org.bukkit.material.{MaterialData, _}
 
 import scala.collection.immutable.{HashMap, IndexedSeq}
 import scala.math.{E, log}
+import scala.reflect.ClassTag
 
 /**
   * Created by Amuxix on 04/01/2017.
   */
 
-sealed abstract case class Material(var energy: Option[Int] = None) extends EnumEntry with Element with Named {
+sealed abstract case class Material(private var _energy: Option[Int] = None) extends EnumEntry with Element with Named {
   def this(energy: Int) = this(Some(energy))
-  def this(tierString: String) = this(Math.pow(E * 2, tierString.substring(1).toDouble).round.toInt)
+  def this(tier: BaseTier) = this(Some(tier.energy))
+
   lazy val tier: Option[Int] = {
-    energy match {
+    _energy match {
       case Some(e) => Some((log(e) / log(E * 2)).round.toInt)
       case None => None
     }
   }
 
-  override def toString: String = s"$name(${energy.getOrElse(-1)})"
+  def energy: Option[Int] = _energy
+  def energy_=(energy: Int): Unit = {
+    require(this.isInstanceOf[NoEnergy] == false, s"Something tried to modify energy of $name which has NoEnergy trait.")
+    _energy = Some(energy)
+  }
+
+  override def toString: String = s"$name(${if (this.isInstanceOf[NoEnergy]) "NoEnergy" else energy.getOrElse("None")})"
 
   override def hashCode(): Int = name.hashCode()
 
@@ -48,6 +56,8 @@ sealed abstract case class Material(var energy: Option[Int] = None) extends Enum
 //TODO: Add Potions
 
 object Material extends CirceEnum[Material] with Enum[Material] {
+
+  type ServerMaterial <: Material.type
 
   @silent protected[material] val materialDataToMaterial: Map[MaterialData, Material] = HashMap(
     new MaterialData(AIR) -> Air,
@@ -69,12 +79,12 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new Wood(JUNGLE) -> JungleWoodPlanks,
     new Wood(ACACIA) -> AcaciaWoodPlanks,
     new Wood(DARK_OAK) -> DarkOakWoodPlanks,
-    new Sapling(GENERIC) -> OakSapling,
-    new Sapling(REDWOOD) -> SpruceSapling,
-    new Sapling(BIRCH) -> BirchSapling,
-    new Sapling(JUNGLE) -> JungleSapling,
-    new Sapling(ACACIA) -> AcaciaSapling,
-    new Sapling(DARK_OAK) -> DarkOakSapling,
+    new org.bukkit.material.Sapling(GENERIC) -> OakSapling,
+    new org.bukkit.material.Sapling(REDWOOD) -> SpruceSapling,
+    new org.bukkit.material.Sapling(BIRCH) -> BirchSapling,
+    new org.bukkit.material.Sapling(JUNGLE) -> JungleSapling,
+    new org.bukkit.material.Sapling(ACACIA) -> AcaciaSapling,
+    new org.bukkit.material.Sapling(DARK_OAK) -> DarkOakSapling,
     new MaterialData(BEDROCK) -> Bedrock,
     new MaterialData(WATER) -> Water,
     new MaterialData(STATIONARY_WATER) -> StationaryWater,
@@ -90,10 +100,10 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new Tree(REDWOOD) -> SpruceLog,
     new Tree(BIRCH) -> BirchLog,
     new Tree(JUNGLE) -> JungleLog,
-    new Leaves(GENERIC) -> OakLeaves,
-    new Leaves(REDWOOD) -> SpruceLeaves,
-    new Leaves(BIRCH) -> BirchLeaves,
-    new Leaves(JUNGLE) -> JungleLeaves,
+    new org.bukkit.material.Leaves(GENERIC) -> OakLeaves,
+    new org.bukkit.material.Leaves(REDWOOD) -> SpruceLeaves,
+    new org.bukkit.material.Leaves(BIRCH) -> BirchLeaves,
+    new org.bukkit.material.Leaves(JUNGLE) -> JungleLeaves,
     new MaterialData(SPONGE) -> Sponge,
     new MaterialData(SPONGE, 1.toByte) -> WetSponge,
     new MaterialData(GLASS) -> Glass,
@@ -115,22 +125,22 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(DEAD_BUSH) -> DeadBush,
     new MaterialData(PISTON_BASE) -> Piston,
     new MaterialData(PISTON_EXTENSION) -> PistonExtension,
-    new Wool(WHITE) -> WhiteWool,
-    new Wool(ORANGE) -> OrangeWool,
-    new Wool(MAGENTA) -> MagentaWool,
-    new Wool(LIGHT_BLUE) -> LightBlueWool,
-    new Wool(YELLOW) -> YellowWool,
-    new Wool(LIME) -> LimeWool,
-    new Wool(PINK) -> PinkWool,
-    new Wool(GRAY) -> GrayWool,
-    new Wool(SILVER) -> LightGrayWool,
-    new Wool(CYAN) -> CyanWool,
-    new Wool(PURPLE) -> PurpleWool,
-    new Wool(BLUE) -> BlueWool,
-    new Wool(BROWN) -> BrownWool,
-    new Wool(GREEN) -> GreenWool,
-    new Wool(RED) -> RedWool,
-    new Wool(BLACK) -> BlackWool,
+    new org.bukkit.material.Wool(WHITE) -> WhiteWool,
+    new org.bukkit.material.Wool(ORANGE) -> OrangeWool,
+    new org.bukkit.material.Wool(MAGENTA) -> MagentaWool,
+    new org.bukkit.material.Wool(LIGHT_BLUE) -> LightBlueWool,
+    new org.bukkit.material.Wool(YELLOW) -> YellowWool,
+    new org.bukkit.material.Wool(LIME) -> LimeWool,
+    new org.bukkit.material.Wool(PINK) -> PinkWool,
+    new org.bukkit.material.Wool(GRAY) -> GrayWool,
+    new org.bukkit.material.Wool(SILVER) -> LightGrayWool,
+    new org.bukkit.material.Wool(CYAN) -> CyanWool,
+    new org.bukkit.material.Wool(PURPLE) -> PurpleWool,
+    new org.bukkit.material.Wool(BLUE) -> BlueWool,
+    new org.bukkit.material.Wool(BROWN) -> BrownWool,
+    new org.bukkit.material.Wool(GREEN) -> GreenWool,
+    new org.bukkit.material.Wool(RED) -> RedWool,
+    new org.bukkit.material.Wool(BLACK) -> BlackWool,
     new MaterialData(PISTON_MOVING_PIECE) -> PistonMovingPiece,
     new MaterialData(YELLOW_FLOWER) -> Dandelion,
     new MaterialData(RED_ROSE) -> Poppy,
@@ -234,8 +244,8 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(SMOOTH_BRICK, 1.toByte) -> CrackedStoneBrick,
     new MaterialData(SMOOTH_BRICK, 2.toByte) -> MossyStoneBrick,
     new MaterialData(SMOOTH_BRICK, 3.toByte) -> ChiseledStoneBrick,
-    new MaterialData(HUGE_MUSHROOM_1) -> HugeMushroom1,
-    new MaterialData(HUGE_MUSHROOM_2) -> HugeMushroom2,
+    new MaterialData(HUGE_MUSHROOM_1) -> BrownMushroomBlock,
+    new MaterialData(HUGE_MUSHROOM_2) -> RedMushroomBlock,
     new MaterialData(IRON_FENCE) -> IronFence,
     new MaterialData(THIN_GLASS) -> GlassPane,
     new MaterialData(MELON_BLOCK) -> MelonBlock,
@@ -260,18 +270,18 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(DRAGON_EGG) -> DragonEgg,
     new MaterialData(REDSTONE_LAMP_OFF) -> RedstoneLampOff,
     new MaterialData(REDSTONE_LAMP_ON) -> RedstoneLampOn,
-    new Wood(GENERIC) -> OakDoubleSlab,
-    new Wood(REDWOOD) -> SpruceDoubleSlab,
-    new Wood(BIRCH) -> BirchDoubleSlab,
-    new Wood(JUNGLE) -> JungleDoubleSlab,
-    new Wood(ACACIA) -> AcaciaDoubleSlab,
-    new Wood(DARK_OAK) -> DarkOakDoubleSlab,
     new WoodenStep(GENERIC) -> OakSingleSlab,
     new WoodenStep(REDWOOD) -> SpruceSingleSlab,
     new WoodenStep(BIRCH) -> BirchSingleSlab,
     new WoodenStep(JUNGLE) -> JungleSingleSlab,
     new WoodenStep(ACACIA) -> AcaciaSingleSlab,
     new WoodenStep(DARK_OAK) -> DarkOakSingleSlab,
+    new MaterialData(WOOD_DOUBLE_STEP) -> OakDoubleSlab,
+    new MaterialData(WOOD_DOUBLE_STEP, 1.toByte) -> SpruceDoubleSlab,
+    new MaterialData(WOOD_DOUBLE_STEP, 2.toByte) -> BirchDoubleSlab,
+    new MaterialData(WOOD_DOUBLE_STEP, 3.toByte) -> JungleDoubleSlab,
+    new MaterialData(WOOD_DOUBLE_STEP, 4.toByte) -> AcaciaDoubleSlab,
+    new MaterialData(WOOD_DOUBLE_STEP, 5.toByte) -> DarkOakDoubleSlab,
     new MaterialData(COCOA) -> Cocoa,
     new MaterialData(SANDSTONE_STAIRS) -> SandstoneStairs,
     new MaterialData(EMERALD_ORE) -> EmeraldOre,
@@ -307,22 +317,22 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(QUARTZ_STAIRS) -> QuartzStairs,
     new MaterialData(ACTIVATOR_RAIL) -> ActivatorRails,
     new MaterialData(DROPPER) -> Dropper,
-    new MaterialData(STAINED_CLAY) -> WhiteHardenedClay,
-    new MaterialData(STAINED_CLAY, 1.toByte) -> OrangeHardenedClay,
-    new MaterialData(STAINED_CLAY, 2.toByte) -> MagentaHardenedClay,
-    new MaterialData(STAINED_CLAY, 3.toByte) -> LightBlueHardenedClay,
-    new MaterialData(STAINED_CLAY, 4.toByte) -> YellowHardenedClay,
-    new MaterialData(STAINED_CLAY, 5.toByte) -> LimeHardenedClay,
-    new MaterialData(STAINED_CLAY, 6.toByte) -> PinkHardenedClay,
-    new MaterialData(STAINED_CLAY, 7.toByte) -> GrayHardenedClay,
-    new MaterialData(STAINED_CLAY, 8.toByte) -> LightGrayHardenedClay,
-    new MaterialData(STAINED_CLAY, 9.toByte) -> CyanHardenedClay,
-    new MaterialData(STAINED_CLAY, 10.toByte) -> PurpleHardenedClay,
-    new MaterialData(STAINED_CLAY, 11.toByte) -> BlueHardenedClay,
-    new MaterialData(STAINED_CLAY, 12.toByte) -> BrownHardenedClay,
-    new MaterialData(STAINED_CLAY, 13.toByte) -> GreenHardenedClay,
-    new MaterialData(STAINED_CLAY, 14.toByte) -> RedHardenedClay,
-    new MaterialData(STAINED_CLAY, 15.toByte) -> BlackHardenedClay,
+    new MaterialData(STAINED_CLAY) -> WhiteTerracotta,
+    new MaterialData(STAINED_CLAY, 1.toByte) -> OrangeTerracotta,
+    new MaterialData(STAINED_CLAY, 2.toByte) -> MagentaTerracotta,
+    new MaterialData(STAINED_CLAY, 3.toByte) -> LightBlueTerracotta,
+    new MaterialData(STAINED_CLAY, 4.toByte) -> YellowTerracotta,
+    new MaterialData(STAINED_CLAY, 5.toByte) -> LimeTerracotta,
+    new MaterialData(STAINED_CLAY, 6.toByte) -> PinkTerracotta,
+    new MaterialData(STAINED_CLAY, 7.toByte) -> GrayTerracotta,
+    new MaterialData(STAINED_CLAY, 8.toByte) -> LightGrayTerracotta,
+    new MaterialData(STAINED_CLAY, 9.toByte) -> CyanTerracotta,
+    new MaterialData(STAINED_CLAY, 10.toByte) -> PurpleTerracotta,
+    new MaterialData(STAINED_CLAY, 11.toByte) -> BlueTerracotta,
+    new MaterialData(STAINED_CLAY, 12.toByte) -> BrownTerracotta,
+    new MaterialData(STAINED_CLAY, 13.toByte) -> GreenTerracotta,
+    new MaterialData(STAINED_CLAY, 14.toByte) -> RedTerracotta,
+    new MaterialData(STAINED_CLAY, 15.toByte) -> BlackTerracotta,
     new MaterialData(STAINED_GLASS_PANE) -> WhiteGlassPane,
     new MaterialData(STAINED_GLASS_PANE, 1.toByte) -> OrangeGlassPane,
     new MaterialData(STAINED_GLASS_PANE, 2.toByte) -> MagentaGlassPane,
@@ -339,8 +349,8 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(STAINED_GLASS_PANE, 13.toByte) -> GreenGlassPane,
     new MaterialData(STAINED_GLASS_PANE, 14.toByte) -> RedGlassPane,
     new MaterialData(STAINED_GLASS_PANE, 15.toByte) -> BlackGlassPane,
-    new Leaves(ACACIA) -> AcaciaLeaves,
-    new Leaves(DARK_OAK) -> DarkOakLeaves,
+    new org.bukkit.material.Leaves(ACACIA) -> AcaciaLeaves,
+    new org.bukkit.material.Leaves(DARK_OAK) -> DarkOakLeaves,
     new Tree(ACACIA) -> AcaciaLog,
     new Tree(DARK_OAK) -> DarkOakLog,
     new MaterialData(ACACIA_STAIRS) -> AcaciaStairs,
@@ -369,7 +379,9 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(CARPET, 13.toByte) -> GreenCarpet,
     new MaterialData(CARPET, 14.toByte) -> RedCarpet,
     new MaterialData(CARPET, 15.toByte) -> BlackCarpet,
-    new MaterialData(HARD_CLAY) -> HardenedClay,
+
+    new MaterialData(HARD_CLAY) -> Terracotta,
+    
     new MaterialData(COAL_BLOCK) -> CoalBlock,
     new MaterialData(PACKED_ICE) -> PackedIce,
     new MaterialData(DOUBLE_PLANT) -> DoublePlant,
@@ -441,6 +453,54 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(GREEN_SHULKER_BOX) -> GreenShulkerBox,
     new MaterialData(RED_SHULKER_BOX) -> RedShulkerBox,
     new MaterialData(BLACK_SHULKER_BOX) -> BlackShulkerBox,
+    new MaterialData(WHITE_GLAZED_TERRACOTTA) -> WhiteGlazedTerracotta,
+    new MaterialData(ORANGE_GLAZED_TERRACOTTA) -> OrangeGlazedTerracotta,
+    new MaterialData(MAGENTA_GLAZED_TERRACOTTA) -> MagentaGlazedTerracotta,
+    new MaterialData(LIGHT_BLUE_GLAZED_TERRACOTTA) -> LightBlueGlazedTerracotta,
+    new MaterialData(YELLOW_GLAZED_TERRACOTTA) -> YellowGlazedTerracotta,
+    new MaterialData(LIME_GLAZED_TERRACOTTA) -> LimeGlazedTerracotta,
+    new MaterialData(PINK_GLAZED_TERRACOTTA) -> PinkGlazedTerracotta,
+    new MaterialData(GRAY_GLAZED_TERRACOTTA) -> GrayGlazedTerracotta,
+    new MaterialData(SILVER_GLAZED_TERRACOTTA) -> LightGrayGlazedTerracotta,
+    new MaterialData(CYAN_GLAZED_TERRACOTTA) -> CyanGlazedTerracotta,
+    new MaterialData(PURPLE_GLAZED_TERRACOTTA) -> PurpleGlazedTerracotta,
+    new MaterialData(BLUE_GLAZED_TERRACOTTA) -> BlueGlazedTerracotta,
+    new MaterialData(BROWN_GLAZED_TERRACOTTA) -> BrownGlazedTerracotta,
+    new MaterialData(GREEN_GLAZED_TERRACOTTA) -> GreenGlazedTerracotta,
+    new MaterialData(RED_GLAZED_TERRACOTTA) -> RedGlazedTerracotta,
+    new MaterialData(BLACK_GLAZED_TERRACOTTA) -> BlackGlazedTerracotta,
+    new MaterialData(CONCRETE) -> WhiteConcrete,
+    new MaterialData(CONCRETE, 1.toByte) -> OrangeConcrete,
+    new MaterialData(CONCRETE, 2.toByte) -> MagentaConcrete,
+    new MaterialData(CONCRETE, 3.toByte) -> LightBlueConcrete,
+    new MaterialData(CONCRETE, 4.toByte) -> YellowConcrete,
+    new MaterialData(CONCRETE, 5.toByte) -> LimeConcrete,
+    new MaterialData(CONCRETE, 6.toByte) -> PinkConcrete,
+    new MaterialData(CONCRETE, 7.toByte) -> GrayConcrete,
+    new MaterialData(CONCRETE, 8.toByte) -> LightGrayConcrete,
+    new MaterialData(CONCRETE, 9.toByte) -> CyanConcrete,
+    new MaterialData(CONCRETE, 10.toByte) -> PurpleConcrete,
+    new MaterialData(CONCRETE, 11.toByte) -> BlueConcrete,
+    new MaterialData(CONCRETE, 12.toByte) -> BrownConcrete,
+    new MaterialData(CONCRETE, 13.toByte) -> GreenConcrete,
+    new MaterialData(CONCRETE, 14.toByte) -> RedConcrete,
+    new MaterialData(CONCRETE, 15.toByte) -> BlackConcrete,
+    new MaterialData(CONCRETE_POWDER) -> WhiteConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 1.toByte) -> OrangeConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 2.toByte) -> MagentaConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 3.toByte) -> LightBlueConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 4.toByte) -> YellowConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 5.toByte) -> LimeConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 6.toByte) -> PinkConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 7.toByte) -> GrayConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 8.toByte) -> LightGrayConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 9.toByte) -> CyanConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 10.toByte) -> PurpleConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 11.toByte) -> BlueConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 12.toByte) -> BrownConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 13.toByte) -> GreenConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 14.toByte) -> RedConcretePowder,
+    new MaterialData(CONCRETE_POWDER, 15.toByte) -> BlackConcretePowder,
     new MaterialData(STRUCTURE_BLOCK) -> StructureSaveBlock,
     new MaterialData(STRUCTURE_BLOCK, 1.toByte) -> StructureLoadBlock,
     new MaterialData(STRUCTURE_BLOCK, 2.toByte) -> StructureCornerBlock,
@@ -546,26 +606,41 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(RAW_FISH, 3.toByte) -> Pufferfish,
     new MaterialData(COOKED_FISH) -> CookedFish,
     new MaterialData(COOKED_FISH, 1.toByte) -> CookedSalmon,
-    new Dye(BLACK) -> InkSack,
-    new Dye(RED) -> RoseRed,
-    new Dye(GREEN) -> CactusGreen,
-    new Dye(BROWN) -> CocoaBeans,
-    new Dye(BLUE) -> LapisLazuli,
-    new Dye(PURPLE) -> PurpleDye,
-    new Dye(CYAN) -> CyanDye,
-    new Dye(SILVER) -> LightGrayDye,
-    new Dye(GRAY) -> GrayDye,
-    new Dye(PINK) -> PinkDye,
-    new Dye(LIME) -> LimeDye,
-    new Dye(YELLOW) -> DandelionYellow,
-    new Dye(LIGHT_BLUE) -> LightBlueDye,
-    new Dye(MAGENTA) -> MagentaDye,
-    new Dye(ORANGE) -> OrangeDye,
-    new Dye(WHITE) -> BoneMeal,
+    new org.bukkit.material.Dye(BLACK) -> InkSack,
+    new org.bukkit.material.Dye(RED) -> RoseRed,
+    new org.bukkit.material.Dye(GREEN) -> CactusGreen,
+    new org.bukkit.material.Dye(BROWN) -> CocoaBeans,
+    new org.bukkit.material.Dye(BLUE) -> LapisLazuli,
+    new org.bukkit.material.Dye(PURPLE) -> PurpleDye,
+    new org.bukkit.material.Dye(CYAN) -> CyanDye,
+    new org.bukkit.material.Dye(SILVER) -> LightGrayDye,
+    new org.bukkit.material.Dye(GRAY) -> GrayDye,
+    new org.bukkit.material.Dye(PINK) -> PinkDye,
+    new org.bukkit.material.Dye(LIME) -> LimeDye,
+    new org.bukkit.material.Dye(YELLOW) -> DandelionYellow,
+    new org.bukkit.material.Dye(LIGHT_BLUE) -> LightBlueDye,
+    new org.bukkit.material.Dye(MAGENTA) -> MagentaDye,
+    new org.bukkit.material.Dye(ORANGE) -> OrangeDye,
+    new org.bukkit.material.Dye(WHITE) -> BoneMeal,
     new MaterialData(BONE) -> Bone,
     new MaterialData(SUGAR) -> Sugar,
     new MaterialData(CAKE) -> Cake,
-    new MaterialData(BED) -> Bed,
+    new MaterialData(BED) -> WhiteBed,
+    new MaterialData(BED, 1.toByte) -> OrangeBed,
+    new MaterialData(BED, 2.toByte) -> MagentaBed,
+    new MaterialData(BED, 3.toByte) -> LightBlueBed,
+    new MaterialData(BED, 4.toByte) -> YellowBed,
+    new MaterialData(BED, 5.toByte) -> LimeBed,
+    new MaterialData(BED, 6.toByte) -> PinkBed,
+    new MaterialData(BED, 7.toByte) -> GrayBed,
+    new MaterialData(BED, 8.toByte) -> LightGrayBed,
+    new MaterialData(BED, 9.toByte) -> CyanBed,
+    new MaterialData(BED, 10.toByte) -> PurpleBed,
+    new MaterialData(BED, 11.toByte) -> BlueBed,
+    new MaterialData(BED, 12.toByte) -> BrownBed,
+    new MaterialData(BED, 13.toByte) -> GreenBed,
+    new MaterialData(BED, 14.toByte) -> RedBed,
+    new MaterialData(BED, 15.toByte) -> BlackBed,
     new MaterialData(DIODE) -> RedstoneRepeater,
     new MaterialData(COOKIE) -> Cookie,
     new MaterialData(MAP) -> DrawnMap,
@@ -682,6 +757,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(TOTEM) -> TotemOfUndying,
     new MaterialData(SHULKER_SHELL) -> ShulkerShell,
     new MaterialData(IRON_NUGGET) -> IronNugget,
+    new MaterialData(KNOWLEDGE_BOOK) -> KnowledgeBook,
     new MaterialData(GOLD_RECORD) -> GoldRecord,
     new MaterialData(GREEN_RECORD) -> GreenRecord,
     new MaterialData(RECORD_3) -> Record3,
@@ -693,43 +769,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
     new MaterialData(RECORD_9) -> Record9,
     new MaterialData(RECORD_10) -> Record10,
     new MaterialData(RECORD_11) -> Record11,
-    new MaterialData(RECORD_12) -> Record12/*,
-    new MaterialData(STONE, (-1).toByte) -> Seq(Stone, Granite, PolishedGranite, Diorite, PolishedDiorite, Andesite, PolishedAndesite).minBy(_.energy),
-    new MaterialData(DIRT, (-1).toByte) -> Seq(Dirt, CoarseDirt, Podzol).minBy(_.energy),
-    new MaterialData(WOOD, (-1).toByte) -> Seq(OakWoodPlanks, SpruceWoodPlanks, BirchWoodPlanks, JungleWoodPlanks, AcaciaWoodPlanks, DarkOakWoodPlanks).minBy(_.energy),
-    new MaterialData(SAPLING, (-1).toByte) -> Seq(OakSapling, SpruceSapling, BirchSapling, JungleSapling, AcaciaSapling, DarkOakSapling).minBy(_.energy),
-    new MaterialData(LOG, (-1).toByte) -> Seq(OakLog, SpruceLog, BirchLog, JungleLog).minBy(_.energy),
-    new MaterialData(LEAVES, (-1).toByte) -> Seq(OakLeaves, SpruceLeaves, BirchLeaves, JungleLeaves).minBy(_.energy),
-    new MaterialData(SPONGE, (-1).toByte) -> Seq(Sponge, WetSponge).minBy(_.energy),
-    new MaterialData(SANDSTONE, (-1).toByte) -> Seq(Sandstone, SmoothSandstone, ChiseledSandstone).minBy(_.energy),
-    new MaterialData(LONG_GRASS, (-1).toByte) -> Seq(Shrub, LongGrass, Fern).minBy(_.energy),
-    new MaterialData(WOOL, (-1).toByte) -> Seq(WhiteWool, OrangeWool, MagentaWool, LightBlueWool, YellowWool, LimeWool, PinkWool, GrayWool, LightGrayWool, CyanWool, PurpleWool, BlueWool, BrownWool, GreenWool, RedWool, BlackWool).minBy(_.energy),
-    new MaterialData(RED_ROSE, (-1).toByte) -> Seq(Poppy, BlueOrchid, Allium, AzureBluet, RedTulip, OrangeTulip, WhiteTulip, PinkTulip, OxeyeDaisy).minBy(_.energy),
-    new MaterialData(DOUBLE_STEP, (-1).toByte) -> Seq(StoneDoubleSlab, SandstoneDoubleSlab, OldWoodDoubleSlab, CobblestoneDoubleSlab, BrickDoubleSlab, StoneBrickDoubleSlab, NetherBrickDoubleSlab, QuartzDoubleSlab).minBy(_.energy),
-    new MaterialData(STEP, (-1).toByte) -> Seq(StoneSingleSlab, SandstoneSingleSlab, OldWoodSingleSlab, CobblestoneSingleSlab, BrickSingleSlab, StoneBrickSingleSlab, NetherBrickSingleSlab, QuartzSingleSlab).minBy(_.energy),
-    new MaterialData(STAINED_GLASS, (-1).toByte) -> Seq(WhiteGlass, OrangeGlass, MagentaGlass, LightBlueGlass, YellowGlass, LimeGlass, PinkGlass, GrayGlass, LightGrayGlass, CyanGlass, PurpleGlass, BlueGlass, BrownGlass, GreenGlass, RedGlass, BlackGlass).minBy(_.energy),
-    new MaterialData(SMOOTH_BRICK, (-1).toByte) -> Seq(StoneBrick, CrackedStoneBrick, MossyStoneBrick, ChiseledStoneBrick).minBy(_.energy),
-    new MaterialData(WOOD_DOUBLE_STEP, (-1).toByte) -> Seq(OakDoubleSlab, SpruceDoubleSlab, BirchDoubleSlab, JungleDoubleSlab, AcaciaDoubleSlab, DarkOakDoubleSlab).minBy(_.energy),
-    new MaterialData(WOOD_STEP, (-1).toByte) -> Seq(OakSingleSlab, SpruceSingleSlab, BirchSingleSlab, JungleSingleSlab, AcaciaSingleSlab, DarkOakSingleSlab).minBy(_.energy),
-    new MaterialData(COBBLE_WALL, (-1).toByte) -> Seq(CobblestoneWall, MossyCobblestoneWall).minBy(_.energy),
-    new MaterialData(QUARTZ_BLOCK, (-1).toByte) -> Seq(QuartzBlock, ChiseledQuartzBlock, PillarQuartzBlock).minBy(_.energy),
-    new MaterialData(STAINED_CLAY, (-1).toByte) -> Seq(WhiteHardenedClay, OrangeHardenedClay, MagentaHardenedClay, LightBlueHardenedClay, YellowHardenedClay, LimeHardenedClay, PinkHardenedClay, GrayHardenedClay, LightGrayHardenedClay, CyanHardenedClay, PurpleHardenedClay, BlueHardenedClay, BrownHardenedClay, GreenHardenedClay, RedHardenedClay, BlackHardenedClay).minBy(_.energy),
-    new MaterialData(STAINED_GLASS_PANE, (-1).toByte) -> Seq(WhiteGlassPane, OrangeGlassPane, MagentaGlassPane, LightBlueGlassPane, YellowGlassPane, LimeGlassPane, PinkGlassPane, GrayGlassPane, LightGrayGlassPane, CyanGlassPane, PurpleGlassPane, BlueGlassPane, BrownGlassPane, GreenGlassPane, RedGlassPane, BlackGlassPane).minBy(_.energy),
-    new MaterialData(LEAVES_2, (-1).toByte) -> Seq(AcaciaLeaves, DarkOakLeaves).minBy(_.energy),
-    new MaterialData(LOG_2, (-1).toByte) -> Seq(AcaciaLog, DarkOakLog).minBy(_.energy),
-    new MaterialData(PRISMARINE, (-1).toByte) -> Seq(Prismarine, PrismarineBrick, DarkPrismarine).minBy(_.energy),
-    new MaterialData(CARPET, (-1).toByte) -> Seq(WhiteCarpet, OrangeCarpet, MagentaCarpet, LightBlueCarpet, YellowCarpet, LimeCarpet, PinkCarpet, GrayCarpet, LightGrayCarpet, CyanCarpet, PurpleCarpet, BlueCarpet, BrownCarpet, GreenCarpet, RedCarpet, BlackCarpet).minBy(_.energy),
-    new MaterialData(DOUBLE_PLANT, (-1).toByte) -> Seq(DoublePlant, Sunflower, Lilac, DoubleTallgrass, LargeFern, RoseBush, Peony, TopPlantHalf).minBy(_.energy),
-    new MaterialData(RED_SANDSTONE, (-1).toByte) -> Seq(RedSandstone, SmoothRedSandstone, ChiseledRedSandstone).minBy(_.energy),
-    new MaterialData(STRUCTURE_BLOCK, (-1).toByte) -> Seq(StructureSaveBlock, StructureLoadBlock, StructureCornerBlock, StructureDataBlock).minBy(_.energy),
-    new MaterialData(COAL, (-1).toByte) -> Seq(Coal, Charcoal).minBy(_.energy),
-    new MaterialData(GOLDEN_APPLE, (-1).toByte) -> Seq(GoldenApple, EnchantedGoldenApple).minBy(_.energy),
-    new MaterialData(RAW_FISH, (-1).toByte) -> Seq(RawFish, RawSalmon, Clownfish, Pufferfish).minBy(_.energy),
-    new MaterialData(COOKED_FISH, (-1).toByte) -> Seq(CookedFish, CookedSalmon).minBy(_.energy),
-    new MaterialData(INK_SACK, (-1).toByte) -> Seq(InkSack, RoseRed, CactusGreen, CocoaBeans, LapisLazuli, PurpleDye, CyanDye, LightGrayDye, GrayDye, PinkDye, LimeDye, DandelionYellow, LightBlueDye, MagentaDye, OrangeDye, BoneMeal).minBy(_.energy),
-    new MaterialData(SKULL_ITEM, (-1).toByte) -> Seq(SkeletonHead, WitherSkeletonHead, ZombieHead, PlayerHead, CreeperHead, DragonHead).minBy(_.energy),
-    new MaterialData(SAND, (-1).toByte) -> Seq(Sand, RedSand).minBy(_.energy),
-    new MaterialData(BANNER, (-1).toByte) -> Seq(WhiteBanner, OrangeBanner, MagentaBanner, LightBlueBanner, YellowBanner, LimeBanner, PinkBanner, GrayBanner, LightGrayBanner, CyanBanner, PurpleBanner, BlueBanner, BrownBanner, GreenBanner, RedBanner, BlackBanner).minBy(_.energy)*/
+    new MaterialData(RECORD_12) -> Record12,
   )
 
   private val materialToMaterialData: Map[Material, MaterialData] = materialDataToMaterial.map(_.swap)
@@ -740,13 +780,15 @@ object Material extends CirceEnum[Material] with Enum[Material] {
       //Directional stuff
       data.isInstanceOf[Directional] || data.isInstanceOf[RedstoneWire] ||
         //This is all kind of wierd stuff on your inventory, for instance, air(which is used to represent empty slots.
-        data.getItemType.isBlock == false && data.getData == 3 ||
+        data.getItemType.isBlock == false && data.getItemType == AIR/*data.getData == 3*/ ||
         //Materials with durability
         data.getItemType.getMaxDurability.toInt > 0 ||
         //Other stuff
         data.getItemType == ANVIL || data.getItemType == FIRE ||
         //Special Types
-        data.getItemType == PISTON_MOVING_PIECE || data.getItemType == AIR
+        data.getItemType == PISTON_MOVING_PIECE || data.getItemType == AIR ||
+        //Generic Types
+        data.getData == -1
     }
 
     materialDataToMaterial(if (isSpecialCase(data)) new MaterialData(data.getItemType) else data)
@@ -758,544 +800,659 @@ object Material extends CirceEnum[Material] with Enum[Material] {
 
   override def values: IndexedSeq[Material] = findValues
 
+  def filter[T: ClassTag]: Seq[Material with T] = values collect {
+    case t: T => t.asInstanceOf[Material with T]
+  }
+
   //@formatter:off
-  object Air extends Material(energy = -1) with Transparent with Crushable with Unconsumable
-  object Stone extends Material(energy = 1) with Solid
-  object Granite extends Material(energy = 1) with Solid
+  object Air extends Material with Transparent with Crushable with NoEnergy
+  object Stone extends Material(tier = T0) with Solid
+  object Granite extends Material(tier = T0) with Solid
   object PolishedGranite extends Material with Solid
-  object Diorite extends Material(energy = 1) with Solid
+  object Diorite extends Material(tier = T0) with Solid
   object PolishedDiorite extends Material with Solid
-  object Andesite extends Material(energy = 1) with Solid
+  object Andesite extends Material(tier = T0) with Solid
   object PolishedAndesite extends Material with Solid
-  object Grass extends Material(energy = 1) with Solid
-  object Dirt extends Material(energy = 1) with Solid
+  object Grass extends Material(tier = T0) with Solid
+  object Dirt extends Material(tier = T0) with Solid
   object CoarseDirt extends Material with Solid
-  object Podzol extends Material(energy = 1) with Solid
-  object Cobblestone extends Material(energy = 1) with Solid
-  object OakWoodPlanks extends Material with GenericPlank
-  object SpruceWoodPlanks extends Material with GenericPlank
-  object BirchWoodPlanks extends Material with GenericPlank
-  object JungleWoodPlanks extends Material with GenericPlank
-  object AcaciaWoodPlanks extends Material with GenericPlank
-  object DarkOakWoodPlanks extends Material with GenericPlank
-  object OakSapling extends Material(tierString = "T2") with GenericSapling
-  object SpruceSapling extends Material(tierString = "T2") with GenericSapling
-  object BirchSapling extends Material(tierString = "T2") with GenericSapling
-  object JungleSapling extends Material(tierString = "T2") with GenericSapling
-  object AcaciaSapling extends Material(tierString = "T2") with GenericSapling
-  object DarkOakSapling extends Material(tierString = "T2") with GenericSapling
-  object Bedrock extends Material(energy = -1) with Solid with Unconsumable
+  object Podzol extends Material(tier = T0) with Solid
+  object Cobblestone extends Material(tier = T0) with Solid
+  object OakWoodPlanks extends Material with Plank
+  object SpruceWoodPlanks extends Material with Plank
+  object BirchWoodPlanks extends Material with Plank
+  object JungleWoodPlanks extends Material with Plank
+  object AcaciaWoodPlanks extends Material with Plank
+  object DarkOakWoodPlanks extends Material with Plank
+  object OakSapling extends Material(tier = T2) with Sapling
+  object SpruceSapling extends Material(tier = T2) with Sapling
+  object BirchSapling extends Material(tier = T2) with Sapling
+  object JungleSapling extends Material(tier = T2) with Sapling
+  object AcaciaSapling extends Material(tier = T2) with Sapling
+  object DarkOakSapling extends Material(tier = T2) with Sapling
+  object Bedrock extends Material with Solid with NoEnergy
   object Water extends Material(energy = 14) with Transparent with Liquid
   object StationaryWater extends Material(energy = 14) with Transparent with Liquid
   object Lava extends Material(energy = 68) with Liquid
   object StationaryLava extends Material(energy = 68) with Liquid
-  object Sand extends Material(energy = 1) with Solid with Gravity
-  object RedSand extends Material(energy = 1) with Solid with Gravity
-  object Gravel extends Material(tierString = "T2") with Solid with Gravity
+  object Sand extends Material(tier = T0) with Solid with Gravity
+  object RedSand extends Material(tier = T0) with Solid with Gravity
+  object Gravel extends Material(tier = T2) with Solid with Gravity
   object GoldOre extends Material(energy = 1168) with Solid
-  object IronOre extends Material(tierString = "T3") with Solid
+  object IronOre extends Material(tier = T3) with Solid
   object CoalOre extends Material with Solid
-  object OakLog extends Material(tierString = "T2") with GenericLog
-  object SpruceLog extends Material(tierString = "T2") with GenericLog
-  object BirchLog extends Material(tierString = "T2") with GenericLog
-  object JungleLog extends Material(tierString = "T2") with GenericLog
-  object OakLeaves extends Material(tierString = "T2") with GenericLeaves
-  object SpruceLeaves extends Material(tierString = "T2") with GenericLeaves
-  object BirchLeaves extends Material(tierString = "T2") with GenericLeaves
-  object JungleLeaves extends Material(tierString = "T2") with GenericLeaves
+  object OakLog extends Material(tier = T2) with Log
+  object SpruceLog extends Material(tier = T2) with Log
+  object BirchLog extends Material(tier = T2) with Log
+  object JungleLog extends Material(tier = T2) with Log
+  object OakLeaves extends Material(tier = T2) with Leaves
+  object SpruceLeaves extends Material(tier = T2) with Leaves
+  object BirchLeaves extends Material(tier = T2) with Leaves
+  object JungleLeaves extends Material(tier = T2) with Leaves
   object Sponge extends Material(energy = 210) with Solid
   object WetSponge extends Material(energy = 18538) with Solid
-  object Glass extends Material with GenericGlass
+  object Glass extends Material with Glass
   object LapisLazuliOre extends Material with Solid
   object LapisLazuliBlock extends Material with Solid
   object Dispenser extends Material with Rotates with Inventory
   object Sandstone extends Material with Solid
   object SmoothSandstone extends Material with Solid
   object ChiseledSandstone extends Material with Solid
-  object NoteBlock extends Material with Solid
+  object NoteBlock extends Material with Solid with Fuel {
+    override val burnTicks: Int = 300
+  }
   object BedBlock extends Material with Solid with Rotates
-  object PoweredRails extends Material with GenericRails
-  object DetectorRails extends Material with GenericRails
+  object PoweredRails extends Material with Rails
+  object DetectorRails extends Material with Rails
   object StickyPiston extends Material with Solid
-  object Cobweb extends Material(energy = 2279) with GenericPlant
-  object Shrub extends Material(energy = 1) with GenericPlant
-  object LongGrass extends Material(energy = 1) with GenericPlant
-  object Fern extends Material(energy = 1) with GenericPlant
-  object DeadBush extends Material(tierString = "T3") with GenericPlant
+  object Cobweb extends Material(energy = 2279) with Plant
+  object Shrub extends Material(tier = T0) with Plant
+  object LongGrass extends Material(tier = T0) with Plant
+  object Fern extends Material(tier = T0) with Plant
+  object DeadBush extends Material(tier = T3) with Plant
   object Piston extends Material with Solid
-  object PistonExtension extends Material(energy = -1) with Solid with Unconsumable
-  object WhiteWool extends Material with GenericWool
-  object OrangeWool extends Material with GenericWool
-  object MagentaWool extends Material with GenericWool
-  object LightBlueWool extends Material with GenericWool
-  object YellowWool extends Material with GenericWool
-  object LimeWool extends Material with GenericWool
-  object PinkWool extends Material with GenericWool
-  object GrayWool extends Material with GenericWool
-  object LightGrayWool extends Material with GenericWool
-  object CyanWool extends Material with GenericWool
-  object PurpleWool extends Material with GenericWool
-  object BlueWool extends Material with GenericWool
-  object BrownWool extends Material with GenericWool
-  object GreenWool extends Material with GenericWool
-  object RedWool extends Material with GenericWool
-  object BlackWool extends Material with GenericWool
-  object PistonMovingPiece extends Material(energy = -1) with Solid with Unconsumable
-  object Dandelion extends Material(energy = 14) with GenericPlant
-  object Poppy extends Material(energy = 14) with GenericPlant
-  object BlueOrchid extends Material(energy = 14) with GenericPlant
-  object Allium extends Material(energy = 14) with GenericPlant
-  object AzureBluet extends Material(energy = 14) with GenericPlant
-  object RedTulip extends Material(energy = 14) with GenericPlant
-  object OrangeTulip extends Material(energy = 14) with GenericPlant
-  object WhiteTulip extends Material(energy = 14) with GenericPlant
-  object PinkTulip extends Material(energy = 14) with GenericPlant
-  object OxeyeDaisy extends Material(energy = 14) with GenericPlant
-  object BrownMushroom extends Material(energy = 159) with GenericPlant
-  object RedMushroom extends Material(energy = 159) with GenericPlant
+  object PistonExtension extends Material with Solid with NoEnergy
+  object WhiteWool extends Material with Wool
+  object OrangeWool extends Material with Wool
+  object MagentaWool extends Material with Wool
+  object LightBlueWool extends Material with Wool
+  object YellowWool extends Material with Wool
+  object LimeWool extends Material with Wool
+  object PinkWool extends Material with Wool
+  object GrayWool extends Material with Wool
+  object LightGrayWool extends Material with Wool
+  object CyanWool extends Material with Wool
+  object PurpleWool extends Material with Wool
+  object BlueWool extends Material with Wool
+  object BrownWool extends Material with Wool
+  object GreenWool extends Material with Wool
+  object RedWool extends Material with Wool
+  object BlackWool extends Material with Wool
+  object PistonMovingPiece extends Material with Solid with NoEnergy
+  object Dandelion extends Material(energy = 14) with Plant
+  object Poppy extends Material(energy = 14) with Plant
+  object BlueOrchid extends Material(energy = 14) with Plant
+  object Allium extends Material(energy = 14) with Plant
+  object AzureBluet extends Material(energy = 14) with Plant
+  object RedTulip extends Material(energy = 14) with Plant
+  object OrangeTulip extends Material(energy = 14) with Plant
+  object WhiteTulip extends Material(energy = 14) with Plant
+  object PinkTulip extends Material(energy = 14) with Plant
+  object OxeyeDaisy extends Material(energy = 14) with Plant
+  object BrownMushroom extends Material(energy = 159) with Plant
+  object RedMushroom extends Material(energy = 159) with Plant
   object GoldBlock extends Material with Solid
   object IronBlock extends Material with Solid
-  object StoneDoubleSlab extends Material with GenericDoubleSlab
-  object SandstoneDoubleSlab extends Material with GenericDoubleSlab
-  object OldWoodDoubleSlab extends Material(energy = -1) with Unconsumable with GenericDoubleSlab
-  object CobblestoneDoubleSlab extends Material with GenericDoubleSlab
-  object BrickDoubleSlab extends Material with GenericDoubleSlab
-  object StoneBrickDoubleSlab extends Material with GenericDoubleSlab
-  object NetherBrickDoubleSlab extends Material with GenericDoubleSlab
-  object QuartzDoubleSlab extends Material with GenericDoubleSlab
-  object StoneSingleSlab extends Material with GenericSingleSlab
-  object SandstoneSingleSlab extends Material with GenericSingleSlab
-  object OldWoodSingleSlab extends Material(energy = -1) with Unconsumable with GenericSingleSlab
-  object CobblestoneSingleSlab extends Material with GenericSingleSlab
-  object BrickSingleSlab extends Material with GenericSingleSlab
-  object StoneBrickSingleSlab extends Material with GenericSingleSlab
-  object NetherBrickSingleSlab extends Material with GenericSingleSlab
-  object QuartzSingleSlab extends Material with GenericSingleSlab
+  object StoneDoubleSlab extends Material with DoubleSlab
+  object SandstoneDoubleSlab extends Material with DoubleSlab
+  object OldWoodDoubleSlab extends Material with NoEnergy/* with WoodenDoubleSlab*/
+  object CobblestoneDoubleSlab extends Material with DoubleSlab
+  object BrickDoubleSlab extends Material with DoubleSlab
+  object StoneBrickDoubleSlab extends Material with DoubleSlab
+  object NetherBrickDoubleSlab extends Material with DoubleSlab
+  object QuartzDoubleSlab extends Material with DoubleSlab
+  object StoneSingleSlab extends Material with SingleSlab
+  object SandstoneSingleSlab extends Material with SingleSlab
+  object OldWoodSingleSlab extends Material with NoEnergy/* with WoodenSingleSlab*/
+  object CobblestoneSingleSlab extends Material with SingleSlab
+  object BrickSingleSlab extends Material with SingleSlab
+  object StoneBrickSingleSlab extends Material with SingleSlab
+  object NetherBrickSingleSlab extends Material with SingleSlab
+  object QuartzSingleSlab extends Material with SingleSlab
   object BrickBlock extends Material with Solid
   object TNT extends Material with Solid
-  object Bookshelf extends Material with Solid
+  object Bookshelf extends Material with Solid with Fuel {
+    override val burnTicks: Int = 300
+  }
   object MossyCobblestone extends Material with Solid
   object Obsidian extends Material(energy = 68) with Solid
-  object Torch extends Material with GenericTorch with Crushable
-  object Fire extends Material(tierString = "T3") with Transparent with Attaches with Crushable
-  object MobSpawner extends Material(tierString = "T6") with Solid
-  object OakStairs extends Material with GenericStairs
-  object Chest extends Material with Solid with Rotates with Inventory
+  object Torch extends Material with Torch with Crushable
+  object Fire extends Material(tier = T3) with Transparent with Attaches with Crushable
+  object MobSpawner extends Material(tier = T6) with Solid
+  object OakStairs extends Material with Stairs
+  object Chest extends Material with Solid with Rotates with Inventory with Fuel {
+    override val burnTicks: Int = 300
+  }
   object RedstoneWire extends Material with Transparent with Attaches
   object DiamondOre extends Material with Solid
   object DiamondBlock extends Material with Solid
-  object CraftingTable extends Material with Solid
-  object Crops extends Material(tierString = "T2") with GenericPlant
-  object Soil extends Material(energy = 1) with Solid
+  object CraftingTable extends Material with Solid with Fuel {
+    override val burnTicks: Int = 300
+  }
+  object Crops extends Material(tier = T2) with Plant
+  object Soil extends Material(tier = T0) with Solid
   object Furnace extends Material with Solid with Rotates with Inventory
   object BurningFurnace extends Material with Solid with Rotates with Inventory
-  object SignPost extends Material with Solid with Rotates
-  object OakDoor extends Material with Solid with Rotates with GenericDoor
-  object Ladder extends Material with Transparent with Attaches with Rotates
-  object Rails extends Material with GenericRails
-  object CobblestoneStairs extends Material with GenericStairs
-  object WallSign extends Material with Transparent with Rotates
+  object SignPost extends Material with Solid with Rotates with Sign
+  object OakDoor extends Material with Solid with Rotates with Door
+  object Ladder extends Material with Transparent with Attaches with Rotates with Fuel {
+    override val burnTicks: Int = 300
+  }
+  object Rails extends Material with Rails
+  object CobblestoneStairs extends Material with Stairs
+  object WallSign extends Material with Transparent with Rotates with Sign
   object Lever extends Material with Transparent with Attaches with Rotates
   object StonePressurePlate extends Material with Transparent with Attaches
-  object IronDoorBlock extends Material with Solid with Transparent with Attaches with Rotates with GenericDoor
-  object WoodPressurePlate extends Material with Transparent with Attaches
+  object IronDoorBlock extends Material with Solid with Transparent with Attaches with Rotates with Door
+  object WoodPressurePlate extends Material with Transparent with Attaches with Fuel {
+    override val burnTicks: Int = 300
+  }
   object RedstoneOre extends Material with Solid
   object GlowingRedstoneOre extends Material with Solid
-  object RedstoneTorchOff extends Material with GenericTorch
-  object RedstoneTorchOn extends Material with GenericTorch
+  object RedstoneTorchOff extends Material with Torch
+  object RedstoneTorchOn extends Material with Torch
   object StoneButton extends Material with Transparent with Attaches with Rotates
-  object Snow extends Material(energy = 1) with Transparent with Attaches with Crushable
-  object Ice extends Material(energy = 1) with Solid
-  object SnowBlock extends Material(energy = 1) with Solid
-  object Cactus extends Material(tierString = "T3") with Solid with Attaches
-  object Clay extends Material with Solid with GenericClayBlock
-  object SugarCaneBlock extends Material(tierString = "T2") with Transparent with Attaches with Crushable
-  object Jukebox extends Material with Solid
-  object OakFence extends Material with GenericFence
-  object Pumpkin extends Material(tierString = "T3") with Solid with Rotates
-  object Netherrack extends Material(energy = 1) with Solid
+  object Snow extends Material(tier = T0) with Transparent with Attaches with Crushable
+  object Ice extends Material(tier = T0) with Solid
+  object SnowBlock extends Material(tier = T0) with Solid
+  object Cactus extends Material(tier = T3) with Solid with Attaches
+  object Clay extends Material with Solid
+  object SugarCaneBlock extends Material(tier = T2) with Transparent with Attaches with Crushable
+  object Jukebox extends Material with Solid with Fuel {
+    override val burnTicks: Int = 300
+  }
+  object OakFence extends Material with Fence
+  object Pumpkin extends Material(tier = T3) with Solid with Rotates
+  object Netherrack extends Material(tier = T0) with Solid
   object SoulSand extends Material with Solid
   object Glowstone extends Material with Solid
-  object Portal extends Material(energy = -1) with Transparent with Unconsumable
+  object Portal extends Material with Transparent with NoEnergy
   object JackOLantern extends Material with Solid
-  object CakeBlock extends Material with Solid with Transparent with Food
+  object CakeBlock extends Material with Solid with Transparent with PlayerConsumable
   object RedstoneRepeaterOff extends Material
   object RedstoneRepeaterOn extends Material
-  object WhiteGlass extends Material with GenericGlass
-  object OrangeGlass extends Material with GenericGlass
-  object MagentaGlass extends Material with GenericGlass
-  object LightBlueGlass extends Material with GenericGlass
-  object YellowGlass extends Material with GenericGlass
-  object LimeGlass extends Material with GenericGlass
-  object PinkGlass extends Material with GenericGlass
-  object GrayGlass extends Material with GenericGlass
-  object LightGrayGlass extends Material with GenericGlass
-  object CyanGlass extends Material with GenericGlass
-  object PurpleGlass extends Material with GenericGlass
-  object BlueGlass extends Material with GenericGlass
-  object BrownGlass extends Material with GenericGlass
-  object GreenGlass extends Material with GenericGlass
-  object RedGlass extends Material with GenericGlass
-  object BlackGlass extends Material with GenericGlass
-  object TrapDoor extends Material with Solid with Transparent with Rotates with GenericDoor
-  object MonsterEggs extends Material(tierString = "T6") with Solid
-  object StoneBrick extends Material(energy = 1) with Solid
-  object CrackedStoneBrick extends Material(tierString = "T5") with Solid
+  object WhiteGlass extends Material with Glass
+  object OrangeGlass extends Material with Glass
+  object MagentaGlass extends Material with Glass
+  object LightBlueGlass extends Material with Glass
+  object YellowGlass extends Material with Glass
+  object LimeGlass extends Material with Glass
+  object PinkGlass extends Material with Glass
+  object GrayGlass extends Material with Glass
+  object LightGrayGlass extends Material with Glass
+  object CyanGlass extends Material with Glass
+  object PurpleGlass extends Material with Glass
+  object BlueGlass extends Material with Glass
+  object BrownGlass extends Material with Glass
+  object GreenGlass extends Material with Glass
+  object RedGlass extends Material with Glass
+  object BlackGlass extends Material with Glass
+  object TrapDoor extends Material with Solid with Transparent with Rotates with Door
+  object MonsterEggs extends Material(tier = T6) with Solid
+  object StoneBrick extends Material(tier = T0) with Solid
+  object CrackedStoneBrick extends Material(tier = T5) with Solid
   object MossyStoneBrick extends Material with Solid
   object ChiseledStoneBrick extends Material with Solid
-  object HugeMushroom1 extends Material(tierString = "T3") with Solid
-  object HugeMushroom2 extends Material(tierString = "T3") with Solid
-  object IronFence extends Material with GenericFence
-  object GlassPane extends Material with GenericGlassPane
+  object BrownMushroomBlock extends Material(tier = T3) with Solid
+  object RedMushroomBlock extends Material(tier = T3) with Solid
+  object IronFence extends Material with Fence
+  object GlassPane extends Material with GlassPane
   object MelonBlock extends Material with Solid
-  object PumpkinStem extends Material(energy = -1) with GenericPlant with Rotates
-  object MelonStem extends Material(energy = -1) with GenericPlant with Rotates
-  object Vine extends Material(tierString = "T5") with Transparent with Crushable
-  object OakFenceGate extends Material with GenericFenceGate
-  object BrickStairs extends Material with GenericStairs
-  object StoneBrickStairs extends Material with GenericStairs
-  object Mycelium extends Material(energy = 1) with Solid
-  object WaterLily extends Material(tierString = "T5") with GenericPlant
+  object PumpkinStem extends Material(tier = T2) with Plant with Rotates
+  object MelonStem extends Material(tier = T2) with Plant with Rotates
+  object Vine extends Material(tier = T5) with Transparent with Crushable
+  object OakFenceGate extends Material with FenceGate
+  object BrickStairs extends Material with Stairs
+  object StoneBrickStairs extends Material with Stairs
+  object Mycelium extends Material(tier = T0) with Solid
+  object WaterLily extends Material(tier = T5) with Plant
   object NetherBrick extends Material with Solid
-  object NetherBrickFence extends Material with GenericFence
-  object NetherBrickStairs extends Material with GenericStairs
-  object NetherWarts extends Material(tierString = "T4") with GenericPlant
+  object NetherBrickFence extends Material with Fence
+  object NetherBrickStairs extends Material with Stairs
+  object NetherWarts extends Material(tier = T4) with Plant
   object EnchantmentTable extends Material with Solid
   object BrewingStand extends Material with Solid
   object Cauldron extends Material with Solid
-  object EnderPortal extends Material(energy = -1) with Transparent with Unconsumable
-  object EnderPortalFrame extends Material(energy = -1) with Solid with Unconsumable
-  object EndStone extends Material(energy = 1) with Solid
+  object EnderPortal extends Material with Transparent with NoEnergy
+  object EnderPortalFrame extends Material with Solid with NoEnergy
+  object EndStone extends Material(tier = T0) with Solid
   object DragonEgg extends Material(energy = 140369) with Solid
   object RedstoneLampOff extends Material with Solid
   object RedstoneLampOn extends Material with Solid
-  object OakDoubleSlab extends Material with GenericDoubleSlab
-  object SpruceDoubleSlab extends Material with GenericDoubleSlab
-  object BirchDoubleSlab extends Material with GenericDoubleSlab
-  object JungleDoubleSlab extends Material with GenericDoubleSlab
-  object AcaciaDoubleSlab extends Material with GenericDoubleSlab
-  object DarkOakDoubleSlab extends Material with GenericDoubleSlab
-  object OakSingleSlab extends Material with GenericSingleSlab
-  object SpruceSingleSlab extends Material with GenericSingleSlab
-  object BirchSingleSlab extends Material with GenericSingleSlab
-  object JungleSingleSlab extends Material with GenericSingleSlab
-  object AcaciaSingleSlab extends Material with GenericSingleSlab
-  object DarkOakSingleSlab extends Material with GenericSingleSlab
-  object Cocoa extends Material(tierString = "T4") with GenericPlant
-  object SandstoneStairs extends Material with GenericStairs
+  object OakDoubleSlab extends Material with WoodenDoubleSlab
+  object SpruceDoubleSlab extends Material with WoodenDoubleSlab
+  object BirchDoubleSlab extends Material with WoodenDoubleSlab
+  object JungleDoubleSlab extends Material with WoodenDoubleSlab
+  object AcaciaDoubleSlab extends Material with WoodenDoubleSlab
+  object DarkOakDoubleSlab extends Material with WoodenDoubleSlab
+  object OakSingleSlab extends Material with WoodenSingleSlab
+  object SpruceSingleSlab extends Material with WoodenSingleSlab
+  object BirchSingleSlab extends Material with WoodenSingleSlab
+  object JungleSingleSlab extends Material with WoodenSingleSlab
+  object AcaciaSingleSlab extends Material with WoodenSingleSlab
+  object DarkOakSingleSlab extends Material with WoodenSingleSlab
+  object Cocoa extends Material(tier = T4) with Plant
+  object SandstoneStairs extends Material with Stairs
   object EmeraldOre extends Material with Solid
   object EnderChest extends Material with Solid with Rotates
   object TripwireHook extends Material with Transparent with Attaches with Rotates
   object Tripwire extends Material with Transparent with Attaches
   object EmeraldBlock extends Material with Solid
-  object SpruceStairs extends Material with GenericStairs
-  object BirchStairs extends Material with GenericStairs
-  object JungleStairs extends Material with GenericStairs
-  object Command extends Material(energy = -1) with Solid with Unconsumable
+  object SpruceStairs extends Material with Stairs
+  object BirchStairs extends Material with Stairs
+  object JungleStairs extends Material with Stairs
+  object Command extends Material with Solid with NoEnergy
   object Beacon extends Material with Solid
   object CobblestoneWall extends Material with Solid
   object MossyCobblestoneWall extends Material with Solid
   object FlowerPot extends Material with Transparent
-  object Carrot extends Material(tierString = "T2") with GenericPlant
-  object Potato extends Material(tierString = "T2") with GenericPlant
-  object WoodButton extends Material with Transparent with Rotates
-  object Skull extends Material(energy = -1) with Transparent with Attaches with Rotates with Unconsumable
+  object Carrot extends Material(tier = T2) with Plant
+  object Potato extends Material(tier = T2) with Plant
+  object WoodButton extends Material with Transparent with Rotates with Fuel {
+    override val burnTicks: Int = 100
+  }
+  object Skull extends Material with Transparent with Attaches with Rotates with NoEnergy
   object Anvil extends Material with Solid with Transparent with Gravity with Inventory
-  object TrappedChest extends Material with Solid with Rotates
+  object TrappedChest extends Material with Solid with Rotates with Fuel {
+    override val burnTicks: Int = 300
+  }
   object GoldPressurePlate extends Material with Solid
   object IronPressurePlate extends Material with Solid
   object RedstoneComparatorOff extends Material with Transparent with Attaches with Rotates
   object RedstoneComparatorOn extends Material with Transparent with Attaches with Rotates
-  object DaylightSensor extends Material with Solid
+  object DaylightSensor extends Material with Solid with Fuel {
+    override val burnTicks: Int = 300
+  }
   object RedstoneBlock extends Material with Solid
   object QuartzOre extends Material with Solid
   object Hopper extends Material with Solid with Inventory
   object QuartzBlock extends Material with Solid
   object ChiseledQuartzBlock extends Material with Solid
   object PillarQuartzBlock extends Material with Solid
-  object QuartzStairs extends Material with GenericStairs
-  object ActivatorRails extends Material with GenericRails
+  object QuartzStairs extends Material with Stairs
+  object ActivatorRails extends Material with Rails
   object Dropper extends Material with Solid with Inventory
-  object WhiteHardenedClay extends Material with GenericClayBlock
-  object OrangeHardenedClay extends Material with GenericClayBlock
-  object MagentaHardenedClay extends Material with GenericClayBlock
-  object LightBlueHardenedClay extends Material with GenericClayBlock
-  object YellowHardenedClay extends Material with GenericClayBlock
-  object LimeHardenedClay extends Material with GenericClayBlock
-  object PinkHardenedClay extends Material with GenericClayBlock
-  object GrayHardenedClay extends Material with GenericClayBlock
-  object LightGrayHardenedClay extends Material with GenericClayBlock
-  object CyanHardenedClay extends Material with GenericClayBlock
-  object PurpleHardenedClay extends Material with GenericClayBlock
-  object BlueHardenedClay extends Material with GenericClayBlock
-  object BrownHardenedClay extends Material with GenericClayBlock
-  object GreenHardenedClay extends Material with GenericClayBlock
-  object RedHardenedClay extends Material with GenericClayBlock
-  object BlackHardenedClay extends Material with GenericClayBlock
-  object WhiteGlassPane extends Material with GenericGlassPane
-  object OrangeGlassPane extends Material with GenericGlassPane
-  object MagentaGlassPane extends Material with GenericGlassPane
-  object LightBlueGlassPane extends Material with GenericGlassPane
-  object YellowGlassPane extends Material with GenericGlassPane
-  object LimeGlassPane extends Material with GenericGlassPane
-  object PinkGlassPane extends Material with GenericGlassPane
-  object GrayGlassPane extends Material with GenericGlassPane
-  object LightGrayGlassPane extends Material with GenericGlassPane
-  object CyanGlassPane extends Material with GenericGlassPane
-  object PurpleGlassPane extends Material with GenericGlassPane
-  object BlueGlassPane extends Material with GenericGlassPane
-  object BrownGlassPane extends Material with GenericGlassPane
-  object GreenGlassPane extends Material with GenericGlassPane
-  object RedGlassPane extends Material with GenericGlassPane
-  object BlackGlassPane extends Material with GenericGlassPane
-  object AcaciaLeaves extends Material(tierString = "T2") with GenericLeaves
-  object DarkOakLeaves extends Material(tierString = "T2") with GenericLeaves
-  object AcaciaLog extends Material(tierString = "T2") with GenericLog
-  object DarkOakLog extends Material(tierString = "T2") with GenericLog
-  object AcaciaStairs extends Material with GenericStairs
-  object DarkOakStairs extends Material with GenericStairs
+  object Terracotta extends Material with Terracotta
+  object WhiteGlassPane extends Material with GlassPane
+  object OrangeGlassPane extends Material with GlassPane
+  object MagentaGlassPane extends Material with GlassPane
+  object LightBlueGlassPane extends Material with GlassPane
+  object YellowGlassPane extends Material with GlassPane
+  object LimeGlassPane extends Material with GlassPane
+  object PinkGlassPane extends Material with GlassPane
+  object GrayGlassPane extends Material with GlassPane
+  object LightGrayGlassPane extends Material with GlassPane
+  object CyanGlassPane extends Material with GlassPane
+  object PurpleGlassPane extends Material with GlassPane
+  object BlueGlassPane extends Material with GlassPane
+  object BrownGlassPane extends Material with GlassPane
+  object GreenGlassPane extends Material with GlassPane
+  object RedGlassPane extends Material with GlassPane
+  object BlackGlassPane extends Material with GlassPane
+  object AcaciaLeaves extends Material(tier = T2) with Leaves
+  object DarkOakLeaves extends Material(tier = T2) with Leaves
+  object AcaciaLog extends Material(tier = T2) with Log
+  object DarkOakLog extends Material(tier = T2) with Log
+  object AcaciaStairs extends Material with Stairs
+  object DarkOakStairs extends Material with Stairs
   object SlimeBlock extends Material with Solid
-  object Barrier extends Material(energy = -1) with Solid with Unconsumable
+  object Barrier extends Material with Solid with NoEnergy
   object IronTrapdoor extends Material with Solid
   object Prismarine extends Material with Solid
   object PrismarineBrick extends Material with Solid
   object DarkPrismarine extends Material with Solid
   object SeaLantern extends Material with Solid
   object HayBale extends Material with Solid
-  object WhiteCarpet extends Material with GenericCarpet
-  object OrangeCarpet extends Material with GenericCarpet
-  object MagentaCarpet extends Material with GenericCarpet
-  object LightBlueCarpet extends Material with GenericCarpet
-  object YellowCarpet extends Material with GenericCarpet
-  object LimeCarpet extends Material with GenericCarpet
-  object PinkCarpet extends Material with GenericCarpet
-  object GrayCarpet extends Material with GenericCarpet
-  object LightGrayCarpet extends Material with GenericCarpet
-  object CyanCarpet extends Material with GenericCarpet
-  object PurpleCarpet extends Material with GenericCarpet
-  object BlueCarpet extends Material with GenericCarpet
-  object BrownCarpet extends Material with GenericCarpet
-  object GreenCarpet extends Material with GenericCarpet
-  object RedCarpet extends Material with GenericCarpet
-  object BlackCarpet extends Material with GenericCarpet
-  object HardenedClay extends Material with Solid with GenericClayBlock
-  object CoalBlock extends Material with Solid
-  object PackedIce extends Material(tierString = "T3") with Solid
-  object DoublePlant extends Material(tierString = "T2") with GenericDoublePlant
-  object Sunflower extends Material(tierString = "T2") with GenericDoublePlant
-  object Lilac extends Material(tierString = "T2") with GenericDoublePlant
-  object DoubleTallgrass extends Material(tierString = "T2") with GenericDoublePlant
-  object LargeFern extends Material(tierString = "T2") with GenericDoublePlant
-  object RoseBush extends Material(tierString = "T2") with GenericDoublePlant
-  object Peony extends Material(tierString = "T2") with GenericDoublePlant
-  object TopPlantHalf extends Material(energy = 1) with GenericDoublePlant
-  object StandingBanner extends Material with Transparent with Attaches with GenericBanner
-  object WallBanner extends Material with Transparent with Attaches with GenericBanner
+  object WhiteCarpet extends Material with Carpet
+  object OrangeCarpet extends Material with Carpet
+  object MagentaCarpet extends Material with Carpet
+  object LightBlueCarpet extends Material with Carpet
+  object YellowCarpet extends Material with Carpet
+  object LimeCarpet extends Material with Carpet
+  object PinkCarpet extends Material with Carpet
+  object GrayCarpet extends Material with Carpet
+  object LightGrayCarpet extends Material with Carpet
+  object CyanCarpet extends Material with Carpet
+  object PurpleCarpet extends Material with Carpet
+  object BlueCarpet extends Material with Carpet
+  object BrownCarpet extends Material with Carpet
+  object GreenCarpet extends Material with Carpet
+  object RedCarpet extends Material with Carpet
+  object BlackCarpet extends Material with Carpet
+  object WhiteTerracotta extends Material with DyedTerracotta
+  object OrangeTerracotta extends Material with DyedTerracotta
+  object MagentaTerracotta extends Material with DyedTerracotta
+  object LightBlueTerracotta extends Material with DyedTerracotta
+  object YellowTerracotta extends Material with DyedTerracotta
+  object LimeTerracotta extends Material with DyedTerracotta
+  object PinkTerracotta extends Material with DyedTerracotta
+  object GrayTerracotta extends Material with DyedTerracotta
+  object LightGrayTerracotta extends Material with DyedTerracotta
+  object CyanTerracotta extends Material with DyedTerracotta
+  object PurpleTerracotta extends Material with DyedTerracotta
+  object BlueTerracotta extends Material with DyedTerracotta
+  object BrownTerracotta extends Material with DyedTerracotta
+  object GreenTerracotta extends Material with DyedTerracotta
+  object RedTerracotta extends Material with DyedTerracotta
+  object BlackTerracotta extends Material with DyedTerracotta
+  object CoalBlock extends Material with Solid with Fuel {
+    override val burnTicks: Int = 16000
+  }
+  object PackedIce extends Material(tier = T3) with Solid
+  object DoublePlant extends Material(tier = T2) with DoublePlant
+  object Sunflower extends Material(tier = T2) with DoublePlant
+  object Lilac extends Material(tier = T2) with DoublePlant
+  object DoubleTallgrass extends Material(tier = T2) with DoublePlant
+  object LargeFern extends Material(tier = T2) with DoublePlant
+  object RoseBush extends Material(tier = T2) with DoublePlant
+  object Peony extends Material(tier = T2) with DoublePlant
+  object TopPlantHalf extends Material(tier = T0) with DoublePlant
+  object StandingBanner extends Material with Transparent with Attaches with Banner
+  object WallBanner extends Material with Transparent with Attaches with Banner
   object InvertedDaylightSensor extends Material with Solid
   object RedSandstone extends Material with Solid
   object SmoothRedSandstone extends Material with Solid
   object ChiseledRedSandstone extends Material with Solid
-  object RedSandstoneStairs extends Material with GenericStairs
-  object RedSandstoneDoubleSlab extends Material with GenericDoubleSlab
-  object RedSandstoneSingleSlab extends Material with GenericSingleSlab
-  object SpruceFenceGate extends Material with GenericFenceGate
-  object BirchFenceGate extends Material with GenericFenceGate
-  object JungleFenceGate extends Material with GenericFenceGate
-  object DarkOakFenceGate extends Material with GenericFenceGate
-  object AcaciaFenceGate extends Material with GenericFenceGate
-  object SpruceFence extends Material with GenericFence
-  object BirchFence extends Material with GenericFence
-  object JungleFence extends Material with GenericFence
-  object DarkOakFence extends Material with GenericFence
-  object AcaciaFence extends Material with GenericFence
-  object SpruceDoor extends Material with Solid with Transparent with GenericDoor
-  object BirchDoor extends Material with Solid with Transparent with GenericDoor
-  object JungleDoor extends Material with Solid with Transparent with GenericDoor
-  object AcaciaDoor extends Material with Solid with Transparent with GenericDoor
-  object DarkOakDoor extends Material with Solid with Transparent with GenericDoor
-  object EndRod extends Material(tierString = "T5") with Solid with Transparent
-  object ChorusPlant extends Material(tierString = "T2") with Solid
-  object ChorusFlower extends Material(tierString = "T2") with Solid with Crushable
-  object PurpurBlock extends Material(tierString = "T4") with Solid
-  object PurpurPillar extends Material(tierString = "T4") with Solid
-  object PurpurStairs extends Material with GenericStairs
-  object PurpurDoubleSlab extends Material with GenericDoubleSlab
-  object PurpurSingleSlab extends Material with GenericSingleSlab
+  object RedSandstoneStairs extends Material with Stairs
+  object RedSandstoneDoubleSlab extends Material with DoubleSlab
+  object RedSandstoneSingleSlab extends Material with SingleSlab
+  object SpruceFenceGate extends Material with FenceGate
+  object BirchFenceGate extends Material with FenceGate
+  object JungleFenceGate extends Material with FenceGate
+  object DarkOakFenceGate extends Material with FenceGate
+  object AcaciaFenceGate extends Material with FenceGate
+  object SpruceFence extends Material with Fence
+  object BirchFence extends Material with Fence
+  object JungleFence extends Material with Fence
+  object DarkOakFence extends Material with Fence
+  object AcaciaFence extends Material with Fence
+  object SpruceDoor extends Material with Solid with Transparent with Door
+  object BirchDoor extends Material with Solid with Transparent with Door
+  object JungleDoor extends Material with Solid with Transparent with Door
+  object AcaciaDoor extends Material with Solid with Transparent with Door
+  object DarkOakDoor extends Material with Solid with Transparent with Door
+  object EndRod extends Material(tier = T5) with Solid with Transparent
+  object ChorusPlant extends Material(tier = T2) with Solid
+  object ChorusFlower extends Material(tier = T2) with Solid with Crushable
+  object PurpurBlock extends Material(tier = T4) with Solid
+  object PurpurPillar extends Material(tier = T4) with Solid
+  object PurpurStairs extends Material with Stairs
+  object PurpurDoubleSlab extends Material with DoubleSlab
+  object PurpurSingleSlab extends Material with SingleSlab
   object EndStoneBricks extends Material
-  object BeetrootPlantation extends Material with GenericPlant
+  object BeetrootPlantation extends Material with Plant
   object GrassPath extends Material with Solid
-  object EndGateway extends Material(energy = -1) with Solid with Unconsumable
-  object CommandRepeating extends Material(energy = -1) with Solid with Unconsumable
-  object CommandChain extends Material(energy = -1) with Solid with Unconsumable
+  object EndGateway extends Material with Solid with NoEnergy
+  object CommandRepeating extends Material with Solid with NoEnergy
+  object CommandChain extends Material with Solid with NoEnergy
   object FrostedIce extends Material with Solid
-  object Magma extends Material(tierString = "T3") with Solid
+  object Magma extends Material(tier = T3) with Solid
   object NetherWartBlock extends Material with Solid
   object RedNetherBrick extends Material with Solid
   object BoneBlock extends Material with Solid
-  object StructureVoid extends Material(energy = -1) with Solid with Unconsumable
-  object Observer extends Material(energy = -1) with Solid with Unconsumable
-  object WhiteShulkerBox extends Material with Solid with Inventory
-  object OrangeShulkerBox extends Material with Solid with Inventory
-  object MagentaShulkerBox extends Material with Solid with Inventory
-  object LightBlueShulkerBox extends Material with Solid with Inventory
-  object YellowShulkerBox extends Material with Solid with Inventory
-  object LimeShulkerBox extends Material with Solid with Inventory
-  object PinkShulkerBox extends Material with Solid with Inventory
-  object GrayShulkerBox extends Material with Solid with Inventory
-  object LightGrayShulkerBox extends Material with Solid with Inventory
-  object CyanShulkerBox extends Material with Solid with Inventory
-  object PurpleShulkerBox extends Material with Solid with Inventory
-  object BlueShulkerBox extends Material with Solid with Inventory
-  object BrownShulkerBox extends Material with Solid with Inventory
-  object GreenShulkerBox extends Material with Solid with Inventory
-  object RedShulkerBox extends Material with Solid with Inventory
-  object BlackShulkerBox extends Material with Solid with Inventory
-  object StructureSaveBlock extends Material(energy = -1) with Solid with Inventory with Unconsumable
-  object StructureLoadBlock extends Material(energy = -1) with Unconsumable
-  object StructureCornerBlock extends Material(energy = -1) with Unconsumable
-  object StructureDataBlock extends Material(energy = -1) with Unconsumable
+  object StructureVoid extends Material with Solid with NoEnergy
+  object Observer extends Material with Solid with NoEnergy
+  object WhiteShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object OrangeShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object MagentaShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object LightBlueShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object YellowShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object LimeShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object PinkShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object GrayShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object LightGrayShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object CyanShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object PurpleShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object BlueShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object BrownShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object GreenShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object RedShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object BlackShulkerBox extends Material with Solid with Inventory with ShulkerBox
+  object WhiteGlazedTerracotta extends Material with GlazedTerracotta
+  object OrangeGlazedTerracotta extends Material with GlazedTerracotta
+  object MagentaGlazedTerracotta extends Material with GlazedTerracotta
+  object LightBlueGlazedTerracotta extends Material with GlazedTerracotta
+  object YellowGlazedTerracotta extends Material with GlazedTerracotta
+  object LimeGlazedTerracotta extends Material with GlazedTerracotta
+  object PinkGlazedTerracotta extends Material with GlazedTerracotta
+  object GrayGlazedTerracotta extends Material with GlazedTerracotta
+  object LightGrayGlazedTerracotta extends Material with GlazedTerracotta
+  object CyanGlazedTerracotta extends Material with GlazedTerracotta
+  object PurpleGlazedTerracotta extends Material with GlazedTerracotta
+  object BlueGlazedTerracotta extends Material with GlazedTerracotta
+  object BrownGlazedTerracotta extends Material with GlazedTerracotta
+  object GreenGlazedTerracotta extends Material with GlazedTerracotta
+  object RedGlazedTerracotta extends Material with GlazedTerracotta
+  object BlackGlazedTerracotta extends Material with GlazedTerracotta
+  object WhiteConcrete extends Material with Solid with Concrete
+  object OrangeConcrete extends Material with Solid with Concrete
+  object MagentaConcrete extends Material with Solid with Concrete
+  object LightBlueConcrete extends Material with Solid with Concrete
+  object YellowConcrete extends Material with Solid with Concrete
+  object LimeConcrete extends Material with Solid with Concrete
+  object PinkConcrete extends Material with Solid with Concrete
+  object GrayConcrete extends Material with Solid with Concrete
+  object LightGrayConcrete extends Material with Solid with Concrete
+  object CyanConcrete extends Material with Solid with Concrete
+  object PurpleConcrete extends Material with Solid with Concrete
+  object BlueConcrete extends Material with Solid with Concrete
+  object BrownConcrete extends Material with Solid with Concrete
+  object GreenConcrete extends Material with Solid with Concrete
+  object RedConcrete extends Material with Solid with Concrete
+  object BlackConcrete extends Material with Solid with Concrete
+  object WhiteConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object OrangeConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object MagentaConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object LightBlueConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object YellowConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object LimeConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object PinkConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object GrayConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object LightGrayConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object CyanConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object PurpleConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object BlueConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object BrownConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object GreenConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object RedConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object BlackConcretePowder extends Material with Solid with Gravity with ConcretePowder
+  object StructureSaveBlock extends Material with Solid with Inventory with NoEnergy
+  object StructureLoadBlock extends Material with NoEnergy
+  object StructureCornerBlock extends Material with NoEnergy
+  object StructureDataBlock extends Material with NoEnergy
 
-  object IronShovel extends Material with GenericShovel
-  object IronPickaxe extends Material with GenericPickaxe
-  object IronAxe extends Material(energy = 48052) with GenericAxe
-  object FlintAndSteel extends Material with Consumable
-  object Apple extends Material with Consumable with Food
-  object Bow extends Material(energy = 118) with Consumable
+  object IronShovel extends Material with Shovel
+  object IronPickaxe extends Material with Pickaxe
+  object IronAxe extends Material /*(energy = 48052)*/ with Axe
+  object FlintAndSteel extends Material with Durable
+  object Apple extends Material with PlayerConsumable
+  object Bow extends Material(energy = 118) with Durable with Fuel {
+    override val burnTicks: Int = 300
+  }
   object Arrow extends Material(energy = 5)
-  object Coal extends Material(energy = 72)
-  object Charcoal extends Material
+  object Coal extends Material(energy = 72) with Fuel {
+    override val burnTicks: Int = 1600
+  }
+  object Charcoal extends Material with Fuel {
+    override val burnTicks: Int = 1600
+  }
   object Diamond extends Material(energy = 2869)
   object IronIngot extends Material(energy = 459)
   object GoldIngot extends Material
-  object IronSword extends Material with Usable with GenericSword
-  object WoodSword extends Material with Usable with GenericSword
-  object WoodShovel extends Material with GenericShovel
-  object WoodPickaxe extends Material with GenericPickaxe
-  object WoodAxe extends Material with GenericAxe
-  object StoneSword extends Material(tierString = "T3") with Usable with GenericSword
-  object StoneShovel extends Material with GenericShovel
-  object StonePickaxe extends Material with GenericPickaxe
-  object StoneAxe extends Material with GenericAxe
-  object DiamondSword extends Material with Usable with GenericSword
-  object DiamondShovel extends Material with GenericShovel
-  object DiamondPickaxe extends Material with GenericPickaxe
-  object DiamondAxe extends Material with GenericAxe
-  object Stick extends Material(energy = 31)
-  object Bowl extends Material
-  object MushroomStew extends Material with Consumable with Food
-  object GoldSword extends Material(energy = 43307) with Usable with GenericSword
-  object GoldShovel extends Material with GenericShovel
-  object GoldPickaxe extends Material with GenericPickaxe
-  object GoldAxe extends Material with GenericAxe
+  object IronSword extends Material with Usable with Sword
+  object WoodSword extends Material with Usable with Sword with Fuel {
+    override val burnTicks: Int = 200
+  }
+  object WoodShovel extends Material with Shovel with Fuel {
+    override val burnTicks: Int = 200
+  }
+  object WoodPickaxe extends Material with Pickaxe with Fuel {
+    override val burnTicks: Int = 200
+  }
+  object WoodAxe extends Material with Axe with Fuel {
+    override val burnTicks: Int = 200
+  }
+  object StoneSword extends Material(tier = T3) with Usable with Sword
+  object StoneShovel extends Material with Shovel
+  object StonePickaxe extends Material with Pickaxe
+  object StoneAxe extends Material with Axe
+  object DiamondSword extends Material with Usable with Sword
+  object DiamondShovel extends Material with Shovel
+  object DiamondPickaxe extends Material with Pickaxe
+  object DiamondAxe extends Material with Axe
+  object Stick extends Material(energy = 31) with Fuel {
+    override val burnTicks: Int = 100
+  }
+  object Bowl extends Material with Fuel {
+    override val burnTicks: Int = 100
+  }
+  object MushroomStew extends Material with PlayerConsumable
+  object GoldSword extends Material(energy = 43307) with Usable with Sword
+  object GoldShovel extends Material with Shovel
+  object GoldPickaxe extends Material with Pickaxe
+  object GoldAxe extends Material with Axe
   object String extends Material(energy = 9)
-  object Feather extends Material(energy = 1)
+  object Feather extends Material(tier = T0)
   object GunPowder extends Material(energy = 35)
-  object WoodHoe extends Material with Consumable with GenericHoe
-  object StoneHoe extends Material with Consumable with GenericHoe
-  object IronHoe extends Material with Consumable with GenericHoe
-  object DiamondHoe extends Material with Consumable with GenericHoe
-  object GoldHoe extends Material with Consumable with GenericHoe
-  object Seeds extends Material(tierString = "T2") with Consumable
-  object Wheat extends Material(tierString = "T2.5")
-  object Bread extends Material with Consumable with Food
-  object LeatherHelmet extends Material with GenericHelmet
-  object LeatherChestplate extends Material with GenericChestplate
-  object LeatherLeggings extends Material with GenericLeggings
-  object LeatherBoots extends Material with GenericBoots
-  object ChainmailHelmet extends Material with GenericHelmet
-  object ChainmailChestplate extends Material with GenericChestplate
-  object ChainmailLeggings extends Material with GenericLeggings
-  object ChainmailBoots extends Material with GenericBoots
-  object IronHelmet extends Material with GenericHelmet
-  object IronChestplate extends Material with GenericChestplate
-  object IronLeggings extends Material with GenericLeggings
-  object IronBoots extends Material with GenericBoots
-  object DiamondHelmet extends Material with GenericHelmet
-  object DiamondChestplate extends Material with GenericChestplate
-  object DiamondLeggings extends Material with GenericLeggings
-  object DiamondBoots extends Material with GenericBoots
-  object GoldHelmet extends Material with GenericHelmet
-  object GoldChestplate extends Material with GenericChestplate
-  object GoldLeggings extends Material with GenericLeggings
-  object GoldBoots extends Material with GenericBoots
+  object WoodHoe extends Material with Hoe with Fuel {
+    override val burnTicks: Int = 200
+  }
+  object StoneHoe extends Material with Hoe
+  object IronHoe extends Material with Hoe
+  object DiamondHoe extends Material with Hoe
+  object GoldHoe extends Material with Hoe
+  object Seeds extends Material(tier = T2) with Consumable
+  object Wheat extends Material(energy = 69) with Consumable
+  object Bread extends Material with PlayerConsumable
+  object LeatherHelmet extends Material with Helmet
+  object LeatherChestplate extends Material with Chestplate
+  object LeatherLeggings extends Material with Leggings
+  object LeatherBoots extends Material with Boots
+  object ChainmailHelmet extends Material with Helmet
+  object ChainmailChestplate extends Material with Chestplate
+  object ChainmailLeggings extends Material with Leggings
+  object ChainmailBoots extends Material with Boots
+  object IronHelmet extends Material with Helmet
+  object IronChestplate extends Material with Chestplate
+  object IronLeggings extends Material with Leggings
+  object IronBoots extends Material with Boots
+  object DiamondHelmet extends Material with Helmet
+  object DiamondChestplate extends Material with Chestplate
+  object DiamondLeggings extends Material with Leggings
+  object DiamondBoots extends Material with Boots
+  object GoldHelmet extends Material with Helmet
+  object GoldChestplate extends Material with Chestplate
+  object GoldLeggings extends Material with Leggings
+  object GoldBoots extends Material with Boots
   object Flint extends Material
-  object RawPorkchop extends Material(energy = 1) with Consumable with Food
-  object CookedPorkchop extends Material with Consumable with Food
+  object RawPorkchop extends Material(tier = T0) with PlayerConsumable
+  object CookedPorkchop extends Material with PlayerConsumable
   object Painting extends Material
-  object GoldenApple extends Material with Consumable with Food
-  object EnchantedGoldenApple extends Material with Consumable with Food
-  object Sign extends Material
-  object OakDoorItem extends Material with GenericDoor
-  object Bucket extends Material with Consumable
-  object WaterBucket extends Material with Consumable
-  object LavaBucket extends Material with Consumable
+  object GoldenApple extends Material with PlayerConsumable
+  object EnchantedGoldenApple extends Material with PlayerConsumable
+  object Sign extends Material with Sign
+  object OakDoorItem extends Material with Door
+  object Bucket extends Material
+  object WaterBucket extends Material
+  object LavaBucket extends Material with Fuel {
+    override val burnTicks: Int = 20000
+  }
   object Minecart extends Material
-  object Saddle extends Material(tierString = "T3")
-  object IronDoor extends Material with GenericDoor
+  object Saddle extends Material(tier = T3)
+  object IronDoor extends Material with Door
   object Redstone extends Material(energy = 35)
-  object SnowBall extends Material(energy = 1) with Consumable
-  object OakBoat extends Material
-  object Leather extends Material(energy = 1)
-  object MilkBucket extends Material with Consumable with Food
-  object ClayBrick extends Material with GenericClayBlock
-  object ClayBall extends Material(tierString = "T2")
-  object SugarCane extends Material(tierString = "T2")
+  object SnowBall extends Material(tier = T0)
+  object OakBoat extends Material with Boat
+  object Leather extends Material(tier = T0)
+  object MilkBucket extends Material with PlayerConsumable
+  object ClayBrick extends Material with Terracotta
+  object ClayBall extends Material(tier = T2)
+  object SugarCane extends Material(tier = T2)
   object Paper extends Material
   object Book extends Material
   object SlimeBall extends Material(energy = 2)
   object StorageMinecart extends Material
   object PoweredMinecart extends Material
-  object Egg extends Material(tierString = "T1") with Consumable
+  object Egg extends Material(tier = T1)
   object Compass extends Material
-  object FishingRod extends Material with Consumable
+  object FishingRod extends Material with Durable with Fuel {
+    override val burnTicks: Int = 300
+  }
   object Watch extends Material
   object GlowstoneDust extends Material(energy = 35)
-  object RawFish extends Material(energy = 33) with Consumable with Food
-  object RawSalmon extends Material(energy = 43) with Consumable with Food
-  object Clownfish extends Material(energy = 3910) with Consumable with Food
-  object Pufferfish extends Material(energy = 3903) with Consumable with Food
-  object CookedFish extends Material with Consumable with Food
-  object CookedSalmon extends Material with Consumable with Food
-  object InkSack extends Material(energy = 1)
-  object RoseRed extends Material
-  object CactusGreen extends Material
-  object CocoaBeans extends Material(tierString = "T2")
-  object LapisLazuli extends Material(tierString = "T4")
-  object PurpleDye extends Material
-  object CyanDye extends Material
-  object LightGrayDye extends Material
-  object GrayDye extends Material
-  object PinkDye extends Material
-  object LimeDye extends Material
-  object DandelionYellow extends Material
-  object LightBlueDye extends Material
-  object MagentaDye extends Material
-  object OrangeDye extends Material
-  object BoneMeal extends Material
+  object RawFish extends Material(energy = 33)with PlayerConsumable
+  object RawSalmon extends Material(energy = 43) with PlayerConsumable
+  object Clownfish extends Material(energy = 3910) with PlayerConsumable
+  object Pufferfish extends Material(energy = 3903) with PlayerConsumable
+  object CookedFish extends Material with PlayerConsumable
+  object CookedSalmon extends Material with PlayerConsumable
+  object InkSack extends Material(tier = T0) with Dye
+  object RoseRed extends Material with Dye
+  object CactusGreen extends Material with Dye
+  object CocoaBeans extends Material(tier = T2) with Dye
+  object LapisLazuli extends Material(tier = T4) with Dye
+  object PurpleDye extends Material with Dye
+  object CyanDye extends Material with Dye
+  object LightGrayDye extends Material with Dye
+  object GrayDye extends Material with Dye
+  object PinkDye extends Material with Dye
+  object LimeDye extends Material with Dye
+  object DandelionYellow extends Material with Dye
+  object LightBlueDye extends Material with Dye
+  object MagentaDye extends Material with Dye
+  object OrangeDye extends Material with Dye
+  object BoneMeal extends Material with Dye
   object Bone extends Material(energy = 5)
   object Sugar extends Material(energy = 35)
-  object Cake extends Material with Consumable with Food
-  object Bed extends Material
+  object Cake extends Material with PlayerConsumable
+  object WhiteBed extends Material with Transparent with Bed
+  object OrangeBed extends Material with Transparent with Bed
+  object MagentaBed extends Material with Transparent with Bed
+  object LightBlueBed extends Material with Transparent with Bed
+  object YellowBed extends Material with Transparent with Bed
+  object LimeBed extends Material with Transparent with Bed
+  object PinkBed extends Material with Transparent with Bed
+  object GrayBed extends Material with Transparent with Bed
+  object LightGrayBed extends Material with Transparent with Bed
+  object CyanBed extends Material with Transparent with Bed
+  object PurpleBed extends Material with Transparent with Bed
+  object BlueBed extends Material with Transparent with Bed
+  object BrownBed extends Material with Transparent with Bed
+  object GreenBed extends Material with Transparent with Bed
+  object RedBed extends Material with Transparent with Bed
+  object BlackBed extends Material with Transparent with Bed
   object RedstoneRepeater extends Material
-  object Cookie extends Material with Consumable
-  object DrawnMap extends Material(energy = -1) with Unconsumable
+  object Cookie extends Material with PlayerConsumable
+  object DrawnMap extends Material with NoEnergy
   object Shears extends Material
-  object Melon extends Material with Food
+  object Melon extends Material with PlayerConsumable
   object PumpkinSeeds extends Material
   object MelonSeeds extends Material
-  object RawBeef extends Material(energy = 1) with Consumable with Food
-  object CookedBeef extends Material with Consumable with Food
-  object RawChicken extends Material(energy = 1) with Consumable with Food
-  object CookedChicken extends Material with Consumable with Food
-  object RottenFlesh extends Material(energy = 10) with Consumable with Food
-  object EnderPearl extends Material(energy = 1090) with Consumable
-  object BlazeRod extends Material(energy = 2322)
+  object RawBeef extends Material(tier = T0) with PlayerConsumable
+  object CookedBeef extends Material with PlayerConsumable
+  object RawChicken extends Material(tier = T0) with PlayerConsumable
+  object CookedChicken extends Material with PlayerConsumable
+  object RottenFlesh extends Material(energy = 10) with PlayerConsumable
+  object EnderPearl extends Material(energy = 1090)
+  object BlazeRod extends Material(energy = 2322) with Fuel {
+    override val burnTicks: Int = 2400
+  }
   object GhastTear extends Material(energy = 269)
   object GoldNugget extends Material(energy = 2490)
-  object NetherWart extends Material(tierString = "T3")
-  object Potion extends Material(energy = -1) with Consumable with Unconsumable
-  object GlassBottle extends Material(energy = 35) with GenericGlass
-  object SpiderEye extends Material(energy = 35) with Consumable with Food
+  object NetherWart extends Material(tier = T3)
+  object Potion extends Material with PlayerConsumable with NoEnergy
+  object GlassBottle extends Material(energy = 35) with Glass
+  object SpiderEye extends Material(energy = 35) with PlayerConsumable
   object FermentedSpiderEye extends Material
   object BlazePowder extends Material
   object MagmaCream extends Material(energy = 386)
@@ -1303,106 +1460,107 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object CauldronItem extends Material
   object EyeOfEnder extends Material
   object GlisteringMelon extends Material
-  object MonsterEgg extends Material(energy = -1) with Consumable with Unconsumable
-  object ExpBottle extends Material(energy = -1) with Consumable with Unconsumable
-  object FireCharge extends Material with Consumable
+  object MonsterEgg extends Material with NoEnergy
+  object ExpBottle extends Material with PlayerConsumable with NoEnergy
+  object FireCharge extends Material with Usable
   object BookAndQuill extends Material with Usable
-  object WrittenBook extends Material(energy = -1) with Usable with Unconsumable
+  object WrittenBook extends Material with Usable with NoEnergy
   object Emerald extends Material(energy = 464)
   object ItemFrame extends Material
   object FlowerPotItem extends Material
-  object CarrotItem extends Material(energy = 5498) with Consumable with Food
-  object PotatoItem extends Material(energy = 5498) with Consumable with Food
-  object BakedPotato extends Material with Consumable with Food
-  object PoisonousPotato extends Material with Consumable with Food
+  object CarrotItem extends Material(energy = 5498) with PlayerConsumable
+  object PotatoItem extends Material(energy = 5498) with PlayerConsumable
+  object BakedPotato extends Material with PlayerConsumable
+  object PoisonousPotato extends Material with PlayerConsumable
   object EmptyMap extends Material with Usable
-  object GoldenCarrot extends Material with Consumable with Food
-  object SkeletonHead extends Material(energy = -1) with Unconsumable
-  object WitherSkeletonHead extends Material(energy = -1) with Unconsumable
-  object ZombieHead extends Material(energy = -1) with Unconsumable
-  object PlayerHead extends Material(energy = -1) with Unconsumable
-  object CreeperHead extends Material(energy = -1) with Unconsumable
-  object DragonHead extends Material(energy = -1) with Unconsumable
+  object GoldenCarrot extends Material with PlayerConsumable
+  object SkeletonHead extends Material with NoEnergy
+  object WitherSkeletonHead extends Material with NoEnergy
+  object ZombieHead extends Material with NoEnergy
+  object PlayerHead extends Material with NoEnergy
+  object CreeperHead extends Material with NoEnergy
+  object DragonHead extends Material with NoEnergy
   object CarrotStick extends Material
   object NetherStar extends Material(energy = 62141)
-  object PumpkinPie extends Material with Consumable with Food
-  object FireworkRocket extends Material(energy = -1) with Consumable with Unconsumable
-  object FireworkStar extends Material(energy = -1) with Unconsumable
-  object EnchantedBook extends Material(energy = -1) with Unconsumable
+  object PumpkinPie extends Material with PlayerConsumable
+  object FireworkRocket extends Material with Usable with NoEnergy
+  object FireworkStar extends Material with NoEnergy
+  object EnchantedBook extends Material with NoEnergy
   object RedstoneComparator extends Material
   object NetherBrickItem extends Material
-  object Quartz extends Material(tierString = "T3")
+  object Quartz extends Material(tier = T3)
   object ExplosiveMinecart extends Material
   object HopperMinecart extends Material with Inventory
-  object PrismarineShard extends Material(energy = 939)
-  object PrismarineCrystals extends Material(energy = 5332)
-  object RawRabbit extends Material(energy = 1) with Consumable with Food
-  object CookedRabbit extends Material with Consumable with Food
-  object RabbitStew extends Material with Consumable with Food
+  object PrismarineShard extends Material(energy = 469)
+  object PrismarineCrystals extends Material(energy =   5332)
+  object RawRabbit extends Material(tier = T0) with PlayerConsumable
+  object CookedRabbit extends Material with PlayerConsumable
+  object RabbitStew extends Material with PlayerConsumable
   object RabbitFoot extends Material(energy = 11)
-  object RabbitHide extends Material(energy = 1)
+  object RabbitHide extends Material(tier = T0)
   object ArmorStand extends Material
-  object IronHorseArmor extends Material(tierString = "T3")
-  object GoldHorseArmor extends Material(tierString = "T4")
-  object DiamondHorseArmor extends Material(tierString = "T5")
+  object IronHorseArmor extends Material(tier = T3)
+  object GoldHorseArmor extends Material(tier = T4)
+  object DiamondHorseArmor extends Material(tier = T5)
   object Leash extends Material
-  object NameTag extends Material(tierString = "T4")
-  object CommandMinecart extends Material(energy = -1) with Unconsumable
-  object RawMutton extends Material(energy = 1) with Consumable
-  object CookedMutton extends Material with Consumable
-  object WhiteBanner extends Material with GenericBanner
-  object OrangeBanner extends Material with GenericBanner
-  object MagentaBanner extends Material with GenericBanner
-  object LightBlueBanner extends Material with GenericBanner
-  object YellowBanner extends Material with GenericBanner
-  object LimeBanner extends Material with GenericBanner
-  object PinkBanner extends Material with GenericBanner
-  object GrayBanner extends Material with GenericBanner
-  object LightGrayBanner extends Material with GenericBanner
-  object CyanBanner extends Material with GenericBanner
-  object PurpleBanner extends Material with GenericBanner
-  object BlueBanner extends Material with GenericBanner
-  object BrownBanner extends Material with GenericBanner
-  object GreenBanner extends Material with GenericBanner
-  object RedBanner extends Material with GenericBanner
-  object BlackBanner extends Material with GenericBanner
+  object NameTag extends Material(tier = T4)
+  object CommandMinecart extends Material with NoEnergy
+  object RawMutton extends Material(tier = T0)
+  object CookedMutton extends Material
+  object WhiteBanner extends Material with Banner
+  object OrangeBanner extends Material with Banner
+  object MagentaBanner extends Material with Banner
+  object LightBlueBanner extends Material with Banner
+  object YellowBanner extends Material with Banner
+  object LimeBanner extends Material with Banner
+  object PinkBanner extends Material with Banner
+  object GrayBanner extends Material with Banner
+  object LightGrayBanner extends Material with Banner
+  object CyanBanner extends Material with Banner
+  object PurpleBanner extends Material with Banner
+  object BlueBanner extends Material with Banner
+  object BrownBanner extends Material with Banner
+  object GreenBanner extends Material with Banner
+  object RedBanner extends Material with Banner
+  object BlackBanner extends Material with Banner
   object EndCrystal extends Material
-  object SpruceDoorItem extends Material with GenericDoor
-  object BirchDoorItem extends Material with GenericDoor
-  object JungleDoorItem extends Material with GenericDoor
-  object AcaciaDoorItem extends Material(tierString = "T2") with GenericDoor
-  object DarkOakDoorItem extends Material with GenericDoor
-  object ChorusFruit extends Material(tierString = "T6") with Consumable
+  object SpruceDoorItem extends Material with Door
+  object BirchDoorItem extends Material with Door
+  object JungleDoorItem extends Material with Door
+  object AcaciaDoorItem extends Material(tier = T2) with Door
+  object DarkOakDoorItem extends Material with Door
+  object ChorusFruit extends Material(tier = T6)
   object PoppedChorusFruit extends Material
-  object Beetroot extends Material with Consumable with Food
-  object BeetrootSeeds extends Material(tierString = "T2") with Consumable
-  object BeetrootSoup extends Material with Consumable with Food
-  object DragonsBreath extends Material(tierString = "T6")
-  object SplashPotion extends Material(energy = -1) with Consumable with Unconsumable
-  object SpectralArrow extends Material(energy = -1) with Unconsumable
-  object TippedArrow extends Material(energy = -1) with Unconsumable
-  object LingeringPotion extends Material(energy = -1) with Consumable with Unconsumable
-  object Shield extends Material with Consumable
-  object Elytra extends Material(tierString = "T6") with Consumable
-  object SpruceBoat extends Material
-  object BirchBoat extends Material
-  object JungleBoat extends Material
-  object AcaciaBoat extends Material
-  object DarkOakBoat extends Material
+  object Beetroot extends Material with PlayerConsumable
+  object BeetrootSeeds extends Material(tier = T2)
+  object BeetrootSoup extends Material with PlayerConsumable
+  object DragonsBreath extends Material(tier = T6)
+  object SplashPotion extends Material with Consumable with NoEnergy
+  object SpectralArrow extends Material with NoEnergy
+  object TippedArrow extends Material with NoEnergy
+  object LingeringPotion extends Material with Consumable with NoEnergy
+  object Shield extends Material with Durable
+  object Elytra extends Material(tier = T6) with Durable
+  object SpruceBoat extends Material with Boat
+  object BirchBoat extends Material with Boat
+  object JungleBoat extends Material with Boat
+  object AcaciaBoat extends Material with Boat
+  object DarkOakBoat extends Material with Boat
   object TotemOfUndying extends Material(energy = 488)
   object ShulkerShell extends Material(energy = 951)
   object IronNugget extends Material
-  object GoldRecord extends Material(tierString = "T4")
-  object GreenRecord extends Material(tierString = "T4")
-  object Record3 extends Material(tierString = "T4")
-  object Record4 extends Material(tierString = "T4")
-  object Record5 extends Material(tierString = "T4")
-  object Record6 extends Material(tierString = "T4")
-  object Record7 extends Material(tierString = "T4")
-  object Record8 extends Material(tierString = "T4")
-  object Record9 extends Material(tierString = "T4")
-  object Record10 extends Material(tierString = "T4")
-  object Record11 extends Material(tierString = "T4")
-  object Record12 extends Material(tierString = "T4")
+  object KnowledgeBook extends Material with NoEnergy
+  object GoldRecord extends Material(tier = T4)
+  object GreenRecord extends Material(tier = T4)
+  object Record3 extends Material(tier = T4)
+  object Record4 extends Material(tier = T4)
+  object Record5 extends Material(tier = T4)
+  object Record6 extends Material(tier = T4)
+  object Record7 extends Material(tier = T4)
+  object Record8 extends Material(tier = T4)
+  object Record9 extends Material(tier = T4)
+  object Record10 extends Material(tier = T4)
+  object Record11 extends Material(tier = T4)
+  object Record12 extends Material(tier = T4)
   //@formatter:on
 }

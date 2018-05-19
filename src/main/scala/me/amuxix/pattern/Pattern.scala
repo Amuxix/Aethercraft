@@ -2,7 +2,7 @@ package me.amuxix.pattern
 
 import me.amuxix.exceptions.InitializationException
 import me.amuxix.logging.Logger.trace
-import me.amuxix.material.{Material, Unconsumable, Block => MBlock}
+import me.amuxix.material.{Material, NoEnergy, Block => MBlock}
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.{Parameters, Rune}
 import me.amuxix.{Block, Matrix4, Rotation, Vector3}
@@ -130,8 +130,8 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     */
   def centerCanBe(centerMaterial: Material): Boolean = {
     centerElement match {
-      case material: Material if centerMaterial != material => false
-      case Tier if patternMaterials.contains(centerMaterial) || centerMaterial.isInstanceOf[Unconsumable] => false
+      case material: Material if centerMaterial != material || centerMaterial.isInstanceOf[NoEnergy] => false
+      case Tier if patternMaterials.contains(centerMaterial) => false
       case _ => true
     }
   }
@@ -183,7 +183,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
           //Material different from pattern
           trace("Material does not match")
           return false
-        case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[Unconsumable] =>
+        case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[NoEnergy] =>
           trace("This block cannot be used as a tier material as its a material used by the rune or the material is unconsumable")
           return false
         case Tier =>

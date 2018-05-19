@@ -295,19 +295,23 @@ object Matrix4 {
     * The identity matrix. When any matrix M is right- or left-multiplied
     * by the identity, M is returned.
     */
-  val IDENTITY = new Matrix4(Array(1, 0, 0, 0,
+  val IDENTITY = new Matrix4(Array(
+    1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 1, 0,
-    0, 0, 0, 1))
+    0, 0, 0, 1
+  ))
 
   /**
     * The matrix composed of all zero values. When any matrix M is right- or
     * left-multiplied by the zero matrix, the zero matrix is returned.
     */
-  val ZERO = new Matrix4(Array(0, 0, 0, 0,
+  val ZERO = new Matrix4(Array(
     0, 0, 0, 0,
     0, 0, 0, 0,
-    0, 0, 0, 0))
+    0, 0, 0, 0,
+    0, 0, 0, 0
+  ))
 
   /**
     * Performs a clockwise rotation on the positive x-axis,
@@ -321,10 +325,12 @@ object Matrix4 {
     val c: Int = cos(degrees.toRadians).round.toInt
     val s: Int = sin(degrees.toRadians).round.toInt
 
-    new Matrix4(Array(1, 0, 0, 0,
-      0, c,    -s,   0,
-      0, s,    c,    0,
-      0, 0, 0, 1))
+    new Matrix4(Array(
+      1, 0,  0, 0,
+      0, c, -s, 0,
+      0, s,  c, 0,
+      0, 0,  0, 1
+    ))
   }
 
   /**
@@ -339,10 +345,12 @@ object Matrix4 {
     val c: Int = cos(degrees.toRadians).round.toInt
     val s: Int = sin(degrees.toRadians).round.toInt
 
-    new Matrix4(Array(c,    0, s,  0,
-      0, 1, 0, 0,
-      -s,   0, c,  0,
-      0, 0, 0, 1))
+    new Matrix4(Array(
+      c,  0, s, 0,
+      0,  1, 0, 0,
+      -s, 0, c, 0,
+      0,  0, 0, 1
+    ))
   }
 
   /**
@@ -357,10 +365,12 @@ object Matrix4 {
     val c: Int = cos(degrees.toRadians).round.toInt
     val s: Int = sin(degrees.toRadians).round.toInt
 
-    new Matrix4(Array(c,    -s,   0, 0,
-      s,    c,    0, 0,
+    new Matrix4(Array(
+      c, -s,0, 0,
+      s, c, 0, 0,
       0, 0, 1, 0,
-      0, 0, 0, 1))
+      0, 0, 0, 1
+    ))
   }
 
   /**
@@ -383,7 +393,8 @@ object Matrix4 {
       1, 0, 0, amount.x,
       0, 1, 0, amount.y,
       0, 0, 1, amount.z,
-      0, 0, 0, 1))
+      0, 0, 0, 1
+    ))
   }
 
   /**
@@ -396,7 +407,8 @@ object Matrix4 {
       factor.x, 0,        0,        0,
       0,        factor.y, 0,        0,
       0,        0,        factor.z, 0,
-      0,        0,        0,        1))
+      0,        0,        0,        1
+    ))
   }
 
 }

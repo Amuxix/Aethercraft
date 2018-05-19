@@ -4,7 +4,7 @@ import java.io._
 
 import io.circe.parser._
 import io.circe.syntax._
-import io.circe.{Decoder, Encoder, Error}
+import io.circe.{Decoder, Encoder}
 import me.amuxix.logging.Logger.info
 import me.amuxix.runes.Rune
 import me.amuxix.runes.waypoints.{Waypoint, WaypointTrait}

@@ -1,65 +1,85 @@
 package me.amuxix.material
 
-import com.github.ghik.silencer.silent
-import me.amuxix.material.Ingredient.possibleDataByteFor
-import me.amuxix.material.Material.{materialData2Material, materialDataToMaterial}
-import org.bukkit.material.MaterialData
-import org.bukkit.{Material => BMaterial}
-
-import scala.annotation.tailrec
+import me.amuxix.util.Mergeable
+import me.amuxix.material.Generic.SpreadableMaterial
 
 /**
   * Created by Amuxix on 08/01/2017.
   */
-
-sealed trait Constituent {
-  def amount: Double
-  def material: Option[Material]
-}
-object Ingredient {
-  @silent def possibleDataByteFor(bukkitMaterial: BMaterial): Iterable[Byte] = {
-    materialDataToMaterial.keys.collect {
-      case m: MaterialData if m.getItemType == bukkitMaterial => m.getData
-    }
-  }
-}
-sealed trait Ingredient extends Constituent {
-  def energy: Option[Double] = material.flatMap(_.energy).map(_ * amount)
-}
-case class UndefinedIngredient(bmaterial: BMaterial, amount: Double) extends Ingredient {
-  @silent
-  private val possibleMaterials = possibleDataByteFor(bmaterial) map { byte =>
-    materialData2Material(new MaterialData(bmaterial, byte))
-  }
-  def material: Option[Material] = {
-    @tailrec def findMin(remainingMaterials: List[Material], currentMin: Int, materialWithMin: Option[Material]): Option[Material] = remainingMaterials match {
-      case Material(None) :: _ =>
-        None
-      case (m @ Material(Some(energy))) :: tail =>
-        if (energy < currentMin) {
-          findMin(tail, energy, Some(m))
-        } else {
-          findMin(tail, currentMin, materialWithMin)
-        }
-      case Nil =>
-        materialWithMin
-    }
-    findMin(possibleMaterials.toList, Int.MaxValue, None)
-  }
-}
-abstract sealed class DefinedMaterial(m: Material) extends Constituent {
-  override def material: Option[Material] = Some(m)
-}
-
-case class DefinedIngredient(private val m: Material, amount: Double) extends DefinedMaterial(m) with Ingredient
-
-case class Result(private val m: Material, amount: Double) extends DefinedMaterial(m)
-
 object Recipe {
-  def apply(ingredients: (Material, Double), result: Material): Recipe = new Recipe(Seq(DefinedIngredient(ingredients._1, ingredients._2)), Result(result, 1))
-  def apply(ingredients: (Material, Double), result: (Material, Int)): Recipe = new Recipe(Seq(DefinedIngredient(ingredients._1, ingredients._2)), Result(result._1, result._2.toDouble))
-  def apply(ingredients: Material, result: (Material, Int)): Recipe = new Recipe(Seq(DefinedIngredient(ingredients, 1)), Result(result._1, result._2.toDouble))
-  def apply(ingredients: Material, result: Material): Recipe = new Recipe(Seq(DefinedIngredient(ingredients, 1)), Result(result, 1))
+  def apply(ingredient: Constituent, result: Constituent): Recipe = new Recipe(Seq(ingredient), result)
 }
 
-case class Recipe(ingredients: Seq[Ingredient], result: Result)
+case class Recipe(ingredients: Seq[Constituent], result: Constituent, requiresFuel: Boolean = false) {
+  private implicit class SpreadableList(val ingredients: Seq[Constituent]) {
+    def spread: Seq[Seq[Constituent]] = {
+      val (genericIngredients, specificIngredients) = ingredients/*.filter(_.material != Air)*/.partition(_.isGeneric)
+      val spreadGenerics: Seq[Seq[Constituent]] = genericIngredients.map(_.spread)
+      val recipeCopiesNumber = spreadGenerics.head.size
+      val spreadIngredients: Seq[Seq[Constituent]] = spreadGenerics ++ specificIngredients.map(ingredient => List.fill(recipeCopiesNumber)(ingredient))
+      require(spreadIngredients.forall(_.size == recipeCopiesNumber), s"Cannot spread generic ingredient list!")
+      require(spreadIngredients.nonEmpty && spreadIngredients.size <= 9, s"Spread created invalid number of ingredients!")
+      spreadIngredients.transpose
+    }
+  }
+
+  require(ingredients.nonEmpty && ingredients.size <= 9, s"Recipe for ${result.material.name} has invalid number of ingredients.\n$ingredients")
+  override def toString: String = s"$result\t<${if (requiresFuel) "= " else "-"}\t${ingredients.mkString("\t")}"
+
+  def spread: Seq[Recipe] = {
+    result match {
+      //case Constituent(Air, _, _) => List.empty
+      case Constituent(_, _, true) =>
+        require(ingredients.exists(_.isGeneric), s"Recipe for $result has generic result but no generic ingredients!")
+        val spreadIngredients = ingredients.spread
+        val spreadResult = result.spread
+        require(spreadIngredients.size == spreadResult.size,
+          s"""Cannot spread generic materials in recipe: $result <- $ingredients
+             |$spreadResult
+             |$spreadIngredients""".stripMargin)
+
+        (spreadIngredients zip spreadResult).map(((ingredients: Seq[Constituent],
+                                                   result: Constituent) => Recipe(ingredients, result, requiresFuel)).tupled)
+      case _ if ingredients.exists(_.isGeneric) =>
+        val spreadIngredients = ingredients.spread
+        spreadIngredients.map((ingredients: Seq[Constituent]) => Recipe(ingredients, result, requiresFuel))
+      case _ =>
+        Seq(this)
+    }
+  }
+}
+
+object Constituent {
+  implicit def material2Constituent(material: Material): Constituent = Constituent(material)
+
+  def apply(material: Material, amount: Double = 1, isGeneric: Boolean = false): Constituent = new Constituent(material, amount, isGeneric)
+  def unapply(arg: Constituent): Option[(Material, Double, Boolean)] = Some((arg.material, arg.amountDouble, arg.isGeneric))
+}
+
+class Constituent(material: Material, val amountDouble: Double = 1, val isGeneric: Boolean = false) extends ItemStack(material, amountDouble.round.toInt) with Mergeable[Constituent] {
+  override def canMerge(that: Constituent): Boolean = this.material == that.material && this.isGeneric == that.isGeneric
+
+  override def merge(that: Constituent): Constituent = Constituent(material, this.amountDouble + that.amountDouble, isGeneric)
+
+  /**
+    * Creates a Seq with all specific materials of this Constituent material if its a generic material otherwise
+    * returns a Seq with only this Constituent.
+    * @return A Seq of Constituent.
+    */
+  def spread: Seq[Constituent] = this match {
+    case Constituent(_: Tool, _, _) | Constituent(_: Armor, _, _) => Seq(new Constituent(material, amountDouble))
+    case Constituent(_, _, true) => material.spread.map(specificMaterial => Constituent(specificMaterial, amountDouble))
+    case _ => Seq(this)
+  }
+
+  override def toString: String = {
+    val materialString = {
+      if (isGeneric) {
+        material.name.replaceFirst("\\w+", "Generic")
+      } else {
+        material.toString
+      }
+    }
+    s"$materialString x $amountDouble"
+  }
+}

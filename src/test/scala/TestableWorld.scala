@@ -2,6 +2,7 @@ import java.io.File
 import java.util
 import java.util.UUID
 
+import com.github.ghik.silencer.silent
 import org.bukkit.World.Environment
 import org.bukkit._
 import org.bukkit.block.{Biome, Block}
@@ -132,8 +133,6 @@ class TestableWorld(underlyingBlocks: Array[Array[Array[Block]]]) extends World 
   override def setTicksPerAnimalSpawns(ticksPerAnimalSpawns: Int): Unit = ???
 
   override def generateTree(location: Location, `type`: TreeType): Boolean = ???
-
-  override def generateTree(loc: Location, `type`: TreeType, delegate: BlockChangeDelegate): Boolean = ???
 
   override def getEmptyChunkSnapshot(x: Int, z: Int, includeBiome: Boolean, includeBiomeTempRain: Boolean): ChunkSnapshot = ???
 
@@ -292,4 +291,8 @@ class TestableWorld(underlyingBlocks: Array[Array[Array[Block]]]) extends World 
   override def getListeningPluginChannels: util.Set[String] = ???
 
   override def sendPluginMessage(source: Plugin, channel: String, message: Array[Byte]): Unit = ???
+
+  override def setSpawnLocation(location: Location): Boolean = ???
+
+  @silent override def generateTree(loc: Location, `type`: TreeType, delegate: BlockChangeDelegate): Boolean = ???
 }

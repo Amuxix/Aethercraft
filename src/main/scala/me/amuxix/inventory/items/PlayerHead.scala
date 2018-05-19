@@ -1,5 +1,6 @@
 package me.amuxix.inventory.items
 
+import com.github.ghik.silencer.silent
 import me.amuxix.Player
 import me.amuxix.inventory.Item
 import org.bukkit.inventory.ItemStack
@@ -13,9 +14,9 @@ class PlayerHead protected[inventory] (itemStack: ItemStack) extends Item(itemSt
 
   def hasOwner: Boolean = skullMeta.hasOwner
 
-  def owner: Option[Player] = Player.named(skullMeta.getOwner)
+  @silent def owner: Option[Player] = Player.named(skullMeta.getOwner)
 
-  def owner_=(player: Player): Unit = {
+  @silent def owner_=(player: Player): Unit = {
     meta = {
       val newMeta = skullMeta
       newMeta.setOwner(player.name)

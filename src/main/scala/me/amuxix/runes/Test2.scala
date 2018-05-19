@@ -1,7 +1,7 @@
 package me.amuxix.runes
 
 import me.amuxix.inventory.Item
-import me.amuxix.material.GenericSword
+import me.amuxix.material.Sword
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Consumable
@@ -13,7 +13,7 @@ object Test2 extends RunePattern {
   /*if (ficheiroDeRunasActivas tem this.name) {
     Matcher.runes += this
   }*/
-  val pattern: Pattern = Pattern(Test2.apply, activatesWith = { case _: GenericSword => true })(
+  val pattern: Pattern = Pattern(Test2.apply, activatesWith = { case _: Sword => true })(
     ActivationLayer(
       Glass, NotInRune, EndStone, NotInRune, Glass,
       NotInRune, Glass, NotInRune, Glass, NotInRune,

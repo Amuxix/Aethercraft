@@ -11,7 +11,7 @@ import me.amuxix.runes.Rune
   * Throws an initialization exception if [[Rune.activationItem]] is not a [[Tool]]
   */
 trait Tool { this: Rune =>
-  def checkActivationItem(activationItem: Item) {
+  def checkActivationItem(activationItem: Item) = {
     /*if (activationItem.isInstanceOf[Tool] == false) {
       throw InitializationException("Item used is not a tool!")
     }*/

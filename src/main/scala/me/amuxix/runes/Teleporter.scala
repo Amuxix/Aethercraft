@@ -29,11 +29,7 @@ object Teleporter extends RunePattern {
   )
 }
 
-case class Teleporter(parameters: Parameters, pattern: Pattern)
-  extends Rune(parameters)
-          with Tiered
-          with Consumable
-          with Linkable {
+case class Teleporter(parameters: Parameters, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
   implicit val doubleAsIfIntegral = DoubleAsIfIntegral
 
   override def validateSignature(): Boolean = {
@@ -49,8 +45,8 @@ case class Teleporter(parameters: Parameters, pattern: Pattern)
 
   override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
 
-  override protected def innerActivate(activationItem: Item): Unit = {
-    val possibleTargets: Map[Int, Rune with WaypointTrait] = Runecraft.waypoints
+  override protected def onActivate(activationItem: Item): Unit = {
+    val possibleTargets: Map[Int, Rune with WaypointTrait] = Aethercraft.waypoints
     val targetWP: Rune with WaypointTrait = possibleTargets.getOrElse(signature, throw InitializationException("Can't find your destination."))
 
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */

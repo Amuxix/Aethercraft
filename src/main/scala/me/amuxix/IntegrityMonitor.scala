@@ -20,7 +20,7 @@ object IntegrityMonitor {
   def addRune(rune: Rune with Persistent): Unit = {
     destructionBlocks ++= rune.monitoredDestroyBlocks.map(_ -> rune)
     buildBlocks ++= rune.monitoredBuildBlocks.map(_ -> rune)
-    Runecraft.persistentRunes += rune.center -> rune
+    Aethercraft.persistentRunes += rune.center -> rune
   }
 
   /**
@@ -31,7 +31,7 @@ object IntegrityMonitor {
     rune.destroyRune()
     destructionBlocks --= rune.monitoredDestroyBlocks
     buildBlocks --= rune.monitoredBuildBlocks
-    Runecraft.persistentRunes -= rune.center
+    Aethercraft.persistentRunes -= rune.center
   }
 
   /**

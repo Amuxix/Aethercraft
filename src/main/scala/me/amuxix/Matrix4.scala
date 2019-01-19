@@ -232,6 +232,16 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     */
   def rotateZ(degrees: Int) = new Matrix4(mult(Matrix4.rotateZ(degrees).data, data))
 
+
+  /**
+    * Rotates the given point about the rotation center.
+    * @param point Point to rotate
+    * @return The rotated points
+    */
+  def rotateAbout(rotationCenter: Vector3[Int])(point: Vector3[Int]): Vector3[Int] = {
+    Matrix4.IDENTITY.translate(rotationCenter) * this * Matrix4.IDENTITY.translate(rotationCenter * -1) * point
+  }
+
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
     * and then translates in the specified direction.

@@ -1,21 +1,21 @@
 package me.amuxix.events
 
-import com.github.ghik.silencer.silent
 import me.amuxix.Block.Location
 import me.amuxix.Player
-import me.amuxix.events.RunecraftPlaceEvent._
+import me.amuxix.events.AethercraftPlaceEvent._
 import me.amuxix.material.Material
 import org.bukkit.block.Block
 import org.bukkit.entity.{Player => BPlayer}
 import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.inventory.EquipmentSlot.HAND
 import org.bukkit.inventory.ItemStack
 
 /**
   * Created by Amuxix on 19/01/2017.
   */
-object RunecraftPlaceEvent {
+object AethercraftPlaceEvent {
   def getPlacedBlock(target: Location, material: Material): Block = {
-    target.block.state.setData(material)
+    target.block.state.setType(material.toBukkitMaterial)
     target.block.state.update(true)
     target.block.state.getBlock
   }
@@ -34,5 +34,5 @@ object RunecraftPlaceEvent {
     }
   }
 }
-@silent case class RunecraftPlaceEvent(target: Location, material: Material, runePlayer: Player)
-  extends BlockPlaceEvent(getPlacedBlock(target, material), target.block.state, target.block.state.getBlock, getItemInHand(runePlayer), getPlayer(runePlayer), true)
+case class AethercraftPlaceEvent(target: Location, material: Material, runePlayer: Player)
+  extends BlockPlaceEvent(getPlacedBlock(target, material), target.block.state, target.block.state.getBlock, getItemInHand(runePlayer), getPlayer(runePlayer), true, HAND)

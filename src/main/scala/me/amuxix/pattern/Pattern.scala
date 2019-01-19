@@ -5,24 +5,22 @@ import me.amuxix.logging.Logger.trace
 import me.amuxix.material.{Material, NoEnergy, Block => MBlock}
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.{Parameters, Rune}
-import me.amuxix.{Block, Matrix4, Rotation, Vector3}
+import me.amuxix.{Block, Matrix4, Vector3}
 
 /**
   * Created by Amuxix on 21/11/2016.
   */
-
-case class Layer(elements: Element*) {
+sealed trait BaseLayer {
+  def elements: Seq[Element]
   def toElementsArray(width: Int): Seq[Seq[Element]] = {
     elements.grouped(width).toSeq
   }
 }
-object ActivationLayer {
-  def apply(elements: Element*) = new ActivationLayer(elements:_*)
-}
-class ActivationLayer(_elements: Element*) extends Layer(_elements:_*)
+case class Layer(elements: Element*) extends BaseLayer
+case class ActivationLayer(elements: Element*) extends BaseLayer
 
 object Pattern {
-  def isMirrored(layer: Layer, width: Int): Boolean = {
+  def isMirrored(layer: BaseLayer, width: Int): Boolean = {
     val layerArray: Seq[Seq[Element]] = layer.toElementsArray(width)
     val height = layerArray.size
     (for {
@@ -33,25 +31,27 @@ object Pattern {
     } yield layerArray(j)(w) == layerArray(width - j - 1)(w) && layerArray(h)(i) == layerArray(h)(height - i - 1)).forall(identity)
   }
 
-  def apply[R <: Rune](creator: (Parameters, Pattern) => R, width: Int = 0, verticality: Boolean = false,
-                       directional: Boolean = false, buildableOnCeiling: Boolean = true,
+  def apply[R <: Rune](creator: (Parameters, Pattern) => R,
+                       width: Option[Int] = None,
+                       verticality: Boolean = false,
+                       directional: Boolean = false,
+                       buildableOnCeiling: Boolean = true,
                        activatesWith: PartialFunction[Material, Boolean] = { case m if !m.isInstanceOf[MBlock] => true })
-                      (layers: Layer*): Pattern = {
+                      (layers: BaseLayer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
-    val finalWidth: Int = if (width == 0) {
-      val sqrt = Math.sqrt(layers.head.elements.size)
-      if (sqrt.isValidInt) {
-        sqrt.toInt
-      } else {
-        throw InitializationException("Rune has invalid width!")
-      }
-    } else {
-      if (width % 2 == 0) {
-        throw InitializationException("Rune width needs to be odd!")
-      }
-      width
+    val finalWidth = width match {
+      case None =>
+        val sqrt = Math.sqrt(layers.head.elements.size)
+        if (sqrt.isValidInt) {
+          sqrt.toInt
+        } else {
+          throw InitializationException("Rune has invalid width!")
+        }
+      case Some(width) if width % 2 == 0 => throw InitializationException("Rune width needs to be odd!")
+      case Some(width) => width
     }
-    if (layers.forall(_.elements.size % finalWidth == 0) == false) {
+
+    if (layers.exists(_.elements.size % finalWidth != 0)) {
       throw InitializationException("At least a layer in the pattern does not form a rectangle!")
     }
     val hasTwoMirroredAxis = layers.forall(isMirrored(_, finalWidth))
@@ -99,29 +99,6 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     */
   protected[pattern] def createRune(parameters: Parameters): Rune
 
-  /**
-    * Looks for this pattern in the given bounding cube
-    * @param boundingCube Cube to look for the pattern in
-    * @return true if rune was found
-    */
-  def foundIn(boundingCube: BoundingCube): Option[Matrix4] = {
-    val rotationMatrix = Matrix4.IDENTITY
-    var possibleRotations = Seq(() => rotationMatrix)
-    if (verticality) {
-      possibleRotations :+= (() => rotationMatrix.rotateZ(90))
-      possibleRotations :+= (() => rotationMatrix.rotateX(90))
-    }
-    if (height > 1) {
-      if (verticality) {
-        possibleRotations :+= (() => rotationMatrix.rotateZ(-90))
-        possibleRotations :+= (() => rotationMatrix.rotateX(-90))
-      }
-      if (buildableOnCeiling) {
-        possibleRotations :+= (() => rotationMatrix.rotateX(180))
-      }
-    }
-    possibleRotations.find(f => matchHorizontalRotations(boundingCube, f()).isDefined).map(f => f())
-  }
 
   /**
     * Checks if the center block can be the given material
@@ -136,19 +113,44 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     }
   }
 
-  private def matchHorizontalRotations(boundingCube: BoundingCube, rotationMatrix: Matrix4): Option[Matrix4] = {
-    var possibleRotations = Seq(() => rotationMatrix)
-    if (directional == false) {
-      if (hasTwoMirroredAxis == false) {
-        possibleRotations :+= (() => rotationMatrix.rotateY(90))
-        possibleRotations :+= (() => rotationMatrix.rotateY(180))
-        possibleRotations :+= (() => rotationMatrix.rotateY(270))
+
+  /**
+    * Checks if this pattern exists in the given bounding cube
+    * @param boundingCube Cube to look for the pattern in
+    * @return The rotation matrix the rune was found in
+    */
+  def findRotation(boundingCube: BoundingCube): Option[Matrix4] = {
+    val rotationMatrix = Matrix4.IDENTITY
+    var possibleRotations: Seq[Matrix4] = Seq(rotationMatrix)
+    if (verticality) {
+      possibleRotations :+= rotationMatrix.rotateZ(90)
+      possibleRotations :+= rotationMatrix.rotateX(90)
+    }
+    if (height > 1) {
+      if (verticality) {
+        possibleRotations :+= rotationMatrix.rotateZ(-90)
+        possibleRotations :+= rotationMatrix.rotateX(-90)
       }
-      if (hasTwoMirroredAxis == true && width != depth) {
-        possibleRotations :+= (() => rotationMatrix.rotateY(90))
+      if (buildableOnCeiling) {
+        possibleRotations :+= rotationMatrix.rotateX(180)
       }
     }
-    possibleRotations.find(f => matchesRotation(boundingCube, f())).map(f => f())
+    possibleRotations.find(findHorizontalRotations(boundingCube, _))
+  }
+
+  private def findHorizontalRotations(boundingCube: BoundingCube, rotationMatrix: Matrix4): Boolean = {
+    var possibleRotations = Seq(rotationMatrix)
+    if (directional == false) {
+      if (hasTwoMirroredAxis == false) {
+        possibleRotations :+= rotationMatrix.rotateY(90)
+        possibleRotations :+= rotationMatrix.rotateY(180)
+        possibleRotations :+= rotationMatrix.rotateY(270)
+      }
+      if (hasTwoMirroredAxis == true && width != depth) {
+        possibleRotations :+= rotationMatrix.rotateY(90)
+      }
+    }
+    possibleRotations.exists { matchesRotation(boundingCube, _) }
   }
 
   private def matchesRotation(boundingCube: BoundingCube, rotationMatrix: Matrix4): Boolean = {
@@ -157,7 +159,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     var key = Set.empty[Material]
     var notInRune = Set.empty[Material]
     val offsetVector: Vector3[Int] = offsetVectorFor(boundingCube)
-    val rotation = Rotation(rotationMatrix, boundingCube.center)
+    val rotate = rotationMatrix.rotateAbout(boundingCube.center) _
     trace("Bounding cube dimension: " + boundingCube.dimension)
     trace(s"Pattern dimensions" + Vector3[Int](depth, height, width))
     trace("Offset Vector: " + offsetVector)
@@ -170,13 +172,14 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
       line <- 0 until depth //X
     } {
       val relativePosition: Vector3[Int] = Vector3(line, layer, block) + offsetVector
-      val rotatedPosition: Vector3[Int] = rotation.rotate(relativePosition)
-      trace("Relative Position: " + relativePosition)
-      trace("Rotated Position: " + rotatedPosition)
-      val blockMaterial: Material = boundingCube.blockAt(rotatedPosition).material
-      trace("Block position: " + boundingCube.blockAt(rotatedPosition).location)
-      trace("Block   Type: " + blockMaterial)
-      trace("Pattern Type: " + elements(layer)(block)(line))
+      val rotatedPosition: Vector3[Int] = rotate(relativePosition)
+      trace(s"Relative Position: $relativePosition")
+      trace(s"Rotated Position: $rotatedPosition")
+      val blockAtRotatedPosition = boundingCube.blockAt(rotatedPosition)
+      val blockMaterial = blockAtRotatedPosition.material
+      trace(s"Block position: ${blockAtRotatedPosition.location}")
+      trace(s"Block   Type: $blockMaterial")
+      trace(s"Pattern Type: ${elements(layer)(block)(line)}")
       //Having elements checked in layer > block > line makes the pattern top line be the northern most one
       elements(layer)(block)(line) match {
         case material: Material if blockMaterial != material =>
@@ -184,7 +187,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
           trace("Material does not match")
           return false
         case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[NoEnergy] =>
-          trace("This block cannot be used as a tier material as its a material used by the rune or the material is unconsumable")
+          trace("This block cannot be used as a tier material since its a rune material or an unconsumable material")
           return false
         case Tier =>
           if (firstTier.isDefined && blockMaterial != firstTier.get) {
@@ -201,11 +204,14 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
         case Key if firstTier.isDefined && firstTier.get == blockMaterial =>
           trace("This block cannot be used as a key as its a material already used by the rune or is being used as tier")
           return false
-        case Signature => signature += blockMaterial
+        case Signature =>
+          signature += blockMaterial
           trace("Its a Signature block")
-        case Key => key += blockMaterial
+        case Key =>
+          key += blockMaterial
           trace("Its a Key block")
-        case NotInRune => notInRune += blockMaterial
+        case NotInRune =>
+          notInRune += blockMaterial
           trace("Its a NotInRune block")
         case _ =>
           trace("Material matches")
@@ -227,8 +233,9 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     true
   }
 
+
   /**
-    * Applies the rotation given by the {@param rotationMatrix} to {@param point} about the {@param center} vector
+    * Applies the rotation given by the `rotationMatrix` to `point` about the `center` vector
     * @param center A vector to rotate the point about
     * @param rotationMatrix The matrix that defines the rotation
     * @param point Point to be rotated
@@ -252,11 +259,10 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     * @param boundingCube Cube this pattern fits in
     * @return Blocks that are inside the bounding cube that belong to this rune.
     */
-  def runeBlocks(boundingCube: BoundingCube, rotation: Rotation): Array[Array[Array[Block]]] = {
+  def runeBlocks(boundingCube: BoundingCube, rotate: Vector3[Int] => Vector3[Int]): Array[Array[Array[Block]]] = {
     val offsetVector: Vector3[Int] = offsetVectorFor(boundingCube)
-    Array.tabulate(depth, height, width) {
-      case (x, y, z) =>
-        boundingCube.blockAt(rotation.rotate(offsetVector + Vector3(x, y, z)))
+    Array.tabulate(depth, height, width) { case (x, y, z) =>
+      boundingCube.blockAt(rotate(offsetVector + Vector3(x, y, z)))
     }
   }
 

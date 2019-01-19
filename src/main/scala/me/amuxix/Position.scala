@@ -4,8 +4,9 @@ import java.util.UUID
 
 import io.circe.generic.auto._
 import io.circe.{Decoder, Encoder}
+import me.amuxix.bukkit._
 import me.amuxix.material.Solid
-import org.bukkit.{World, Location => BLocation}
+import org.bukkit.World
 
 import scala.math.{pow, sqrt}
 
@@ -13,20 +14,12 @@ import scala.math.{pow, sqrt}
   * Created by Amuxix on 30/12/2016.
   */
 object Position {
-  import scala.math.Numeric.DoubleAsIfIntegral
-  implicit val doubleAsIfIntegral = DoubleAsIfIntegral //Allows this method to be implicitly used by bukkitEntity2Position
-
-  implicit def bukkitLocation2Position(location: BLocation): Position[Double] =
-    Position(location.getWorld, Vector3(location.getX, location.getY, location.getZ))
-
-  implicit def doublePosition2IntPosition(position: Position[Double]): Position[Int] = position.toIntPosition
-
   implicit val encodePositionInt: Encoder[Position[Int]] = Encoder.forProduct2("world", "coordinates")(r =>
     (r.world.getUID, r.coordinates)
   )
 
   implicit val decodePositionInt: Decoder[Position[Int]] = Decoder.forProduct2("world", "coordinates")((worldID: UUID, coordinates: Vector3[Int]) => {
-    val world = Runecraft.server.getWorld(worldID)
+    val world = Aethercraft.server.getWorld(worldID)
     Position[Int](world, coordinates)
   })
 }
@@ -41,7 +34,7 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
   def -(vector: Vector3[T]): Position[T] = Position(world, coordinates - vector)
 
   def block(implicit ev: T =:= Int): Block = {
-    world.getBlockAt(coordinates.x, coordinates.y, coordinates.z)
+    world.getBlockAt(coordinates.x, coordinates.y, coordinates.z).toBlock
   }
 
   /**

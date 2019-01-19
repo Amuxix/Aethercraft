@@ -1,0 +1,7 @@
+teleporter:
+  maxBounce: 256
+energy:
+  multipliers:
+    ore: 1.5
+    chainmail: 1.1
+    crafting: 1.05

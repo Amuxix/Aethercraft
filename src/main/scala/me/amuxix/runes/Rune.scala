@@ -10,7 +10,10 @@ import me.amuxix.pattern._
 /**
   * Created by Amuxix on 22/11/2016.
   */
-abstract class Rune(parameters: Parameters) extends Named {
+trait Rune extends Named {
+  def parameters: Parameters
+  val pattern: Pattern
+
   val blocks: Array[Array[Array[Block]]] = parameters.blocks
   val center: Location = parameters.center
   /**
@@ -18,14 +21,13 @@ abstract class Rune(parameters: Parameters) extends Named {
     */
   private val realActivator: Player = parameters.activator
   val direction: Direction = parameters.direction
-  val pattern: Pattern
 
   /**
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
   def activate(activationItem: Item): Unit = {
-    innerActivate(activationItem)
+    onActivate(activationItem)
     consumeTrueName()
     logRuneActivation()
     notifyActivator()
@@ -41,7 +43,7 @@ abstract class Rune(parameters: Parameters) extends Named {
     */
   val activator: Player = {
     val owner = for {
-      possibleHelmet <- realActivator.helmet()
+      possibleHelmet <- realActivator.helmet
       playerHead = possibleHelmet.asInstanceOf[PlayerHead]
       owner <- playerHead.owner if shouldUseTrueName && playerHead.hasRuneEnchant(TrueName)
     } yield owner
@@ -53,7 +55,7 @@ abstract class Rune(parameters: Parameters) extends Named {
     */
   private def consumeTrueName(): Unit = {
     val playerHead = for {
-      possibleHelmet <- realActivator.helmet()
+      possibleHelmet <- realActivator.helmet
       playerHead = possibleHelmet.asInstanceOf[PlayerHead]
     } yield playerHead
     if (playerHead.isDefined && playerHead.get.hasOwner && playerHead.get.hasRuneEnchant(TrueName)) {
@@ -65,7 +67,7 @@ abstract class Rune(parameters: Parameters) extends Named {
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  protected def innerActivate(activationItem: Item): Unit
+  protected def onActivate(activationItem: Item): Unit
 
   protected def notifyActivator(): Unit = {
     activator.sendNotification(name + " activated")

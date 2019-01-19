@@ -1,8 +1,9 @@
 package me.amuxix.inventory.items
 
-import com.github.ghik.silencer.silent
-import me.amuxix.{Player, Runecraft}
+import me.amuxix.{Player, Aethercraft}
 import me.amuxix.inventory.Item
+import me.amuxix.runes.TrueName
+import me.amuxix.runes.TrueName.trueNameDisplayFor
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.SkullMeta
 
@@ -19,11 +20,14 @@ class PlayerHead protected[inventory] (itemStack: ItemStack) extends Item(itemSt
     case owner => Some(Player(owner.getUniqueId))
   }
 
-  @silent def owner_=(player: Player): Unit = {
+  def owner_=(player: Player): Unit = {
     meta = {
       val newMeta = skullMeta
-      newMeta.setOwningPlayer(Runecraft.server.getOfflinePlayer(player.uniqueID))
+      newMeta.setOwningPlayer(Aethercraft.server.getOfflinePlayer(player.uniqueID))
       newMeta
     }
   }
+
+  def isTrueNameOf(player: Player): Boolean =
+    hasRuneEnchant(TrueName) && displayName.contains(trueNameDisplayFor(player))
 }

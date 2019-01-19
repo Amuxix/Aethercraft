@@ -9,12 +9,12 @@ import me.amuxix.{Block, Vector3}
   * Created by Amuxix on 21/11/2016.
   */
 case class BoundingCube(centerLocation: Location, possiblePatterns: Seq[Pattern]) {
-  val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, pattern) => acc max pattern.largestDimension}
+  val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, pattern) => acc max pattern.largestDimension }
   val center: Vector3[Int] = Vector3(dimension, dimension, dimension) / 2
   val cubeOrigin: Location = centerLocation - center
-  trace("Center: " + centerLocation)
-  trace("Cube Origin: " + cubeOrigin)
-  trace("Cube size: " + dimension)
+  trace(s"Center: $centerLocation")
+  trace(s"Cube Origin: $cubeOrigin")
+  trace(s"Cube size: $dimension")
 	val blocks: Array[Array[Array[Block]]] = Array.tabulate[Block](dimension, dimension, dimension){
 		case (x, y, z) => (cubeOrigin + Vector3(x, y, z)).block
 	}

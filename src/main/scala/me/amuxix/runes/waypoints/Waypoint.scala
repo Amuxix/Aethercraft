@@ -6,7 +6,7 @@ import me.amuxix.inventory.Item
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.{Parameters, Rune}
-import me.amuxix.{Block, Direction, Player, Runecraft}
+import me.amuxix.{Block, Direction, Player, Aethercraft}
 import org.bukkit.ChatColor
 
 /**
@@ -41,7 +41,7 @@ object Waypoint extends RunePattern {
 }
 
 case class Waypoint(parameters: Parameters, pattern: Pattern)
-  extends Rune(parameters)
+  extends Rune
           with WaypointTrait
           with Linkable
           with Persistent {
@@ -52,7 +52,7 @@ case class Waypoint(parameters: Parameters, pattern: Pattern)
       throw InitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
       throw InitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
-    } else if (Runecraft.waypoints.contains(signature)) {
+    } else if (Aethercraft.waypoints.contains(signature)) {
       throw InitializationException("Signature already in use.")
     }
     true
@@ -90,10 +90,10 @@ case class Waypoint(parameters: Parameters, pattern: Pattern)
   /**
     * Destroys the rune effect. This should undo all lasting effects this rune introduced.
     */
-  override def destroyRune(): Unit = Runecraft.waypoints -= signature
+  override def destroyRune(): Unit = Aethercraft.waypoints -= signature
 
-  override protected def innerActivate(activationItem: Item): Unit = {
-    Runecraft.waypoints += signature -> this
+  override protected def onActivate(activationItem: Item): Unit = {
+    Aethercraft.waypoints += signature -> this
   }
 
   /**

@@ -25,10 +25,8 @@ object Test2 extends RunePattern {
   )
 }
 
-case class Test2(parameters: Parameters, pattern: Pattern)
-  extends Rune(parameters)
-          with Consumable {
-  override protected def innerActivate(activationItem: Item): Unit = Unit
+case class Test2(parameters: Parameters, pattern: Pattern) extends Rune with Consumable {
+  override protected def onActivate(activationItem: Item): Unit = ()
 
   /**
     * Should this rune use a true name if the activator is wearing one?

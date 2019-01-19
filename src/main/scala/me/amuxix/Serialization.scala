@@ -5,6 +5,7 @@ import java.io._
 import io.circe.parser._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
+import io.circe.generic.auto._
 import me.amuxix.logging.Logger.info
 import me.amuxix.runes.Rune
 import me.amuxix.runes.waypoints.{Waypoint, WaypointTrait}
@@ -19,7 +20,7 @@ object Serialization {
   private val fileTermination = ".rune"
   private val backupTermination = ".old"
 
-  private val runecraftMagicFileName = Runecraft.simpleVersion
+  private val magicFileName = Aethercraft.simpleVersion
   private val waypointsFileName = "Waypoints"
 
   //Encoders
@@ -48,15 +49,15 @@ object Serialization {
     * Saves all runes to their respective files
     */
   def saveRunes(): Unit = {
-    saveWaypoints(Runecraft.waypoints.values.toArray)
+    saveWaypoints(Aethercraft.waypoints.values.toArray)
   }
 
   /**
-    * Loads all runes it can find in the runecraft folder in each world
+    * Loads all runes it can find in the aethercraft folder in each world
     */
   def loadRunes(): Unit = {
-    Runecraft.server.getWorlds.forEach(world => {
-      val magicFolder = new File(world.getWorldFolder, runecraftMagicFileName)
+    Aethercraft.server.getWorlds.forEach(world => {
+      val magicFolder = new File(world.getWorldFolder, magicFileName)
       if (magicFolder.exists() && magicFolder.isDirectory && magicFolder.listFiles().exists(f =>
           f.isFile && (f.getName.endsWith(fileTermination) || f.getName.endsWith(backupTermination)))) {
         info("Loading runes in " + world.getName)
@@ -88,7 +89,7 @@ object Serialization {
     */
   private def saveWaypoints(waypoints: Array[Rune with WaypointTrait]): Unit = {
     waypoints.groupBy(_.center.world).foreach{ case (world, waypointsInWorld) =>
-      val magicFolder = new File(world.getWorldFolder, runecraftMagicFileName)
+      val magicFolder = new File(world.getWorldFolder, magicFileName)
       magicFolder.mkdir() //Makes the dir if it does not exist, does nothing otherwise
       backupOldFile(magicFolder, waypointsFileName)
       val waypointFile = new File(magicFolder, waypointsFileName + fileTermination)
@@ -106,7 +107,7 @@ object Serialization {
   private def loadWaypoints(magicFile: File): Unit = {
     val waypoints = runesInWorld[Rune with WaypointTrait](magicFile, waypointsFileName)
     if (waypoints.isDefined) {
-      Runecraft.waypoints ++= waypoints.get.map(w => w.signature -> w)
+      Aethercraft.waypoints ++= waypoints.get.map(w => w.signature -> w)
       info(s"  - Loaded ${waypoints.get.length} $waypointsFileName")
     }
   }

@@ -19,17 +19,14 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-/**
- * Gotten from https://raw.githubusercontent.com/Rayzr522/JSONMessage/master/src/main/java/com/rayzr522/jsonmessage/JSONMessage.java
- */
 
 /**
  * This is a complete JSON message builder class. To create a new JSONMessage do
  * {@link #create(String)}
  *
  * @author Rayzr
- *
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class JSONMessage {
 
     private static final BiMap<ChatColor, String> stylesToNames;
@@ -59,7 +56,7 @@ public class JSONMessage {
         stylesToNames = builder.build();
     }
 
-    private List<MessagePart> parts = new ArrayList<MessagePart>();
+    private final List<MessagePart> parts = new ArrayList<>();
 
     /**
      * Creates a new {@link JSONMessage} object
@@ -74,6 +71,7 @@ public class JSONMessage {
      * Creates a new {@link JSONMessage} object
      *
      * @param text The text to start with
+     * @return A new {@link JSONMessage} object
      */
     public static JSONMessage create(String text) {
         return new JSONMessage(text);
@@ -81,6 +79,8 @@ public class JSONMessage {
 
     /**
      * Creates a new {@link JSONMessage} object
+     *
+     * @return A new {@link JSONMessage} object
      */
     public static JSONMessage create() {
         return create("");
@@ -89,12 +89,11 @@ public class JSONMessage {
     /**
      * Sends an action bar message
      *
+     * @param message The message to send
      * @param players The players you want to send it to
      */
     public static void actionbar(String message, Player... players) {
-
         ReflectionHelper.sendPacket(ReflectionHelper.createActionbarPacket(ChatColor.translateAlternateColorCodes('&', message)), players);
-
     }
 
     /**
@@ -114,15 +113,16 @@ public class JSONMessage {
      * @return The JSON representation of this {@link JSONMessage}
      */
     public JsonObject toJSON() {
-
         JsonObject obj = new JsonObject();
 
         obj.addProperty("text", "");
 
         JsonArray array = new JsonArray();
-        for (MessagePart part : parts) {
-            array.add(part.toJSON());
-        }
+
+        parts.stream()
+          .map(MessagePart::toJSON)
+          .forEach(array::add);
+
         obj.add("extra", array);
 
         return obj;
@@ -139,15 +139,17 @@ public class JSONMessage {
 
     /**
      * Converts this {@link JSONMessage} object to the legacy formatting system, which
-     * uses formatting codes (like &6, &l, &4, etc.)
+     * uses formatting codes (like &amp;6, &amp;l, &amp;4, etc.)
      *
      * @return This {@link JSONMessage} instance {@link JSONMessage} in legacy format
      */
     public String toLegacy() {
         StringBuilder output = new StringBuilder();
-        for (MessagePart part : parts) {
-            output.append(part.toLegacy());
-        }
+
+        parts.stream()
+          .map(MessagePart::toLegacy)
+          .forEach(output::append);
+
         return output.toString();
     }
 
@@ -157,16 +159,14 @@ public class JSONMessage {
      * @param players The players you want to send this to
      */
     public void send(Player... players) {
-
         ReflectionHelper.sendPacket(ReflectionHelper.createTextPacket(toString()), players);
-
     }
 
     /**
      * Sends this as a title to all the players specified
      *
-     * @param fadeIn How many ticks to fade in
-     * @param stay How many ticks to stay
+     * @param fadeIn  How many ticks to fade in
+     * @param stay    How many ticks to stay
      * @param fadeOut How many ticks to fade out
      * @param players The players to send this to
      */
@@ -286,7 +286,7 @@ public class JSONMessage {
      * Shows an achievement when you hover over it
      *
      * @param id The id of the achievement
-     * @return
+     * @return This {@link JSONMessage} instance
      */
     public JSONMessage achievement(String id) {
         last().setOnHover(HoverEvent.showAchievement(id));
@@ -346,151 +346,6 @@ public class JSONMessage {
     ///////////////////////////
     // BEGIN UTILITY CLASSES //
     ///////////////////////////
-    /**
-     * Defines a section of the message, and represents the format that all JSON messages must follow in Minecraft.
-     * <br>
-     * <br>
-     * <a href="http://minecraft.gamepedia.com/Commands#Raw_JSON_text">Reference</a>
-     *
-     * @author Rayzr
-     */
-    public class MessagePart {
-
-        private MessageEvent onClick;
-        private MessageEvent onHover;
-        private List<ChatColor> styles = new ArrayList<ChatColor>();
-        private ChatColor color;
-        private String text;
-
-        public MessagePart(String text) {
-            this.text = text == null ? "null" : text;
-        }
-
-        /**
-         * Converts this {@link MessagePart} into a {@link JsonObject}
-         *
-         * @return The Minecraft-compatible {@link JsonObject}
-         */
-        public JsonObject toJSON() {
-            Objects.requireNonNull(text);
-
-            JsonObject obj = new JsonObject();
-            obj.addProperty("text", text);
-
-            if (color != null) {
-                obj.addProperty("color", color.name().toLowerCase());
-            }
-
-            for (ChatColor style : styles) {
-                obj.addProperty(stylesToNames.get(style), true);
-            }
-
-            if (onClick != null) {
-                obj.add("clickEvent", onClick.toJSON());
-            }
-
-            if (onHover != null) {
-                obj.add("hoverEvent", onHover.toJSON());
-            }
-
-            return obj;
-
-        }
-
-        /**
-         * @return This {@link MessagePart} in legacy-style color/formatting codes
-         */
-        public String toLegacy() {
-            StringBuilder output = new StringBuilder();
-            if (color != null) {
-                output.append(color.toString());
-            }
-            for (ChatColor style : styles) {
-                output.append(style.toString());
-            }
-            return output.append(text).toString();
-        }
-
-        /**
-         * @return The click event bound
-         */
-        public MessageEvent getOnClick() {
-            return onClick;
-        }
-
-        /**
-         * @param onClick The new click event to bind
-         */
-        public void setOnClick(MessageEvent onClick) {
-            this.onClick = onClick;
-        }
-
-        /**
-         * @return The hover event bound
-         */
-        public MessageEvent getOnHover() {
-            return onHover;
-        }
-
-        /**
-         * @param onHover The new hover event to bind
-         */
-        public void setOnHover(MessageEvent onHover) {
-            this.onHover = onHover;
-        }
-
-        /**
-         * @return The color
-         */
-        public ChatColor getColor() {
-            return color;
-        }
-
-        /**
-         * @param color The color to set
-         */
-        public void setColor(ChatColor color) {
-            if (!color.isColor()) {
-                throw new IllegalArgumentException(color.name() + " is not a color!");
-            }
-            this.color = color;
-        }
-
-        /**
-         * @return The list of styles
-         */
-        public List<ChatColor> getStyles() {
-            return styles;
-        }
-
-        /**
-         * @param style The new style to add
-         */
-        public void addStyle(ChatColor style) {
-            if (style == null) {
-                throw new IllegalArgumentException("Style cannot be null!");
-            }
-            if (!style.isFormat()) {
-                throw new IllegalArgumentException(color.name() + " is not a style!");
-            }
-            styles.add(style);
-        }
-
-        /**
-         * @return The raw text
-         */
-        public String getText() {
-            return text;
-        }
-
-        /**
-         * @param text The raw text to set
-         */
-        public void setText(String text) {
-            this.text = text;
-        }
-
-    }
 
     /**
      * Represents the JSON format that all click/hover events in JSON messages must follow.
@@ -506,10 +361,8 @@ public class JSONMessage {
         private Object value;
 
         public MessageEvent(String action, Object value) {
-
             this.action = action;
             this.value = value;
-
         }
 
         /**
@@ -639,76 +492,77 @@ public class JSONMessage {
 
     private static class ReflectionHelper {
 
+        private static final String version;
         private static Class<?> craftPlayer;
-
         private static Constructor<?> chatComponentText;
         private static Class<?> packetPlayOutChat;
         private static Class<?> packetPlayOutTitle;
         private static Class<?> iChatBaseComponent;
         private static Class<?> titleAction;
-
         private static Field connection;
         private static MethodHandle GET_HANDLE;
         private static MethodHandle SEND_PACKET;
         private static MethodHandle STRING_TO_CHAT;
-
-        private static Object actionTitle;
-        private static Object actionSubtitle;
-
-        private static String version;
-
-        private static boolean SETUP = false;
+        private static Object enumActionTitle;
+        private static Object enumActionSubtitle;
+        private static Object enumChatMessage;
+        private static Object enumActionbarMessage;
+        private static boolean SETUP;
+        private static int MAJOR_VER = -1;
 
         static {
+            String[] split = Bukkit.getServer().getClass().getPackage().getName().split("\\.");
+            version = split[split.length - 1];
 
-            if (!SETUP) {
+            try {
+                SETUP = true;
 
-                String[] split = Bukkit.getServer().getClass().getPackage().getName().split("\\.");
-                version = split[split.length - 1];
+                MAJOR_VER = getVersion();
 
-                try {
+                craftPlayer = getClass("{obc}.entity.CraftPlayer");
+                Method getHandle = craftPlayer.getMethod("getHandle");
+                connection = getHandle.getReturnType().getField("playerConnection");
+                Method sendPacket = connection.getType().getMethod("sendPacket", getClass("{nms}.Packet"));
 
-                    SETUP = true;
+                chatComponentText = getClass("{nms}.ChatComponentText").getConstructor(String.class);
 
-                    craftPlayer = getClass("{obc}.entity.CraftPlayer");
-                    Method getHandle = craftPlayer.getMethod("getHandle");
-                    connection = getHandle.getReturnType().getField("playerConnection");
-                    Method sendPacket = connection.getType().getMethod("sendPacket", getClass("{nms}.Packet"));
+                iChatBaseComponent = getClass("{nms}.IChatBaseComponent");
 
-                    chatComponentText = getClass("{nms}.ChatComponentText").getConstructor(String.class);
+                Method stringToChat;
 
-                    iChatBaseComponent = getClass("{nms}.IChatBaseComponent");
-
-                    Method stringToChat;
-
-                    if (getVersion() > 7) {
-                        stringToChat = getClass("{nms}.IChatBaseComponent$ChatSerializer").getMethod("a", String.class);
-                    } else {
-                        stringToChat = getClass("{nms}.ChatSerializer").getMethod("a", String.class);
-                    }
-
-                    GET_HANDLE = MethodHandles.lookup().unreflect(getHandle);
-                    SEND_PACKET = MethodHandles.lookup().unreflect(sendPacket);
-                    STRING_TO_CHAT = MethodHandles.lookup().unreflect(stringToChat);
-
-                    packetPlayOutChat = getClass("{nms}.PacketPlayOutChat");
-                    packetPlayOutTitle = getClass("{nms}.PacketPlayOutTitle");
-
-                    titleAction = getClass("{nms}.PacketPlayOutTitle$EnumTitleAction");
-
-                    actionTitle = titleAction.getField("TITLE").get(null);
-                    actionSubtitle = titleAction.getField("SUBTITLE").get(null);
-
-                } catch (Exception e) {
-                    e.printStackTrace();
-                    SETUP = false;
+                if (MAJOR_VER < 8) {
+                    stringToChat = getClass("{nms}.ChatSerializer").getMethod("a", String.class);
+                } else {
+                    stringToChat = getClass("{nms}.IChatBaseComponent$ChatSerializer").getMethod("a", String.class);
                 }
 
+                GET_HANDLE = MethodHandles.lookup().unreflect(getHandle);
+                SEND_PACKET = MethodHandles.lookup().unreflect(sendPacket);
+                STRING_TO_CHAT = MethodHandles.lookup().unreflect(stringToChat);
+
+                packetPlayOutChat = getClass("{nms}.PacketPlayOutChat");
+                packetPlayOutTitle = getClass("{nms}.PacketPlayOutTitle");
+
+                titleAction = getClass("{nms}.PacketPlayOutTitle$EnumTitleAction");
+
+                enumActionTitle = titleAction.getField("TITLE").get(null);
+                enumActionSubtitle = titleAction.getField("SUBTITLE").get(null);
+
+                if (MAJOR_VER >= 12) {
+                    Method getChatMessageType = getClass("{nms}.ChatMessageType").getMethod("a", byte.class);
+
+                    enumChatMessage = getChatMessageType.invoke(null, (byte) 1);
+                    enumActionbarMessage = getChatMessageType.invoke(null, (byte) 2);
+                }
+
+            } catch (Exception e) {
+                e.printStackTrace();
+                SETUP = false;
             }
 
         }
 
-        public static void sendPacket(Object packet, Player... players) {
+        static void sendPacket(Object packet, Player... players) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
@@ -727,23 +581,41 @@ public class JSONMessage {
 
         }
 
-        public static Object createActionbarPacket(String message) {
+        private static void setType(Object object, byte type) {
+            if (MAJOR_VER < 12) {
+                set("b", object, type);
+                return;
+            }
+
+            switch (type) {
+                case 1:
+                    set("b", object, enumChatMessage);
+                    break;
+                case 2:
+                    set("b", object, enumActionbarMessage);
+                    break;
+                default:
+                    throw new IllegalArgumentException("type must be 1 or 2");
+            }
+        }
+
+        static Object createActionbarPacket(String message) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
             Object packet = createTextPacket(message);
-            set("b", packet, (byte) 2);
+            setType(packet, (byte) 2);
             return packet;
         }
 
-        public static Object createTextPacket(String message) {
+        static Object createTextPacket(String message) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
             try {
                 Object packet = packetPlayOutChat.newInstance();
                 set("a", packet, fromJson(message));
-                set("b", packet, (byte) 1);
+                setType(packet, (byte) 1);
                 return packet;
             } catch (Exception e) {
                 e.printStackTrace();
@@ -752,12 +624,12 @@ public class JSONMessage {
 
         }
 
-        public static Object createTitlePacket(String message) {
+        static Object createTitlePacket(String message) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
             try {
-                return packetPlayOutTitle.getConstructor(titleAction, iChatBaseComponent).newInstance(actionTitle, fromJson(message));
+                return packetPlayOutTitle.getConstructor(titleAction, iChatBaseComponent).newInstance(enumActionTitle, fromJson(message));
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -765,12 +637,12 @@ public class JSONMessage {
 
         }
 
-        public static Object createSubtitlePacket(String message) {
+        static Object createSubtitlePacket(String message) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
             try {
-                return packetPlayOutTitle.getConstructor(titleAction, iChatBaseComponent).newInstance(actionSubtitle, fromJson(message));
+                return packetPlayOutTitle.getConstructor(titleAction, iChatBaseComponent).newInstance(enumActionSubtitle, fromJson(message));
             } catch (Exception e) {
                 e.printStackTrace();
                 return null;
@@ -778,7 +650,7 @@ public class JSONMessage {
 
         }
 
-        public static Object createTitleTimesPacket(int fadeIn, int stay, int fadeOut) {
+        static Object createTitleTimesPacket(int fadeIn, int stay, int fadeOut) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
@@ -797,7 +669,7 @@ public class JSONMessage {
          * @param message The text to convert to a chat component
          * @return The chat component
          */
-        public static Object componentText(String message) {
+        static Object componentText(String message) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
@@ -816,7 +688,7 @@ public class JSONMessage {
          * @param json The JSON to attempt to parse
          * @return The object representing the text in JSON form, or <code>null</code> if something went wrong converting the String to JSON data
          */
-        public static Object fromJson(String json) {
+        static Object fromJson(String json) {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
@@ -847,7 +719,7 @@ public class JSONMessage {
          * @return The class
          * @throws ClassNotFoundException If the class was not found
          */
-        public static Class<?> getClass(String path) throws ClassNotFoundException {
+        static Class<?> getClass(String path) throws ClassNotFoundException {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
@@ -858,10 +730,10 @@ public class JSONMessage {
          * Sets a field with the given name on an object to the value specified
          *
          * @param field The name of the field to change
-         * @param obj The object to change the field of
+         * @param obj   The object to change the field of
          * @param value The new value to set
          */
-        public static void set(String field, Object obj, Object value) {
+        static void set(String field, Object obj, Object value) {
             try {
                 Field f = obj.getClass().getDeclaredField(field);
                 f.setAccessible(true);
@@ -871,7 +743,7 @@ public class JSONMessage {
             }
         }
 
-        public static int getVersion() {
+        static int getVersion() {
             if (!SETUP) {
                 throw new IllegalStateException("ReflectionHelper is not set up!");
             }
@@ -882,6 +754,153 @@ public class JSONMessage {
                 return 10;
             }
 
+        }
+
+    }
+
+    /**
+     * Defines a section of the message, and represents the format that all JSON messages must follow in Minecraft.
+     * <br>
+     * <br>
+     * <a href="http://minecraft.gamepedia.com/Commands#Raw_JSON_text">Reference</a>
+     *
+     * @author Rayzr
+     */
+    public class MessagePart {
+
+        private final List<ChatColor> styles = new ArrayList<>();
+        private MessageEvent onClick;
+        private MessageEvent onHover;
+        private ChatColor color;
+        private String text;
+
+        public MessagePart(String text) {
+            this.text = text == null ? "null" : text;
+        }
+
+        /**
+         * Converts this {@link MessagePart} into a {@link JsonObject}
+         *
+         * @return The Minecraft-compatible {@link JsonObject}
+         */
+        public JsonObject toJSON() {
+            Objects.requireNonNull(text);
+
+            JsonObject obj = new JsonObject();
+            obj.addProperty("text", text);
+
+            if (color != null) {
+                obj.addProperty("color", color.name().toLowerCase());
+            }
+
+            for (ChatColor style : styles) {
+                obj.addProperty(stylesToNames.get(style), true);
+            }
+
+            if (onClick != null) {
+                obj.add("clickEvent", onClick.toJSON());
+            }
+
+            if (onHover != null) {
+                obj.add("hoverEvent", onHover.toJSON());
+            }
+
+            return obj;
+
+        }
+
+        /**
+         * @return This {@link MessagePart} in legacy-style color/formatting codes
+         */
+        public String toLegacy() {
+            StringBuilder output = new StringBuilder();
+            if (color != null) {
+                output.append(color.toString());
+            }
+            styles.stream()
+              .map(ChatColor::toString)
+              .forEach(output::append);
+
+            return output.append(text).toString();
+        }
+
+        /**
+         * @return The click event bound
+         */
+        public MessageEvent getOnClick() {
+            return onClick;
+        }
+
+        /**
+         * @param onClick The new click event to bind
+         */
+        public void setOnClick(MessageEvent onClick) {
+            this.onClick = onClick;
+        }
+
+        /**
+         * @return The hover event bound
+         */
+        public MessageEvent getOnHover() {
+            return onHover;
+        }
+
+        /**
+         * @param onHover The new hover event to bind
+         */
+        public void setOnHover(MessageEvent onHover) {
+            this.onHover = onHover;
+        }
+
+        /**
+         * @return The color
+         */
+        public ChatColor getColor() {
+            return color;
+        }
+
+        /**
+         * @param color The color to set
+         */
+        public void setColor(ChatColor color) {
+            if (!color.isColor()) {
+                throw new IllegalArgumentException(color.name() + " is not a color!");
+            }
+            this.color = color;
+        }
+
+        /**
+         * @return The list of styles
+         */
+        public List<ChatColor> getStyles() {
+            return styles;
+        }
+
+        /**
+         * @param style The new style to add
+         */
+        public void addStyle(ChatColor style) {
+            if (style == null) {
+                throw new IllegalArgumentException("Style cannot be null!");
+            }
+            if (!style.isFormat()) {
+                throw new IllegalArgumentException(color.name() + " is not a style!");
+            }
+            styles.add(style);
+        }
+
+        /**
+         * @return The raw text
+         */
+        public String getText() {
+            return text;
+        }
+
+        /**
+         * @param text The raw text to set
+         */
+        public void setText(String text) {
+            this.text = text;
         }
 
     }

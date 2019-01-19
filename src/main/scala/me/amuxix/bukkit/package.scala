@@ -1,27 +1,18 @@
 package me.amuxix
 
-import com.github.ghik.silencer.silent
-import me.amuxix.material._
-import org.bukkit.Material.AIR
-import org.bukkit.inventory.{Recipe => _, _}
-
-import scala.collection.JavaConverters._
+import me.amuxix.material.Material.BukkitMaterialOps
+import org.bukkit.block.{Block => BukkitBlock}
+import org.bukkit.{Location => BLocation}
 
 package object bukkit {
-  implicit def bukkitStack2Constituent(stack: org.bukkit.inventory.ItemStack): Constituent = {
-    Constituent(stack.getData, stack.getAmount, stack.getData.getData == -1: @silent)
+  implicit class BukkitBlockOps(block: BukkitBlock) {
+    def toBlock: Block = Block(bukkitLocation2Position(block.getLocation), block.getState.getType.toMaterial)
   }
 
-  val bukkitRecipes: List[Recipe] = Runecraft.server.recipeIterator.asScala.map {
-    case recipe: ShapedRecipe =>
-      (recipe.getIngredientMap.values.asScala.toList, recipe.getResult, false)
-    case recipe: ShapelessRecipe =>
-      (recipe.getIngredientList.asScala.toList, recipe.getResult, false)
-    case recipe: FurnaceRecipe =>
-      (List(recipe.getInput), recipe.getResult, true)
-  }.collect {
-    case (ingredients, result, requiresFuel) if result != null && result.getType != AIR && ingredients.exists(_ != null) =>
-      val mergedIngredients: List[Constituent] = ingredients.collect { case stack if stack != null && stack.getType != AIR => bukkitStack2Constituent(stack) }.merge
-      Recipe(mergedIngredients, result, requiresFuel)
-  }.toList
+  import scala.math.Numeric.DoubleAsIfIntegral
+  //implicit val doubleAsIfIntegral = DoubleAsIfIntegral //Allows this method to be implicitly used by bukkitEntity2Position
+  implicit def bukkitLocation2Position(location: BLocation): Position[Double] =
+    Position(location.getWorld, Vector3(location.getX, location.getY, location.getZ))
+
+  implicit def doublePosition2IntPosition(position: Position[Double]): Position[Int] = position.toIntPosition
 }

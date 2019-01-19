@@ -2,15 +2,14 @@ package me.amuxix
 
 import java.util.UUID
 
-import com.github.ghik.silencer.silent
 import io.circe.generic.semiauto._
 import io.circe.{Decoder, Encoder}
 import me.amuxix.Player.Location
 import me.amuxix.inventory.Item
-import org.bukkit.entity.{Player => BPlayer}
-import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause.PLUGIN
-import org.bukkit.inventory.PlayerInventory
+import me.amuxix.bukkit._
 import org.bukkit.{ChatColor, OfflinePlayer}
+import org.bukkit.entity.{Player => BPlayer}
+import org.bukkit.inventory.PlayerInventory
 
 /**
   * Created by Amuxix on 22/11/2016.
@@ -63,8 +62,8 @@ case class Player(uniqueID: UUID) extends Entity {
 
   def inventory: Option[PlayerInventory] = getPlayer.toOption.map(_.getInventory)
 
-  protected[events] def getPlayer: Either[OfflinePlayer, BPlayer] = {
-    val offlinePlayer = Runecraft.server.getOfflinePlayer(uniqueID)
+  def getPlayer: Either[OfflinePlayer, BPlayer] = {
+    val offlinePlayer = Aethercraft.server.getOfflinePlayer(uniqueID)
     if (offlinePlayer.isOnline) {
       Right(offlinePlayer.getPlayer)
     } else {
@@ -72,7 +71,11 @@ case class Player(uniqueID: UUID) extends Entity {
     }
   }
 
-  def helmet(): Option[Item] = inventory collect {
+  def helmet: Option[Item] = inventory collect {
     case inventory if inventory.getHelmet != null => inventory.getHelmet
   }
+
+  def itemInMainHand: Option[Item] = inventory.map(_.getItemInMainHand)
+
+  def itemInOffHand: Option[Item] = inventory.map(_.getItemInOffHand)
 }

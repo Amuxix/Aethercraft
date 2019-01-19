@@ -3,20 +3,19 @@ package me.amuxix
 import io.circe.{Encoder, _}
 import me.amuxix.Block.Location
 import me.amuxix.Position._
-import me.amuxix.events.{RunecraftBreakEvent, RunecraftPlaceEvent}
+import me.amuxix.events.{AethercraftBreakEvent, AethercraftPlaceEvent}
 import me.amuxix.material.Material.{Air, Stone}
 import me.amuxix.material.{Crushable, Material}
-import org.bukkit.block.{BlockState, Block => BukkitBlock}
+import org.bukkit.block.BlockState
 
 /**
   * Created by Amuxix on 22/11/2016.
   */
 object Block {
-  implicit def BukkitBlock2Block(bukkitBlock: BukkitBlock): Block = Block(bukkitLocation2Position(bukkitBlock.getLocation), bukkitBlock.getState.getData)
   type Location = Position[Int]
 
   implicit val encodeBlock: Encoder[Block] = Encoder.forProduct2("location", "material")(b =>
-    (b.location, b.material) //This works, intelliJ just doesn't know it.
+    (b.location, b.material)
   )
   implicit val decodeBlock: Decoder[Block] = Decoder.forProduct2("location", "material")(Block.apply)
 }
@@ -25,8 +24,7 @@ case class Block(location: Location, material: Material) {
   val state: BlockState = location.world.getBlockAt(location.x, location.y, location.z).getState
 
   def setMaterial(material: Material): Unit = {
-    state.setType(material.getItemType)
-    state.setData(material)
+    state.setType(material.toBukkitMaterial)
     state.update(true)
   }
 
@@ -64,10 +62,10 @@ case class Block(location: Location, material: Material) {
     */
   def canMoveTo(target: Location, player: Player): Boolean = {
     if (target.block.material.isInstanceOf[Crushable]) {
-      val placeEvent = RunecraftPlaceEvent(target, material, player)
-      val breakEvent = RunecraftBreakEvent(location, player)
-      Runecraft.server.getPluginManager.callEvent(placeEvent)
-      Runecraft.server.getPluginManager.callEvent(breakEvent)
+      val placeEvent = AethercraftPlaceEvent(target, material, player)
+      val breakEvent = AethercraftBreakEvent(location, player)
+      Aethercraft.server.getPluginManager.callEvent(placeEvent)
+      Aethercraft.server.getPluginManager.callEvent(breakEvent)
       if (breakEvent.isCancelled == false && placeEvent.isCancelled == false && placeEvent.canBuild) {
         return true
       }

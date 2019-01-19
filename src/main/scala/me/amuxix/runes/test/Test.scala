@@ -14,7 +14,7 @@ import me.amuxix.runes.{Parameters, Rune}
   */
 
 object Test extends RunePattern {
-  val pattern: Pattern = Pattern(Test.apply, width = 3, verticality = true)(
+  val pattern: Pattern = Pattern(Test.apply, verticality = true)(
     ActivationLayer(
       EndStone, NotInRune, EndStone,
       NotInRune, EndStone, NotInRune,
@@ -27,11 +27,7 @@ object Test extends RunePattern {
   )
 }
 
-case class Test(parameters: Parameters, pattern: Pattern)
-  extends Rune(parameters)
-          with Tiered
-          with Consumable
-          with Linkable {
+case class Test(parameters: Parameters, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     *
@@ -39,7 +35,7 @@ case class Test(parameters: Parameters, pattern: Pattern)
     */
   override def validateSignature(): Boolean = true
 
-  override protected def innerActivate(activationItem: Item): Unit = Unit
+  override protected def onActivate(activationItem: Item): Unit = ()
 
   /**
     * Should this rune use a true name if the activator is wearing one?

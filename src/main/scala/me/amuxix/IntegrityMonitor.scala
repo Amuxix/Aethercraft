@@ -44,7 +44,7 @@ object IntegrityMonitor {
     if (destructionBlocks.contains(block)) {
       val rune: Rune with Persistent = destructionBlocks(block)
       removeRune(rune)
-      player.sendNotification(rune.destroyMessage)
+      player.notify(rune.destroyMessage)
     }
   }
 
@@ -57,12 +57,12 @@ object IntegrityMonitor {
     if (buildBlocks.contains(block)) {
       val rune: Rune with Persistent = buildBlocks(block)
       val runeMaterials = rune match {
-        case tiered: Tiered => rune.pattern.patternMaterials + tiered.tierType
+        case tiered: Tiered => rune.pattern.patternMaterials + tiered.tierMaterial
         case _ => rune.pattern.patternMaterials
       }
       if (runeMaterials.contains(block.material)) {
         removeRune(rune)
-        player.sendNotification(rune.destroyMessage)
+        player.notify(rune.destroyMessage)
       }
     }
   }

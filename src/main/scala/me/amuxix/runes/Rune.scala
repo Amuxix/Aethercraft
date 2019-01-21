@@ -22,11 +22,12 @@ abstract class Rune extends Named {
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  def activate(activationItem: Item): Unit = {
-    onActivate(activationItem)
+  def activate(activationItem: Item): Boolean = {
+    val cancel = onActivate(activationItem)
     consumeTrueName()
     logRuneActivation()
     notifyActivator()
+    cancel
   }
 
   /**
@@ -53,16 +54,18 @@ abstract class Rune extends Named {
     creator.helmet.collect {
       case playerHead: PlayerHead if playerHead.hasRuneEnchant(TrueName) =>
         playerHead.amount -= 1
-        creator.sendNotification(s"The magic of this rune is activated in ${playerHead.owner}'s name and the true name shatters")
+        creator.notify(s"The magic of this rune is activated in ${playerHead.owner}'s name and the true name shatters")
     }
 
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  protected def onActivate(activationItem: Item): Unit
+  protected def onActivate(activationItem: Item): Boolean
+
+  protected var activationMessage: String = name + " activated"
 
   protected def notifyActivator(): Unit = {
-    activator.sendNotification(name + " activated")
+    activator.notify(activationMessage)
   }
 
   protected def logRuneActivation(): Unit = {

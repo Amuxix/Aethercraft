@@ -5,18 +5,24 @@ import java.util.UUID
 import me.amuxix.Serialization
 import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.Location.BukkitIntPositionOps
-import me.amuxix.bukkit.Player
 import me.amuxix.bukkit.Player.BukkitPlayerOps
+import me.amuxix.bukkit._
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
 import me.amuxix.exceptions.InitializationException
 import me.amuxix.pattern.matching.Matcher
 import org.bukkit.ChatColor
+import org.bukkit.entity.EntityType.DROPPED_ITEM
+import org.bukkit.entity.{Item => BItem}
 import org.bukkit.event.EventHandler
-import org.bukkit.event.EventPriority.LOWEST
+import org.bukkit.event.EventPriority._
 import org.bukkit.event.block.Action.RIGHT_CLICK_BLOCK
+import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.EntityDamageEvent.DamageCause._
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.EquipmentSlot.{HAND, OFF_HAND}
+
+import scala.collection.JavaConverters._
 
 object Listener extends org.bukkit.event.Listener {
   /**
@@ -31,32 +37,67 @@ object Listener extends org.bukkit.event.Listener {
     if (event.getAction == RIGHT_CLICK_BLOCK) {
       val clickedBlockLocation: Location = event.getClickedBlock.getLocation.aetherize
       val player: Player = event.getPlayer.aetherize
-      if (event.getHand == OFF_HAND && lastActivatedRune.exists(_.==((player.uuid, clickedBlockLocation)))) {
+      if (event.getHand == OFF_HAND) {
         //If the player activates a rune with the main hand and places a block with the offhand we cancel the block placement.
-        event.setCancelled(true)
+        val cancel = lastActivatedRune.exists(_.==((player.uuid, clickedBlockLocation)))
+        event.setCancelled(cancel)
+        lastActivatedRune -= player.uuid
       } else {
         val itemInHand: Item = event.getPlayer.getInventory.getItemInMainHand.aetherize
         if (event.getHand == HAND && itemInHand.material.isSolid == false) {
           try {
+            lastActivatedRune += player.uuid -> clickedBlockLocation
             if (Serialization.persistentRunes.contains(clickedBlockLocation)) {
               //There is a rune at this location, update it.
-              lastActivatedRune += player.uuid -> clickedBlockLocation
-              event.setCancelled(true)
-              Serialization.persistentRunes(clickedBlockLocation).update(player) //This can throw initialization exceptions
+              val cancel = Serialization.persistentRunes(clickedBlockLocation).update(player) //This can throw initialization exceptions
+              event.setCancelled(cancel)
             } else {
               //Look for new runes
               Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand.material)
                 .foreach { rune =>
-                  lastActivatedRune += player.uuid -> clickedBlockLocation
-                  event.setCancelled(true) //Rune was found, cancel the original event.
-                  rune.activate(itemInHand) //This can throw initialization exceptions
+                  val cancel = rune.activate(itemInHand) //This can throw initialization exceptions
+                  event.setCancelled(cancel) //Rune was found, cancel the original event.
                 }
             }
           } catch {
-            case ex: InitializationException => player.sendNotification(ChatColor.RED + ex.textError)
+            case ex: InitializationException => player.notify(ChatColor.RED + ex.textError)
           }
         }
       }
     }
+  }
+
+  @EventHandler(priority = NORMAL, ignoreCancelled = true)
+  def onEntityDamageEvent(event: EntityDamageEvent): Unit = {
+    if (event.getEntityType == DROPPED_ITEM && (event.getCause == FIRE || event.getCause == LAVA)) {
+      val entity = event.getEntity
+      val item = entity.asInstanceOf[BItem].getItemStack.aetherize
+      if (item.material.hasEnergy) {
+        val itemPosition = entity.getLocation.aetherize
+        findClosestPlayerTo(itemPosition, Configuration.maxBurnDistance).foreach { player =>
+          item.consume(player)
+        }
+      }
+    }
+
+  }
+
+  private def findClosestPlayerTo(where: Location, maxDistance: Double): Option[Player] = {
+    Aethercraft.server.getOnlinePlayers.asScala
+      .foldLeft(Option.empty[(Player, Double)]) { case (None, player) =>
+        val distance = player.getLocation.aetherize.distance(where)
+        if (distance <= maxDistance) {
+          Some((player.aetherize, distance))
+        } else {
+          None
+        }
+      case (closest @ Some((_, closestPlayerDistance)), player) =>
+        val distance = player.getLocation.aetherize.distance(where)
+        if (distance < closestPlayerDistance) {
+          Some((player.aetherize, distance))
+        } else {
+          closest
+        }
+      }.map(_._1)
   }
 }

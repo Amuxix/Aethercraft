@@ -35,7 +35,7 @@ case class SuperTool(blocks: Array[Array[Array[Block]]], center: Location, creat
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  override protected def onActivate(activationItem: Item): Unit = {
+  override protected def onActivate(activationItem: Item): Boolean = {
     /*checkActivationItem(activationItem)
     val meta = activationItem.meta
     val lore: Seq[String] = if (meta.hasLore) {
@@ -44,6 +44,7 @@ case class SuperTool(blocks: Array[Array[Array[Block]]], center: Location, creat
       Seq(name)
     }
     meta.setLore(lore.toList.asJava)*/
+    true
   }
 
   /**

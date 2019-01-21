@@ -55,7 +55,7 @@ sealed abstract case class Material(protected var _energy: Option[Int] = None) e
   def isConsumable: Boolean = isInstanceOf[Consumable]
   def isPlayerConsumable: Boolean = isInstanceOf[PlayerConsumable]
   def isDurable: Boolean = isInstanceOf[Durable]
-  def isAttaches: Boolean = isInstanceOf[Attaches]
+  def isAttachable: Boolean = isInstanceOf[Attaches]
   def isCrushable: Boolean = isInstanceOf[Crushable]
   def isGravity: Boolean = isInstanceOf[Gravity]
   def hasEnergy: Boolean = !isInstanceOf[NoEnergy]
@@ -884,7 +884,7 @@ object Material extends CirceEnum[Material] with Enum[Material] {
   object TNTMinecart extends Material
   object Torch extends Material with Torch with Crushable
   object TotemOfUndying extends Material(energy = 488)
-  object TrappedChest extends Material with Solid with Rotates with Fuel { override val burnTicks: Int = 300 }
+  object TrappedChest extends Material with Inventory with Solid with Rotates with Fuel { override val burnTicks: Int = 300 }
   object Trident extends Material(tier = T2) with Trident
   object Tripwire extends Material with Transparent with Attaches
   object TripwireHook extends Material with Transparent with Attaches with Rotates

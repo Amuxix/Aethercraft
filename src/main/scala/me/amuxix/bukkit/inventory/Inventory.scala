@@ -1,6 +1,6 @@
 package me.amuxix.bukkit.inventory
 
-import me.amuxix.{Aetherizeable, inventory}
+import me.amuxix._
 import org.bukkit.inventory.{Inventory => BukkitInventory}
 /**
   * Created by Amuxix on 01/02/2017.
@@ -17,7 +17,12 @@ object Inventory {
 private[bukkit] case class Inventory(inv: BukkitInventory) extends inventory.Inventory {
   def isFull: Boolean = inv.firstEmpty() == -1
 
-  override def contents: Seq[Item] = inv.getContents.toSeq.map(Item(_))
+  override def contents: Seq[Item] = inv.getContents.toSeq.flatMap(stack => Option(stack).map(Item(_)))
+
+  override def moveContentsTo(inventory: me.amuxix.inventory.Inventory): Unit = {
+    inventory.asInstanceOf[Inventory].inv.setContents(inv.getContents)
+    clear()
+  }
 
   /**
     * Clears the whole inventory

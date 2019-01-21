@@ -22,6 +22,12 @@ object Aethercraft {
 
   def callEvent(event: Event): Unit = server.getPluginManager.callEvent(event)
   def getWorld(uuid: UUID): World = server.getWorld(uuid).aetherize
+
+  def runTask(task: => Unit): Unit = {
+    Aethercraft.server.getScheduler.runTask(self, new Runnable {
+      override def run(): Unit = task
+    })
+  }
 }
 
 /**

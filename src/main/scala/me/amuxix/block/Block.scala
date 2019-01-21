@@ -49,6 +49,7 @@ trait Block {
     * Consumes this block and gives energy to the player
     *
     * @param player Player who receives the energy for consuming this block
+    * @return Energy received by the player, 0 if material cannot be consumed
     */
-  def consume(player: Player): Unit
+  def consume(player: Player): Int
 }

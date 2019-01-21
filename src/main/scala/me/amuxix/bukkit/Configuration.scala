@@ -12,4 +12,5 @@ object Configuration {
   lazy val chainmailMultiplier: Double = config.getDouble("energy.multipliers.chainmail", 1.1)
   // Crafting increases energy by this percent of the material worth
   lazy val craftingMultiplier: Double = config.getDouble("energy.multipliers.crafting", 1.05)
+  lazy val maxBurnDistance: Double = config.getInt("energy.maxBurnDistance", 30)
 }

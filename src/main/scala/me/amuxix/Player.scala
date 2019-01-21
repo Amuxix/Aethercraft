@@ -23,18 +23,11 @@ trait Player {
   def yaw: Float
 
   /**
-    * Shows a message in the action bar position for the player.
+    * Shows a message to the player in the most appropriate way possible
     *
     * @param text Message to be sent
     */
-  def sendNotification(text: String): Unit
-
-  /**
-    * Sends a message to the player.
-    *
-    * @param text Message to be sent
-    */
-  def sendMessage(text: String): Unit
+  def notify(text: String): Unit
 
   def location: Option[Any]
 
@@ -47,4 +40,12 @@ trait Player {
   def itemInMainHand: Option[Item]
 
   def itemInOffHand: Option[Item]
+
+  private lazy val energyReservoir: EnergyReservoir = EnergyReservoir(this)
+
+  def addEnergy(energy: Int): Int = energyReservoir.add(energy)
+
+  def hasAtLeast(energy: Int): Boolean = energyReservoir.hasAtLeast(energy)
+
+  def removeEnergy(energy: Int): Int = energyReservoir.remove(energy)
 }

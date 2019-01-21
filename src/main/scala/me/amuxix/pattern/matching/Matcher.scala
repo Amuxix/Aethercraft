@@ -14,7 +14,7 @@ import me.amuxix.runes.waypoints.Waypoint
   * This is the class that knows how to look for runes in the world
   */
 object Matcher {
-  private val defaultRunePatterns: Seq[RunePattern] = List(Test, Test2, Waypoint, Teleporter, Compass, TrueName)
+  private val defaultRunePatterns: Seq[RunePattern] = List(Test, Test2, Waypoint, Teleporter, Compass, TrueName, RunicChest)
 
   private var patterns: Seq[Pattern] = defaultRunePatterns.map(_.pattern)
 

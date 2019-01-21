@@ -11,5 +11,5 @@ import org.bukkit.block.{Chest => BukkitChest}
 private[bukkit] class Chest protected[block](location: Location) extends Block(location, Chest) with blocks.Chest {
   private val chest = state.asInstanceOf[BukkitChest]
 
-  override protected def inventory: Inventory = chest.getBlockInventory.aetherize
+  override def inventory: Inventory = chest.getBlockInventory.aetherize
 }

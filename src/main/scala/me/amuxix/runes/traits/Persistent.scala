@@ -35,7 +35,7 @@ trait Persistent extends Rune {
     *
     * @param player Player who triggered the update
     */
-  def update(player: Player): Unit
+  def update(player: Player): Boolean
 
   /**
     * Default message when a rune is destroyed.

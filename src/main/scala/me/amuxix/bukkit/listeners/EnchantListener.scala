@@ -18,7 +18,7 @@ object EnchantListener extends org.bukkit.event.Listener {
   @EventHandler(priority = LOWEST)
   def onBlockBreakEvent(event: BlockBreakEvent): Unit = {
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
-    event.setCancelled(blockBreakEnchants.foldLeft(false)(_ || _.onBlockBreak(event.getPlayer.aetherize, event.getBlock.aetherize)))
+    event.setCancelled(blockBreakEnchants.foldLeft(event.isCancelled)(_ || _.onBlockBreak(event.getPlayer.aetherize, event.getBlock.aetherize)))
   }
 
   @EventHandler(priority = LOWEST)
@@ -31,7 +31,7 @@ object EnchantListener extends org.bukkit.event.Listener {
     } else {
       player.itemInOffHand
     }
-    event.setCancelled(blockPlaceEnchants.foldLeft(false)(_ || _.onBlockPlace(player, placedBlock, event.getBlockAgainst.aetherize, itemPlaced)))
+    event.setCancelled(blockPlaceEnchants.foldLeft(event.isCancelled)(_ || _.onBlockPlace(player, placedBlock, event.getBlockAgainst.aetherize, itemPlaced)))
   }
 
   @EventHandler(priority = LOWEST)
@@ -46,13 +46,13 @@ object EnchantListener extends org.bukkit.event.Listener {
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
     event.getAction match {
       case RIGHT_CLICK_BLOCK =>
-        event.setCancelled(blockInteractEnchants.foldLeft(false)(_ || _.onBlockInteract(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
+        event.setCancelled(blockInteractEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onBlockInteract(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
       case LEFT_CLICK_BLOCK =>
-        event.setCancelled(blockDamageEnchants.foldLeft(false)(_ || _.onBlockDamage(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
+        event.setCancelled(blockDamageEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onBlockDamage(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
       case RIGHT_CLICK_AIR =>
-        event.setCancelled(airInteractEnchants.foldLeft(false)(_ || _.onAirInteract(player, itemInHand)))
+        event.setCancelled(airInteractEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onAirInteract(player, itemInHand)))
       case LEFT_CLICK_AIR =>
-        event.setCancelled(airSwingEnchants.foldLeft(false)(_ || _.onAirSwing(player, itemInHand)))
+        event.setCancelled(airSwingEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onAirSwing(player, itemInHand)))
       case _ => //Do Nothing
     }
   }

@@ -5,3 +5,4 @@ energy:
     ore: 1.5
     chainmail: 1.1
     crafting: 1.05
+  maxBurnDistance: 30

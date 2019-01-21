@@ -16,7 +16,7 @@ trait Tiered extends Rune {
 
   val tierBlocks: Seq[Block] = specialBlocks(Tier)
 
-  val tierType: Material = tierBlocks.head.material
+  val tierMaterial: Material = tierBlocks.head.material
 
-	val tier: Int = tierType.tier.get
+	val tier: Int = tierMaterial.tier.get
 }

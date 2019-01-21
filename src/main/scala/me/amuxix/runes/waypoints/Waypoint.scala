@@ -51,8 +51,8 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
   override def validateSignature(): Boolean = {
     if (signatureIsEmpty) {
       throw InitializationException("Signature is empty!")
-    } else if (signatureContains(tierType)) {
-      throw InitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
+    } else if (signatureContains(tierMaterial)) {
+      throw InitializationException(tierMaterial.name + " can't be used on this rune because it is the same as the tier used in rune.")
     } else if (Serialization.waypoints.contains(signature)) {
       throw InitializationException("Signature already in use.")
     }
@@ -66,7 +66,7 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
     */
   override def notifyActivator(): Unit = {
     super.notifyActivator()
-    activator.sendNotification("Signature is no longer needed here.")
+    activator.notify("Signature is no longer needed here.")
   }
 
   /**
@@ -74,16 +74,19 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
     *
     * @param player Player who triggered the update
     */
-  override def update(player: Player): Unit = {
+  override def update(player: Player): Boolean = {
     if (signature == calculateSignature()) {
       throw InitializationException("This " + getClass.getSimpleName + " is already active.")
     } else {
       if (validateSignature()) {
         signature = calculateSignature()
-        player.sendNotification("Signature updated.")
+        player.notify("Signature updated.")
         if (player.uuid != activator.uuid) {
-          activator.sendNotification(ChatColor.RED + "The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
+          activator.notify(ChatColor.RED + "The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
         }
+        true
+      } else {
+        false
       }
     }
   }
@@ -93,8 +96,9 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
     */
   override def destroyRune(): Unit = Serialization.waypoints -= signature
 
-  override protected def onActivate(activationItem: Item): Unit = {
+  override protected def onActivate(activationItem: Item): Boolean = {
     Serialization.waypoints += signature -> this
+    true
   }
 
   /**

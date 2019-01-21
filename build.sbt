@@ -14,7 +14,7 @@ scalacOptions ++= Seq(
   "-language:implicitConversions",     // Explicitly enables the implicit conversions feature
   "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
   "-Xcheckinit",                       // Wrap field accessors to throw an exception on uninitialized access.
-  "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
+  //"-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
   "-Xfuture",                          // Turn on future language features.
   "-Ypartial-unification",             // Enable partial unification in type constructor inference
   "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
@@ -65,15 +65,6 @@ resourceGenerators in Compile += Def.task {
 mappings in(Compile, packageBin) += {
   (resourceManaged.value / "plugin.yml") -> "plugin.yml"
 }
-
-//assemblyMergeStrategy in assembly := (_ => MergeStrategy.concat)
-/*assemblyMergeStrategy in assembly := {
-  case m if m.toLowerCase.endsWith("manifest.mf")       => MergeStrategy.discard
-  case m if m.toLowerCase.matches("meta-inf.*\\.sf$")   => MergeStrategy.discard
-  case "reference.conf"                                 => MergeStrategy.concat
-  case x: String if x.contains("UnusedStubClass.class") => MergeStrategy.first
-  case _                                                => MergeStrategy.first
-}*/
 
 val serverProperties = settingKey[Properties]("The test server properties")
 serverProperties := {

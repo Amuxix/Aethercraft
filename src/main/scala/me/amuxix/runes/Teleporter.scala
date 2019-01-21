@@ -36,8 +36,8 @@ case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, crea
   override def validateSignature(): Boolean = {
     if (signatureIsEmpty) {
       throw InitializationException("Signature is empty!")
-    } else if (signatureContains(tierType)) {
-      throw InitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
+    } else if (signatureContains(tierMaterial)) {
+      throw InitializationException(tierMaterial.name + " can't be used on this rune because it is the same as the tier used in rune.")
     }
     true
   }
@@ -46,7 +46,7 @@ case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, crea
 
   override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
 
-  override protected def onActivate(activationItem: Item): Unit = {
+  override protected def onActivate(activationItem: Item): Boolean = {
     val possibleTargets: Map[Int, Rune with GenericWaypoint] = Serialization.waypoints
     val targetWP: Rune with GenericWaypoint = possibleTargets.getOrElse(signature, throw InitializationException("Can't find your destination."))
 
@@ -71,7 +71,7 @@ case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, crea
       targetTier + scala.math.min(0, scala.math.log10(center.distance(target) - 1000).toInt)
     }
 
-    if (targetWPTier > tier && (tierType != ChorusPlant || tierType != ChorusFlower)) {
+    if (targetWPTier > tier && (tierMaterial != ChorusPlant || tierMaterial != ChorusFlower)) {
       throw InitializationException("This teleporter is not powerful enough to reach the destination.")
     } else {
       val blockCenterOffset: Vector3[Double] = {
@@ -85,6 +85,7 @@ case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, crea
       finalTarget = Position[Double](target.world, Vector3[Double](target.x, target.y, target.z) + blockCenterOffset)
     }
     activator.teleportTo(finalTarget, activator.pitch, activator.yaw)
+    true
   }
 
   /**

@@ -6,8 +6,9 @@ import me.amuxix.bukkit.Material.{BukkitMaterialOps, MaterialOps}
 import me.amuxix.bukkit.block.blocks.Chest
 import me.amuxix.bukkit.events._
 import me.amuxix.bukkit.{Player => _, block => _, _}
+import me.amuxix.inventory.Inventory
 import me.amuxix.material.Material
-import me.amuxix.material.Material.{Air, Chest, Stone}
+import me.amuxix.material.Material._
 import me.amuxix.{World => _, _}
 import org.bukkit.block.BlockState
 
@@ -66,6 +67,12 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
       val replacedBlock = Block(target, targetBlock.material)
       Aethercraft.callEvent(new BlockPlace(target.block, replacedBlock, player))
       targetBlock.setMaterial(material)
+      this match {
+        case inv: Inventory =>
+          val targetInv = Block(target, material).asInstanceOf[Chest].inventory
+          inv.moveContentsTo(targetInv)
+        case _ =>
+      }
       setMaterial(Air)
       true
     } else {
@@ -103,8 +110,21 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     * Consumes this block and gives energy to the player
     *
     * @param player Player who receives the energy for consuming this block
+    * @return Energy received by the player, 0 if material cannot be consumed
     */
-  override def consume(player: Player): Unit = setMaterial(Stone)
+  override def consume(player: Player): Int = (material match {
+    case m if m.hasEnergy && m.isAttachable => Some(Air)
+    case m if m.hasEnergy && m.isSolid => Some(Stone)
+    case m if m.hasEnergy && m.isSolid == false => Some(Air)
+    case _ => None
+  }).fold(0) { mat =>
+    this match {
+      case inv: Inventory => inv.consumeContents(player)
+      case _ => //Do nothing
+    }
+    setMaterial(mat)
+    player.addEnergy(material.energy.getOrElse(0))
+  }
 
   override def toString: String = s"(${location.toString}, ${material.toString})"
 

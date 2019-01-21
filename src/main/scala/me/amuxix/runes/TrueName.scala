@@ -49,8 +49,8 @@ object TrueName extends RunePattern with Enchant with BlockPlaceTrigger {
     itemPlaced match {
       case Some(head: PlayerHead) if head.isTrueNameOf(player) => false //Trying to place own truename, allow this.
       case Some(head: PlayerHead) if head.hasRuneEnchant(this) => //Trying to place someone else's truename, destroy it.
-        player.sendNotification(ChatColor.RED + s"As you place ${head.displayName.get} it crumbles to dust.")
-        head.destroy
+        player.notify(ChatColor.RED + s"As you place ${head.displayName.get} it crumbles to dust.")
+        head.destroy()
         true
       case _ => false
     }
@@ -62,12 +62,13 @@ case class TrueName(blocks: Array[Array[Array[Block]]], center: Location, creato
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  override protected def onActivate(activationItem: Item): Unit = {
+  override protected def onActivate(activationItem: Item): Boolean = {
     if (direction == Self) {
       throw InitializationException("This rune cannot be automated.")
     }
     val inventory: Inventory = activator.inventory.getOrElse(throw InitializationException("Cannot access player inventory."))
     consumeRuneBlocks()
     inventory.add(TrueName.createTrueNameOf(activator))
+    true
   }
 }

@@ -4,11 +4,13 @@ import me.amuxix.inventory.{Inventory, Item}
 
 trait Chest extends Inventory {
 
-  protected def inventory: Inventory
+  def inventory: Inventory
 
   override def isFull: Boolean = inventory.isFull
 
   override def contents: Seq[Item] = inventory.contents
+
+  override def moveContentsTo(inventory: Inventory): Unit = this.inventory.moveContentsTo(inventory)
 
   /**
     * Adds an item to the inventory if it can fit there.

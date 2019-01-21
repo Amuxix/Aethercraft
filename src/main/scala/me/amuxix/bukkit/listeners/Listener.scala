@@ -1,12 +1,16 @@
-package me.amuxix.bukkit
+package me.amuxix.bukkit.listeners
 
 import java.util.UUID
 
-import me.amuxix.Block.Location
+import me.amuxix.Serialization
+import me.amuxix.block.Block.Location
+import me.amuxix.bukkit.Location.BukkitIntPositionOps
+import me.amuxix.bukkit.Player
+import me.amuxix.bukkit.Player.BukkitPlayerOps
+import me.amuxix.bukkit.inventory.Item
+import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
 import me.amuxix.exceptions.InitializationException
-import me.amuxix.inventory.Item
 import me.amuxix.pattern.matching.Matcher
-import me.amuxix.{Player, Aethercraft}
 import org.bukkit.ChatColor
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority.LOWEST
@@ -25,25 +29,25 @@ object Listener extends org.bukkit.event.Listener {
   def onPlayerInteract(event: PlayerInteractEvent): Unit = {
     //This gets fired Twice in a row, once for main hand and one for the off hand
     if (event.getAction == RIGHT_CLICK_BLOCK) {
-      val clickedBlockLocation: Location = bukkitLocation2Position(event.getClickedBlock.getLocation)
-      val player: Player = event.getPlayer
-      if (event.getHand == OFF_HAND && lastActivatedRune.exists(_.==((player.uniqueID, clickedBlockLocation)))) {
+      val clickedBlockLocation: Location = event.getClickedBlock.getLocation.aetherize
+      val player: Player = event.getPlayer.aetherize
+      if (event.getHand == OFF_HAND && lastActivatedRune.exists(_.==((player.uuid, clickedBlockLocation)))) {
         //If the player activates a rune with the main hand and places a block with the offhand we cancel the block placement.
         event.setCancelled(true)
       } else {
-        val itemInHand: Item = event.getPlayer.getInventory.getItemInMainHand
+        val itemInHand: Item = event.getPlayer.getInventory.getItemInMainHand.aetherize
         if (event.getHand == HAND && itemInHand.material.isSolid == false) {
           try {
-            if (Aethercraft.persistentRunes.contains(clickedBlockLocation)) {
+            if (Serialization.persistentRunes.contains(clickedBlockLocation)) {
               //There is a rune at this location, update it.
-              lastActivatedRune += player.uniqueID -> clickedBlockLocation
+              lastActivatedRune += player.uuid -> clickedBlockLocation
               event.setCancelled(true)
-              Aethercraft.persistentRunes(clickedBlockLocation).update(player) //This can throw initialization exceptions
+              Serialization.persistentRunes(clickedBlockLocation).update(player) //This can throw initialization exceptions
             } else {
               //Look for new runes
               Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand.material)
                 .foreach { rune =>
-                  lastActivatedRune += player.uniqueID -> clickedBlockLocation
+                  lastActivatedRune += player.uuid -> clickedBlockLocation
                   event.setCancelled(true) //Rune was found, cancel the original event.
                   rune.activate(itemInHand) //This can throw initialization exceptions
                 }

@@ -1,6 +1,6 @@
 package me.amuxix.pattern.matching
 
-import me.amuxix.Block.Location
+import me.amuxix.block.Block.Location
 import me.amuxix._
 import me.amuxix.logging.Logger.trace
 import me.amuxix.material.Material
@@ -46,7 +46,7 @@ object Matcher {
     val boundingCube = BoundingCube(location, filteredPatterns)
     filteredPatterns.toStream.map { pattern =>
       pattern.findRotation(boundingCube).map { matrix =>
-        pattern.createRune(Parameters(pattern.runeBlocks(boundingCube, matrix.rotateAbout(boundingCube.center)), location, activator, direction))
+        pattern.createRune(pattern.runeBlocks(boundingCube, matrix.rotateAbout(boundingCube.center)), location, activator, direction)
       }
     } collectFirst { case Some(pattern) => pattern }
   }

@@ -55,7 +55,7 @@ resourceGenerators in Compile += Def.task {
     s"""name: Aethercraft
         |version: ${version.value}-$date
         |author: Amuxix
-        |main: me.amuxix.Aethercraft
+        |main: me.amuxix.bukkit.Aethercraft
         |api-version: 1.13
      """.stripMargin
   IO.write(file, pluginYml)

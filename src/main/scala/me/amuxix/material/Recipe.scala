@@ -1,9 +1,9 @@
 package me.amuxix.material
 
 import cats.data.NonEmptyList
-import me.amuxix.Configuration
-import me.amuxix.bukkit.Recipes
+import me.amuxix.bukkit.{Configuration, Recipes}
 import me.amuxix.logging.Logger
+import me.amuxix.material.Generic.Slab
 import me.amuxix.material.Material._
 
 /**

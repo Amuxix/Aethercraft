@@ -1,11 +1,16 @@
 package me.amuxix
 
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+
 object Vector3 {
   import scala.math.Numeric.DoubleAsIfIntegral
   implicit val doubleAsIfIntegral = DoubleAsIfIntegral //Allows this method to be implicitly used by Tuple32Vector
 	implicit def Tuple32Vector3[T: Integral](tuple: (T, T, T)): Vector3[T] = {
 		Vector3(tuple._1, tuple._2, tuple._3)
 	}
+	implicit val encoder: Encoder[Vector3[Int]] = deriveEncoder
+	implicit val decoder: Decoder[Vector3[Int]] = deriveDecoder
 }
 
 /**

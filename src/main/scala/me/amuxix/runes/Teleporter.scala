@@ -1,16 +1,17 @@
 package me.amuxix.runes
 
-import me.amuxix.Block.Location
-import me.amuxix.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
+import me.amuxix.block.Block.Location
+import me.amuxix.bukkit.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
 import me.amuxix._
-import me.amuxix.exceptions.InitializationException
+import me.amuxix.block.Block
 import me.amuxix.inventory.Item
+import me.amuxix.exceptions.InitializationException
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
 import me.amuxix.material.Solid
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
-import me.amuxix.runes.waypoints.WaypointTrait
+import me.amuxix.runes.waypoints.GenericWaypoint
 
 import scala.math.Numeric.DoubleAsIfIntegral
 
@@ -29,8 +30,8 @@ object Teleporter extends RunePattern {
   )
 }
 
-case class Teleporter(parameters: Parameters, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
-  implicit val doubleAsIfIntegral = DoubleAsIfIntegral
+case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
+  private implicit val doubleAsIfIntegral = DoubleAsIfIntegral
 
   override def validateSignature(): Boolean = {
     if (signatureIsEmpty) {
@@ -46,12 +47,12 @@ case class Teleporter(parameters: Parameters, pattern: Pattern) extends Rune wit
   override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
 
   override protected def onActivate(activationItem: Item): Unit = {
-    val possibleTargets: Map[Int, Rune with WaypointTrait] = Aethercraft.waypoints
-    val targetWP: Rune with WaypointTrait = possibleTargets.getOrElse(signature, throw InitializationException("Can't find your destination."))
+    val possibleTargets: Map[Int, Rune with GenericWaypoint] = Serialization.waypoints
+    val targetWP: Rune with GenericWaypoint = possibleTargets.getOrElse(signature, throw InitializationException("Can't find your destination."))
 
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */
     def target: Location = {
-      for ( dist <- 1 to maxDistance) {
+      for (dist <- 1 to maxDistance) {
         val possibleTarget: Location = targetWP.center + targetWP.direction * dist
         if (possibleTarget.block.material.isInstanceOf[Solid] == false) {
           if (possibleTarget.canFitPlayer) {
@@ -83,7 +84,7 @@ case class Teleporter(parameters: Parameters, pattern: Pattern) extends Rune wit
       }
       finalTarget = Position[Double](target.world, Vector3[Double](target.x, target.y, target.z) + blockCenterOffset)
     }
-    activator.teleport(finalTarget, activator.pitch, activator.yaw)
+    activator.teleportTo(finalTarget, activator.pitch, activator.yaw)
   }
 
   /**

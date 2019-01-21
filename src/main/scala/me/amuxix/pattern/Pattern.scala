@@ -1,11 +1,13 @@
 package me.amuxix.pattern
 
+import me.amuxix.block.Block
+import me.amuxix.block.Block.Location
 import me.amuxix.exceptions.InitializationException
 import me.amuxix.logging.Logger.trace
 import me.amuxix.material.{Material, NoEnergy, Block => MBlock}
 import me.amuxix.pattern.matching.BoundingCube
-import me.amuxix.runes.{Parameters, Rune}
-import me.amuxix.{Block, Matrix4, Vector3}
+import me.amuxix.runes.Rune
+import me.amuxix._
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -31,7 +33,7 @@ object Pattern {
     } yield layerArray(j)(w) == layerArray(width - j - 1)(w) && layerArray(h)(i) == layerArray(h)(height - i - 1)).forall(identity)
   }
 
-  def apply[R <: Rune](creator: (Parameters, Pattern) => R,
+  def apply[R <: Rune](runeCreator: (Array[Array[Array[Block]]], Location, Player, Direction, Pattern) => R,
                        width: Option[Int] = None,
                        verticality: Boolean = false,
                        directional: Boolean = false,
@@ -57,8 +59,8 @@ object Pattern {
     val hasTwoMirroredAxis = layers.forall(isMirrored(_, finalWidth))
     val elements = layers.map(_.toElementsArray(finalWidth))
     new Pattern(activationLayer, elements, hasTwoMirroredAxis, verticality, directional, buildableOnCeiling, activatesWith) {
-      def createRune(parameters: Parameters): Rune = {
-        creator(parameters, this)
+      override def createRune(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction): Rune = {
+        runeCreator(blocks, center, creator, direction, this)
       }
     }
   }
@@ -97,7 +99,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
   /**
     * Attempts to create the rune, may fail.
     */
-  protected[pattern] def createRune(parameters: Parameters): Rune
+  protected[pattern] def createRune(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction): Rune
 
 
   /**
@@ -177,7 +179,6 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
       trace(s"Rotated Position: $rotatedPosition")
       val blockAtRotatedPosition = boundingCube.blockAt(rotatedPosition)
       val blockMaterial = blockAtRotatedPosition.material
-      trace(s"Block position: ${blockAtRotatedPosition.location}")
       trace(s"Block   Type: $blockMaterial")
       trace(s"Pattern Type: ${elements(layer)(block)(line)}")
       //Having elements checked in layer > block > line makes the pattern top line be the northern most one

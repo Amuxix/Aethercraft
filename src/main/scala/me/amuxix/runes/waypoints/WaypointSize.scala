@@ -1,21 +1,19 @@
 package me.amuxix.runes.waypoints
 
+import enumeratum.{CirceEnum, Enum, EnumEntry}
+
+import scala.collection.immutable.IndexedSeq
+
 /**
   * Created by Amuxix on 03/01/2017.
   */
-sealed trait WaypointSize
+sealed trait WaypointSize extends EnumEntry
 
-/**
-  * This supports items.
-  */
-object Small extends WaypointSize
+object WaypointSize extends CirceEnum[WaypointSize] with Enum[WaypointSize] {
+  override def values: IndexedSeq[WaypointSize] = findValues
 
-/**
-  * This supports items and entities(Player, Monsters)
-  */
-object Medium extends WaypointSize
+  case object Small extends WaypointSize //This supports items.
+  case object Medium extends WaypointSize //This supports items and entities(Player, Monsters)
+  case object Large extends WaypointSize //This supports Blocks (useful for faiths)
+}
 
-/**
-  * This supports Blocks (useful for faiths)
-  */
-object Large extends WaypointSize

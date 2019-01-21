@@ -1,9 +1,11 @@
-package me.amuxix.bukkit
+package me.amuxix.bukkit.listeners
 
-import me.amuxix.inventory.Item
-import me.amuxix.material.Material.Air
+import me.amuxix.Direction
+import me.amuxix.bukkit.Player
+import me.amuxix.bukkit.Player.BukkitPlayerOps
+import me.amuxix.bukkit.block.Block
+import me.amuxix.bukkit.block.Block.BukkitBlockOps
 import me.amuxix.runes.traits.enchants.Enchant._
-import me.amuxix.{Block, Direction, Player}
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority.LOWEST
 import org.bukkit.event.block.Action._
@@ -16,41 +18,37 @@ object EnchantListener extends org.bukkit.event.Listener {
   @EventHandler(priority = LOWEST)
   def onBlockBreakEvent(event: BlockBreakEvent): Unit = {
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
-    event.setCancelled(blockBreakEnchants.foldLeft(false)(_ || _.onBlockBreak(event.getPlayer, event.getBlock.toBlock)))
+    event.setCancelled(blockBreakEnchants.foldLeft(false)(_ || _.onBlockBreak(event.getPlayer.aetherize, event.getBlock.aetherize)))
   }
 
   @EventHandler(priority = LOWEST)
   def onBlockPlaceEvent(event: BlockPlaceEvent): Unit = {
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
-    val player: Player = event.getPlayer
-    val placedBlock: Block = event.getBlock.toBlock
-    val air = Item(Air)
-    val mainHandItem = player.itemInMainHand.getOrElse(air)
-    val offHandItem = player.itemInOffHand.getOrElse(air)
-    val itemPlaced = (mainHandItem.material, offHandItem.material) match {
-      case (mainHand, offHand) if mainHand == placedBlock.material || offHand == Air => mainHandItem
-      case (mainHand, offHand) if offHand == placedBlock.material || mainHand == Air => offHandItem
-      case _ => air //TODO: Fix this once 1.13 API is out
+    val player: Player = event.getPlayer.aetherize
+    val placedBlock: Block = event.getBlock.aetherize
+    val itemPlaced = if (event.getHand == HAND) {
+      player.itemInMainHand
+    } else {
+      player.itemInOffHand
     }
-    event.setCancelled(blockPlaceEnchants.foldLeft(false)(_ || _.onBlockPlace(player, placedBlock, event.getBlockAgainst.toBlock, itemPlaced)))
+    event.setCancelled(blockPlaceEnchants.foldLeft(false)(_ || _.onBlockPlace(player, placedBlock, event.getBlockAgainst.aetherize, itemPlaced)))
   }
 
   @EventHandler(priority = LOWEST)
   def onPlayerInteract(event: PlayerInteractEvent): Unit = {
-    val player: Player = event.getPlayer
+    val player: Player = event.getPlayer.aetherize
     val blockFace: Direction = event.getBlockFace
-    val air = Item(Air)
     val itemInHand = if (event.getHand == HAND) {
-      player.itemInMainHand.getOrElse(air)
+      player.itemInMainHand
     } else {
-      player.itemInOffHand.getOrElse(air)
+      player.itemInOffHand
     }
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
     event.getAction match {
       case RIGHT_CLICK_BLOCK =>
-        event.setCancelled(blockInteractEnchants.foldLeft(false)(_ || _.onBlockInteract(player, itemInHand, event.getClickedBlock.toBlock, blockFace)))
+        event.setCancelled(blockInteractEnchants.foldLeft(false)(_ || _.onBlockInteract(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
       case LEFT_CLICK_BLOCK =>
-        event.setCancelled(blockDamageEnchants.foldLeft(false)(_ || _.onBlockDamage(player, itemInHand, event.getClickedBlock.toBlock, blockFace)))
+        event.setCancelled(blockDamageEnchants.foldLeft(false)(_ || _.onBlockDamage(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
       case RIGHT_CLICK_AIR =>
         event.setCancelled(airInteractEnchants.foldLeft(false)(_ || _.onAirInteract(player, itemInHand)))
       case LEFT_CLICK_AIR =>

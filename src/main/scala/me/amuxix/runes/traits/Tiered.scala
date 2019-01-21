@@ -1,6 +1,6 @@
 package me.amuxix.runes.traits
 
-import me.amuxix.Block
+import me.amuxix.block.Block
 import me.amuxix.material.Material
 import me.amuxix.pattern.Tier
 import me.amuxix.runes.Rune

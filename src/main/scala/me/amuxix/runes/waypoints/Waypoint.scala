@@ -1,12 +1,14 @@
 package me.amuxix.runes.waypoints
 
-import me.amuxix.Block.Location
-import me.amuxix.exceptions.InitializationException
+import me.amuxix.block.Block.Location
+import me.amuxix.block.Block
+import me.amuxix._
 import me.amuxix.inventory.Item
+import me.amuxix.exceptions.InitializationException
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Linkable, Persistent}
-import me.amuxix.runes.{Parameters, Rune}
-import me.amuxix.{Block, Direction, Player, Aethercraft}
+import me.amuxix.runes.Rune
+import me.amuxix.runes.waypoints.WaypointSize.Medium
 import org.bukkit.ChatColor
 
 /**
@@ -27,22 +29,21 @@ object Waypoint extends RunePattern {
     * This knows how to load a waypoint with the given parameters.
     * @param blocks Blocks that make up the rune
     * @param center Center of the rune
-    * @param activator Who owns this rune
+    * @param creator Who owns this rune
     * @param direction Activation this teleport will teleport to
     * @param signature Signature of the waypoint
     * @return A waypoint instance with the given parameters.
     */
-  def deserialize(blocks: Array[Array[Array[Block]]], center: Location, activator: Player, direction: Direction, signature: Int): Waypoint = {
-    val parameters: Parameters = Parameters(blocks, center, activator, direction)
-    val waypoint = Waypoint(parameters, pattern)
+  def deserialize(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, signature: Int): Waypoint = {
+    val waypoint = Waypoint(blocks, center, creator, direction, pattern)
     waypoint.signature = signature
     waypoint
   }
 }
 
-case class Waypoint(parameters: Parameters, pattern: Pattern)
+case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern)
   extends Rune
-          with WaypointTrait
+          with GenericWaypoint
           with Linkable
           with Persistent {
   override val size: WaypointSize = Medium
@@ -52,7 +53,7 @@ case class Waypoint(parameters: Parameters, pattern: Pattern)
       throw InitializationException("Signature is empty!")
     } else if (signatureContains(tierType)) {
       throw InitializationException(tierType.name + " can't be used on this rune because it is the same as the tier used in rune.")
-    } else if (Aethercraft.waypoints.contains(signature)) {
+    } else if (Serialization.waypoints.contains(signature)) {
       throw InitializationException("Signature already in use.")
     }
     true
@@ -80,7 +81,7 @@ case class Waypoint(parameters: Parameters, pattern: Pattern)
       if (validateSignature()) {
         signature = calculateSignature()
         player.sendNotification("Signature updated.")
-        if (player.uniqueID != activator.uniqueID) {
+        if (player.uuid != activator.uuid) {
           activator.sendNotification(ChatColor.RED + "The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
         }
       }
@@ -90,10 +91,10 @@ case class Waypoint(parameters: Parameters, pattern: Pattern)
   /**
     * Destroys the rune effect. This should undo all lasting effects this rune introduced.
     */
-  override def destroyRune(): Unit = Aethercraft.waypoints -= signature
+  override def destroyRune(): Unit = Serialization.waypoints -= signature
 
   override protected def onActivate(activationItem: Item): Unit = {
-    Aethercraft.waypoints += signature -> this
+    Serialization.waypoints += signature -> this
   }
 
   /**

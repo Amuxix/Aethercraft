@@ -1,10 +1,12 @@
-package me.amuxix.bukkit
+package me.amuxix.bukkit.listeners
 
-import me.amuxix.Anonymous
 import me.amuxix.IntegrityMonitor.{checkIntegrityAfterBlockDestruction, checkIntegrityAfterBlockPlacement}
+import me.amuxix.bukkit.Anonymous
+import me.amuxix.bukkit.block.Block.BukkitBlockOps
+import me.amuxix.bukkit.Player.BukkitPlayerOps
 import org.bukkit.event.EventHandler
 import org.bukkit.event.EventPriority.MONITOR
-import org.bukkit.event.block.{BlockBreakEvent, BlockBurnEvent, BlockFadeEvent, BlockPlaceEvent}
+import org.bukkit.event.block._
 
 object IntegrityListener extends org.bukkit.event.Listener {
 
@@ -15,7 +17,7 @@ object IntegrityListener extends org.bukkit.event.Listener {
     */
   @EventHandler(priority = MONITOR, ignoreCancelled = true)
   def onBlockBreakEvent(event: BlockBreakEvent): Unit = {
-    checkIntegrityAfterBlockDestruction(event.getBlock.toBlock, event.getPlayer)
+    checkIntegrityAfterBlockDestruction(event.getBlock.aetherize, event.getPlayer.aetherize)
   }
 
   /**
@@ -25,7 +27,7 @@ object IntegrityListener extends org.bukkit.event.Listener {
     */
   @EventHandler(priority = MONITOR, ignoreCancelled = true)
   def onBlockBurnEvent(event: BlockBurnEvent): Unit = {
-    checkIntegrityAfterBlockDestruction(event.getBlock.toBlock, Anonymous)
+    checkIntegrityAfterBlockDestruction(event.getBlock.aetherize, Anonymous)
   }
 
   /**
@@ -35,7 +37,7 @@ object IntegrityListener extends org.bukkit.event.Listener {
     */
   @EventHandler(priority = MONITOR, ignoreCancelled = true)
   def onBlockFadeEvent(event: BlockFadeEvent): Unit = {
-    checkIntegrityAfterBlockDestruction(event.getBlock.toBlock, Anonymous)
+    checkIntegrityAfterBlockDestruction(event.getBlock.aetherize, Anonymous)
   }
 
   /*@EventHandler(priority = MONITOR, ignoreCancelled = true)
@@ -51,6 +53,6 @@ object IntegrityListener extends org.bukkit.event.Listener {
     */
   @EventHandler(priority = MONITOR, ignoreCancelled = true)
   def onBlockPlaceEvent(event: BlockPlaceEvent): Unit = {
-    checkIntegrityAfterBlockPlacement(event.getBlockPlaced.toBlock, event.getPlayer)
+    checkIntegrityAfterBlockPlacement(event.getBlockPlaced.aetherize, event.getPlayer.aetherize)
   }
 }

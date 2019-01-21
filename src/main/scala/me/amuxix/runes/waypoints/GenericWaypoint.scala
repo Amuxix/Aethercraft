@@ -9,6 +9,6 @@ import me.amuxix.runes.traits.{Linkable, Tiered}
 /**
   * This represents a point that can be targeted by a waypoint.
   */
-trait WaypointTrait extends Tiered with Linkable { this: Rune =>
+trait GenericWaypoint extends Tiered with Linkable { this: Rune =>
   val size: WaypointSize
 }

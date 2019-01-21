@@ -1,5 +1,6 @@
 package me.amuxix
 
+import me.amuxix.block.Block
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.{Persistent, Tiered}
 
@@ -10,8 +11,8 @@ import scala.collection.immutable.HashMap
   */
 object IntegrityMonitor {
   //Maps bocks to the rune which they are tied to, modifying these blocks destroys the rune.
-  private var destructionBlocks: HashMap[Block, Rune with Persistent] = HashMap.empty[Block, Rune with Persistent]
-  private var buildBlocks: HashMap[Block, Rune with Persistent] = HashMap.empty[Block, Rune with Persistent]
+  private var destructionBlocks: HashMap[Block, Rune with Persistent] = HashMap.empty
+  private var buildBlocks: HashMap[Block, Rune with Persistent] = HashMap.empty
 
   /**
     * Registers a persistent rune for its blocks to be monitored
@@ -20,7 +21,7 @@ object IntegrityMonitor {
   def addRune(rune: Rune with Persistent): Unit = {
     destructionBlocks ++= rune.monitoredDestroyBlocks.map(_ -> rune)
     buildBlocks ++= rune.monitoredBuildBlocks.map(_ -> rune)
-    Aethercraft.persistentRunes += rune.center -> rune
+    Serialization.persistentRunes += rune.center -> rune
   }
 
   /**
@@ -31,7 +32,7 @@ object IntegrityMonitor {
     rune.destroyRune()
     destructionBlocks --= rune.monitoredDestroyBlocks
     buildBlocks --= rune.monitoredBuildBlocks
-    Aethercraft.persistentRunes -= rune.center
+    Serialization.persistentRunes -= rune.center
   }
 
   /**

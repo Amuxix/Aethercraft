@@ -1,4 +1,4 @@
-package me.amuxix
+package me.amuxix.bukkit
 
 /**
   * Created by Amuxix on 03/01/2017.

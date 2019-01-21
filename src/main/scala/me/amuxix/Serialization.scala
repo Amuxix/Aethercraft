@@ -6,10 +6,17 @@ import io.circe.parser._
 import io.circe.syntax._
 import io.circe.{Decoder, Encoder}
 import io.circe.generic.auto._
+import me.amuxix.block.Block
+import me.amuxix.block.Block.Location
+import me.amuxix.bukkit.Aethercraft
+import me.amuxix.exceptions.DeserializationException
 import me.amuxix.logging.Logger.info
 import me.amuxix.runes.Rune
-import me.amuxix.runes.waypoints.{Waypoint, WaypointTrait}
+import me.amuxix.runes.traits.Persistent
+import me.amuxix.runes.waypoints._
+import me.amuxix.runes.waypoints.WaypointSize.Medium
 
+import scala.collection.immutable.HashMap
 import scala.io.Source
 import scala.util.Try
 
@@ -20,19 +27,32 @@ object Serialization {
   private val fileTermination = ".rune"
   private val backupTermination = ".old"
 
+  /**
+    * Lists of persistent runes that will be serialized
+    */
+  var persistentRunes = HashMap.empty[Location, Persistent]
+
+  /** The map key is the [[me.amuxix.runes.traits.Linkable.signature]] of the waypoint */
+  var waypoints = Map.empty[Int, GenericWaypoint]
+
   private val magicFileName = Aethercraft.simpleVersion
   private val waypointsFileName = "Waypoints"
 
   //Encoders
-  implicit val encodeWaypoints: Encoder[Rune with WaypointTrait] =
-    Encoder.forProduct5("blocks", "center", "activator", "direction", "signature")(w => (w.blocks, w.center, w.activator, w.direction, w.signature))
+  implicit val encodeWaypoints: Encoder[GenericWaypoint] =
+    Encoder.forProduct6("blocks", "center", "activator", "direction", "signature", "size")(w => (w.blocks, w.center, w.activator, w.direction, w.signature, w.size))
 
-  //Deciders
-  implicit val decodeWaypoints: Decoder[Rune with WaypointTrait] =
-    Decoder.forProduct5("blocks", "center", "activator", "direction", "signature")(Waypoint.deserialize)
+  //Decoders
+  implicit val decodeWaypoints: Decoder[GenericWaypoint] =
+    Decoder.forProduct6[GenericWaypoint, Array[Array[Array[Block]]], Location, Player, Direction, Int, WaypointSize]("blocks", "center", "activator", "direction", "signature", "size") {
+      case (blocks, center, activator, direction, signature, `Medium`) =>
+        Waypoint.deserialize(blocks, center, activator, direction, signature)
+      case _ => throw DeserializationException("a Waypoint")
+    }
 
   /**
     * Creates a backup of the old file when loading.
+    *
     * @param worldFolder Folder of the world we are backing up
     * @param fileName File we are backing up
     */
@@ -49,7 +69,7 @@ object Serialization {
     * Saves all runes to their respective files
     */
   def saveRunes(): Unit = {
-    saveWaypoints(Aethercraft.waypoints.values.toArray)
+    saveWaypoints(waypoints.values.toArray)
   }
 
   /**
@@ -87,9 +107,9 @@ object Serialization {
     * Saves all waypoints to files in the world folders
     * @param waypoints Array of all waypoints to save
     */
-  private def saveWaypoints(waypoints: Array[Rune with WaypointTrait]): Unit = {
+  private def saveWaypoints(waypoints: Array[Rune with GenericWaypoint]): Unit = {
     waypoints.groupBy(_.center.world).foreach{ case (world, waypointsInWorld) =>
-      val magicFolder = new File(world.getWorldFolder, magicFileName)
+      val magicFolder = new File(world.worldFolder, magicFileName)
       magicFolder.mkdir() //Makes the dir if it does not exist, does nothing otherwise
       backupOldFile(magicFolder, waypointsFileName)
       val waypointFile = new File(magicFolder, waypointsFileName + fileTermination)
@@ -105,9 +125,9 @@ object Serialization {
     * @throws Error is thrown when it fails to load
     */
   private def loadWaypoints(magicFile: File): Unit = {
-    val waypoints = runesInWorld[Rune with WaypointTrait](magicFile, waypointsFileName)
+    val waypoints = runesInWorld[Rune with GenericWaypoint](magicFile, waypointsFileName)
     if (waypoints.isDefined) {
-      Aethercraft.waypoints ++= waypoints.get.map(w => w.signature -> w)
+      this.waypoints ++= waypoints.get.map(w => w.signature -> w)
       info(s"  - Loaded ${waypoints.get.length} $waypointsFileName")
     }
   }

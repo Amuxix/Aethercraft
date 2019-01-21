@@ -1,21 +1,12 @@
 package me.amuxix.inventory
 
-import org.bukkit.inventory.PlayerInventory
 
-/**
-  * Created by Amuxix on 01/02/2017.
-  */
-object Inventory {
-  implicit def playerInventory2Inventory(inv: PlayerInventory): Inventory = Inventory(inv)
-}
-/**
-  * A decorator to bukkit inventory
-  * @param inv Bukkit Inventory
-  */
-case class Inventory(inv: PlayerInventory) {
-  def isFull: Boolean = inv.firstEmpty() == -1
+trait Inventory {
+  def isFull: Boolean
 
-  def contains(item: Item): Boolean = inv.contains(item.itemStack)
+  def contents: Seq[Item]
+
+  def contains(item: Item): Boolean = contents.contains(item)
 
   //TODO: Have this check if item can fill existing stacks even if inventory is full
   /**
@@ -23,10 +14,10 @@ case class Inventory(inv: PlayerInventory) {
     * @param item Item to be added
     * @return true if inventory had space to fit the item
     */
-  def add(item: Item): Boolean = if (isFull) {
-    false
-  } else {
-    inv.addItem(item.itemStack)
-    true
-  }
+  def add(item: Item): Boolean
+
+  /**
+    * Clears the whole inventory
+    */
+  def clear(): Unit
 }

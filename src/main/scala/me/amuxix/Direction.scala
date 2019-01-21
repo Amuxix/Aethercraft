@@ -1,6 +1,6 @@
 package me.amuxix
 
-import io.circe.generic.semiauto
+import io.circe.generic.semiauto.{deriveEncoder, deriveDecoder}
 import io.circe.{Decoder, Encoder}
 import org.bukkit.block.BlockFace
 
@@ -37,10 +37,8 @@ object Direction {
     case _ => throw new Exception("Cardinal point with this vector does not exist")
   }
 
-  //implicit val cardinalPointEncoder: Encoder[Direction] = Encoder.forProduct1("cardinalPoint")(_.vector)
-  //implicit val cardinalPointDecoder: Decoder[Direction] = Decoder.forProduct1("cardinalPoint")(vector3Int2Direction)
-  implicit val cardinalPointEncoder: Encoder[Direction] = semiauto.deriveEncoder
-  implicit val cardinalPointDecoder: Decoder[Direction] = semiauto.deriveDecoder
+  implicit val encoder: Encoder[Direction] = deriveEncoder
+  implicit val decoder: Decoder[Direction] = deriveDecoder
 }
 
 sealed abstract class Direction(x: Int, y: Int, z: Int) extends Vector3[Int](x, y, z) {

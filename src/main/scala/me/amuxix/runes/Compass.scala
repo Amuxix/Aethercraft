@@ -1,6 +1,9 @@
 package me.amuxix.runes
 
-import me.amuxix._
+import me.amuxix.block.Block.Location
+import me.amuxix.{Player, _}
+import me.amuxix.block.{Block, BlockUtils}
+import me.amuxix.bukkit._
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{Air, Glass}
 import me.amuxix.pattern._
@@ -20,7 +23,7 @@ object Compass extends RunePattern {
   )
 }
 
-case class Compass(parameters: Parameters, pattern: Pattern) extends Tiered {
+case class Compass(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Tiered {
   private var blocksMoved = false
   override protected def notifyActivator(): Unit = {
     if (blocksMoved) {

@@ -1,8 +1,8 @@
 package me.amuxix.bukkit
 
 import cats.data.NonEmptyList
-import me.amuxix.Aethercraft
 import me.amuxix.material._
+import me.amuxix.bukkit.Material.BukkitMaterialOps
 import me.amuxix.material.Material._
 import org.bukkit.inventory.RecipeChoice.MaterialChoice
 import org.bukkit.inventory.{Recipe => _, _}
@@ -13,7 +13,7 @@ object Recipes {
   implicit class MaterialChoiceOps(materialChoice: MaterialChoice) {
     def spread: Option[NonEmptyList[Material]] = NonEmptyList.fromList(materialChoice.getChoices.asScala.toList.collect {
       case material if material != null =>
-        material.toMaterial
+        material.aetherize
     })
   }
 
@@ -29,7 +29,7 @@ object Recipes {
   def createRecipe(ingredients: NonEmptyList[NonEmptyList[Material]], result: org.bukkit.inventory.ItemStack, requiresFuel: Boolean = false): Option[Recipe] = result match {
     case null => None
     case _ =>
-      result.getType.toMaterial match {
+      result.getType.aetherize match {
         case `Air` | `CaveAir` | `VoidAir` | _: NoEnergy => None
         case resultMaterial =>
           Some(Recipe(ingredients, resultMaterial, result.getAmount, requiresFuel))
@@ -60,7 +60,7 @@ object Recipes {
       case Recipe(_, _: NoEnergy, _, _) => false
       case Recipe(ingredients, _, _, _) if ingredients.exists(_.forall(_.isInstanceOf[NoEnergy])) => false
       //Filter out smelting ore recipes, these are replaced by custom ones that increase ore value.
-      case Recipe(ingredients, _, _, _) if ingredients.exists(_.exists(_.isInstanceOf[Ore])) => false
+      case Recipe(ingredients, _, _, _) if ingredients.exists(_.exists(_.isOre)) => false
       case _ => true
     }
 }

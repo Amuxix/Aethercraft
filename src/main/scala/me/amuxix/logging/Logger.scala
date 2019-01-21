@@ -1,6 +1,6 @@
 package me.amuxix.logging
 
-import me.amuxix.Aethercraft
+import me.amuxix.bukkit.Aethercraft
 
 /**
   * Created by Amuxix on 15/12/2016.

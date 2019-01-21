@@ -1,6 +1,7 @@
-package me.amuxix
+package me.amuxix.block
 
-import me.amuxix.Block.Location
+import me.amuxix.{Player, Vector3}
+import me.amuxix.block.Block.Location
 
 /**
   * Created by Amuxix on 24/01/2017.

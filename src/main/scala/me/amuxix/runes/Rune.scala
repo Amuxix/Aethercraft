@@ -1,26 +1,22 @@
 package me.amuxix.runes
 
-import me.amuxix.Block.Location
+import me.amuxix.block.Block.Location
 import me.amuxix._
-import me.amuxix.inventory.Item
+import me.amuxix.block.Block
 import me.amuxix.inventory.items.PlayerHead
+import me.amuxix.inventory.Item
 import me.amuxix.logging.Logger.info
 import me.amuxix.pattern._
 
 /**
   * Created by Amuxix on 22/11/2016.
   */
-trait Rune extends Named {
-  def parameters: Parameters
+abstract class Rune extends Named {
+  val blocks: Array[Array[Array[Block]]]
+  val center: Location
+  val creator: Player
+  val direction: Direction
   val pattern: Pattern
-
-  val blocks: Array[Array[Array[Block]]] = parameters.blocks
-  val center: Location = parameters.center
-  /**
-    * The player that triggered the rune activation.
-    */
-  private val realActivator: Player = parameters.activator
-  val direction: Direction = parameters.direction
 
   /**
     * This is where the rune effects when the rune is first activated go.
@@ -43,26 +39,22 @@ trait Rune extends Named {
     */
   val activator: Player = {
     val owner = for {
-      possibleHelmet <- realActivator.helmet
-      playerHead = possibleHelmet.asInstanceOf[PlayerHead]
+      helmet <- creator.helmet
+      playerHead = helmet.asInstanceOf[PlayerHead]
       owner <- playerHead.owner if shouldUseTrueName && playerHead.hasRuneEnchant(TrueName)
     } yield owner
-    owner.getOrElse(realActivator)
+    owner.getOrElse(creator)
   }
 
   /**
     * Consumes a true name on the real activator of this rune
     */
-  private def consumeTrueName(): Unit = {
-    val playerHead = for {
-      possibleHelmet <- realActivator.helmet
-      playerHead = possibleHelmet.asInstanceOf[PlayerHead]
-    } yield playerHead
-    if (playerHead.isDefined && playerHead.get.hasOwner && playerHead.get.hasRuneEnchant(TrueName)) {
-      playerHead.get.amount -= 1
-      realActivator.sendNotification(s"The magic of this rune is activated in ${playerHead.get.owner}'s name and the true name shatters")
+  private def consumeTrueName(): Unit =
+    creator.helmet.collect {
+      case playerHead: PlayerHead if playerHead.hasRuneEnchant(TrueName) =>
+        playerHead.amount -= 1
+        creator.sendNotification(s"The magic of this rune is activated in ${playerHead.owner}'s name and the true name shatters")
     }
-  }
 
   /**
     * Internal activate method that should contain all code to activate a rune.
@@ -74,7 +66,7 @@ trait Rune extends Named {
   }
 
   protected def logRuneActivation(): Unit = {
-    info(s"${activator.name} activated $name in $center")
+    info(s"${activator.name} activated $name at $center")
   }
 
   protected def specialBlocks(element: Element): Seq[Block] = {

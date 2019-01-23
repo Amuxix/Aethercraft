@@ -6,31 +6,34 @@ import me.amuxix.bukkit.Material.BukkitMaterialOps
 import me.amuxix.material.Material._
 import org.bukkit.inventory.RecipeChoice.MaterialChoice
 import org.bukkit.inventory.{Recipe => _, _}
+import org.bukkit.inventory.{ItemStack => BukkitItemStack}
 
 import scala.collection.JavaConverters._
 
 object Recipes {
   implicit class MaterialChoiceOps(materialChoice: MaterialChoice) {
-    def spread: Option[NonEmptyList[Material]] = NonEmptyList.fromList(materialChoice.getChoices.asScala.toList.collect {
-      case material if material != null =>
-        material.aetherize
-    })
-  }
-
-  implicit class RecipeChoices(choices: List[RecipeChoice]) {
-    def toMaterialList: Option[NonEmptyList[NonEmptyList[Material]]] = choices match {
-      case null => None
-      case _ => NonEmptyList.fromList(choices.filter(_ != null).collect {
-        case materialChoice: MaterialChoice => materialChoice.spread
-      }.flatten)
+    def spread: Option[NonEmptyList[Material]] = NonEmptyList.fromList {
+      materialChoice.getChoices.asScala
+        .flatMap(material => Option(material).map(_.aetherize))
+        .toList
     }
   }
 
-  def createRecipe(ingredients: NonEmptyList[NonEmptyList[Material]], result: org.bukkit.inventory.ItemStack, requiresFuel: Boolean = false): Option[Recipe] = result match {
-    case null => None
-    case _ =>
+  implicit class RecipeChoices(choices: List[RecipeChoice]) {
+    def toMaterialList: Option[NonEmptyList[NonEmptyList[Material]]] = Option(choices).flatMap { choices =>
+      NonEmptyList.fromList {
+        choices.collect {
+          case materialChoice: MaterialChoice => Option(materialChoice).flatMap(_.spread)
+        }.flatten
+      }
+    }
+  }
+
+  def createRecipe(ingredients: NonEmptyList[NonEmptyList[Material]], result: BukkitItemStack, requiresFuel: Boolean = false): Option[Recipe] =
+    Option(result).flatMap { result =>
       result.getType.aetherize match {
-        case `Air` | `CaveAir` | `VoidAir` | _: NoEnergy => None
+        case `Air` | `CaveAir` | `VoidAir` => None
+        case material if material.hasNoEnergy => None
         case resultMaterial =>
           Some(Recipe(ingredients, resultMaterial, result.getAmount, requiresFuel))
       }
@@ -57,8 +60,8 @@ object Recipes {
     }
     .toSet
     .filter {
-      case Recipe(_, _: NoEnergy, _, _) => false
-      case Recipe(ingredients, _, _, _) if ingredients.exists(_.forall(_.isInstanceOf[NoEnergy])) => false
+      case Recipe(_, material, _, _) if material.hasNoEnergy => false
+      case Recipe(ingredients, _, _, _) if ingredients.exists(_.forall(_.hasNoEnergy)) => false
       //Filter out smelting ore recipes, these are replaced by custom ones that increase ore value.
       case Recipe(ingredients, _, _, _) if ingredients.exists(_.exists(_.isOre)) => false
       case _ => true

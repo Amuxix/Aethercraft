@@ -25,7 +25,7 @@ object Test2 extends RunePattern {
 }
 
 case class Test2(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Consumable {
-  override protected def onActivate(activationItem: Item): Boolean = true
+  override protected def onActivate(activationItem: Item): Either[String, Boolean] = Right(true)
 
   /**
     * Should this rune use a true name if the activator is wearing one?

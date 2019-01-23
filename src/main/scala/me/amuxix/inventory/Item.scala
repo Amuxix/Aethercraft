@@ -15,7 +15,7 @@ trait Item {
 
   def hasRuneEnchant(enchant: Enchant): Boolean
 
-  def addRuneEnchant(enchant: Enchant): Boolean
+  def addRuneEnchant(enchant: Enchant): Option[String]
 
   def hasDisplayName: Boolean
 

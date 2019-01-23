@@ -5,9 +5,6 @@ import me.amuxix.bukkit.World.BukkitWorldOps
 import org.bukkit.{Location => BukkitLocation}
 
 private[bukkit] object Location {
-  import scala.math.Numeric.DoubleAsIfIntegral
-  private implicit val doubleAsIfIntegral = DoubleAsIfIntegral
-
   implicit class BukkitDoublePositionOps(location: BukkitLocation) extends Aetherizeable[Position[Double]] {
     def aetherize: Position[Double] = Position[Double](location.getWorld.aetherize, Vector3[Double](location.getX, location.getY, location.getZ))
   }

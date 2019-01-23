@@ -18,7 +18,7 @@ trait Block {
   val location: Location
   var material: Material
 
-  def setMaterial(material: Material): Unit
+  def setMaterial(material: Material): Option[String]
 
   /**
     * Attempts to move this block by the displacement vector.
@@ -26,7 +26,7 @@ trait Block {
     * @param displacementVector Vector that defines the move.
     * @return true if the move was successful, false otherwise.
     */
-  def move(displacementVector: Vector3[Int], player: Player): Boolean
+  def move(displacementVector: Vector3[Int], player: Player): Option[String]
 
   /**
     * Attempts to move this block to the target location.
@@ -34,7 +34,7 @@ trait Block {
     * @param target Location where the block should be moved to.
     * @return true if the move was successful, false otherwise.
     */
-  def moveTo(target: Location, player: Player): Boolean
+  def moveTo(target: Location, player: Player): Option[String]
 
   /**
     * Checks if the player can move this block to the target location, it check if the block can be destroyed at
@@ -43,7 +43,7 @@ trait Block {
     * @param player Player who triggered the move
     * @return true if the player can move this block, false otherwise
     */
-  def canMoveTo(target: Location, player: Player): Boolean
+  def canMoveTo(target: Location, player: Player): Option[String]
 
   /**
     * Consumes this block and gives energy to the player

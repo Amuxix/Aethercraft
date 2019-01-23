@@ -22,13 +22,14 @@ abstract class Rune extends Named {
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  def activate(activationItem: Item): Boolean = {
-    val cancel = onActivate(activationItem)
-    consumeTrueName()
-    logRuneActivation()
-    notifyActivator()
-    cancel
-  }
+  def activate(activationItem: Item): Either[String, Boolean] =
+  for {
+    _ <- validateActivationItem(activationItem).toLeft(())
+    cancel <- onActivate(activationItem)
+    _ = consumeTrueName()
+    _ = logRuneActivation()
+    _ = notifyActivator()
+  } yield cancel
 
   /**
     * Should this rune use a true name if the activator is wearing one?
@@ -41,8 +42,10 @@ abstract class Rune extends Named {
   val activator: Player = {
     val owner = for {
       helmet <- creator.helmet
+      if shouldUseTrueName
       playerHead = helmet.asInstanceOf[PlayerHead]
-      owner <- playerHead.owner if shouldUseTrueName && playerHead.hasRuneEnchant(TrueName)
+      if playerHead.hasRuneEnchant(TrueName)
+      owner <- playerHead.owner
     } yield owner
     owner.getOrElse(creator)
   }
@@ -60,27 +63,24 @@ abstract class Rune extends Named {
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  protected def onActivate(activationItem: Item): Boolean
+  protected def onActivate(activationItem: Item): Either[String, Boolean]
+
+  /**
+    * Checks if rune can be activated with the given item.
+    * @param activationItem Item used to activate this rune
+    * @return None if activation item is ok, Some with an error if activation should fail
+    */
+  protected def validateActivationItem(activationItem: Item): Option[String] = None
 
   protected var activationMessage: String = name + " activated"
 
-  protected def notifyActivator(): Unit = {
-    activator.notify(activationMessage)
-  }
+  protected def notifyActivator(): Unit = activator.notify(activationMessage)
 
-  protected def logRuneActivation(): Unit = {
-    info(s"${activator.name} activated $name at $center")
-  }
+  protected def logRuneActivation(): Unit = info(s"${activator.name} activated $name at $center")
 
-  protected def specialBlocks(element: Element): Seq[Block] = {
-    pattern.specialBlockVectors(element).map(blockAt)
-  }
+  protected def specialBlocks(element: Element): Seq[Block] = pattern.specialBlockVectors(element).map(blockAt)
 
-  protected def nonSpecialBlocks: Seq[Block] = {
-    pattern.nonSpecialBlockVectors.map(blockAt)
-  }
+  protected def nonSpecialBlocks: Seq[Block] = pattern.nonSpecialBlockVectors.map(blockAt)
 
-  protected[runes] def blockAt(position: Vector3[Int]): Block = {
-    blocks(position.x)(position.y)(position.z)
-  }
+  protected[runes] def blockAt(position: Vector3[Int]): Block = blocks(position.x)(position.y)(position.z)
 }

@@ -9,7 +9,6 @@ import me.amuxix.bukkit.Player.BukkitPlayerOps
 import me.amuxix.bukkit._
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
-import me.amuxix.exceptions.InitializationException
 import me.amuxix.pattern.matching.Matcher
 import org.bukkit.ChatColor
 import org.bukkit.entity.EntityType.DROPPED_ITEM
@@ -45,23 +44,17 @@ object Listener extends org.bukkit.event.Listener {
       } else {
         val itemInHand: Item = event.getPlayer.getInventory.getItemInMainHand.aetherize
         if (event.getHand == HAND && itemInHand.material.isSolid == false) {
-          try {
-            lastActivatedRune += player.uuid -> clickedBlockLocation
-            if (Serialization.persistentRunes.contains(clickedBlockLocation)) {
-              //There is a rune at this location, update it.
-              val cancel = Serialization.persistentRunes(clickedBlockLocation).update(player) //This can throw initialization exceptions
-              event.setCancelled(cancel)
-            } else {
-              //Look for new runes
-              Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand.material)
-                .foreach { rune =>
-                  val cancel = rune.activate(itemInHand) //This can throw initialization exceptions
-                  event.setCancelled(cancel) //Rune was found, cancel the original event.
-                }
-            }
-          } catch {
-            case ex: InitializationException => player.notify(ChatColor.RED + ex.textError)
-          }
+          (if (Serialization.persistentRunes.contains(clickedBlockLocation)) {
+            //There is a rune at this location, update it.
+            Some(Serialization.persistentRunes(clickedBlockLocation).update(player))
+          } else {
+            //Look for new runes
+            Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace)
+              .map(_.activate(itemInHand))
+          }).map {
+            case Right(cancel) => event.setCancelled(cancel)
+            case Left(error) => player.notifyError(error)
+          }.foreach(_ => lastActivatedRune += player.uuid -> clickedBlockLocation)
         }
       }
     }

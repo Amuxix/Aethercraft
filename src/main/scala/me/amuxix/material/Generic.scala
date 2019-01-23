@@ -1,5 +1,7 @@
 package me.amuxix.material
 
+import me.amuxix.material.Properties._
+
 private[material] object Generic {
   val tools: Seq[Material with Tool] = Material.filter[Tool]
   val axes: Seq[Material with Axe] = Material.filter[Axe]

@@ -16,18 +16,25 @@ object Player {
 trait Player {
   def uuid: UUID
 
-  def teleportTo(target: Location, pitch: Float, yaw: Float): Unit
+  def teleportTo(target: Location, pitch: Float, yaw: Float): Option[String]
 
   def pitch: Float
 
   def yaw: Float
 
   /**
-    * Shows a message to the player in the most appropriate way possible
+    * Shows a notification to this player
     *
     * @param text Message to be sent
     */
   def notify(text: String): Unit
+
+  /**
+    * Shows an error to this player
+    *
+    * @param text Message to be sent
+    */
+  def notifyError(text: String): Unit
 
   def location: Option[Any]
 

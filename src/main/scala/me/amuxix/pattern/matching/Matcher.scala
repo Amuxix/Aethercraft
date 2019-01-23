@@ -30,7 +30,7 @@ object Matcher {
     * Looks for runes at the given location
     * @param event Event that contains the location where to look for runes as well as some other useful parameters when activating the rune
     */
-  def lookForRunesAt(location: Location, activator: Player, direction: Direction, materialInHand: Material): Option[Rune] = {
+  def lookForRunesAt(location: Location, activator: Player, direction: Direction): Option[Rune] = {
     //val possiblePatterns: Seq[Pattern] = patterns.filter(_.activatesWith(materialInHand))
     val possiblePatterns: Seq[Pattern] = patterns
     matchRunes(location, activator, direction, possiblePatterns)

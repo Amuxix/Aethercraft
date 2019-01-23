@@ -16,17 +16,16 @@ object Aethercraft {
   var server: Server = _
   var self: Aethercraft = _
 
-
   lazy val fullVersion: String = Aethercraft.self.getDescription.getFullName
   lazy val simpleVersion: String = Aethercraft.self.getDescription.getFullName.split("-").head
+
+  val defaultFailureMessage = "Some unknown force blocks you."
 
   def callEvent(event: Event): Unit = server.getPluginManager.callEvent(event)
   def getWorld(uuid: UUID): World = server.getWorld(uuid).aetherize
 
   def runTask(task: => Unit): Unit = {
-    Aethercraft.server.getScheduler.runTask(self, new Runnable {
-      override def run(): Unit = task
-    })
+    Aethercraft.server.getScheduler.runTask(self, (() => task): Runnable)
   }
 }
 
@@ -49,15 +48,15 @@ class Aethercraft extends JavaPlugin {
       //Keep updating energy from recipes while at least one energy value is changed.
     }
     material.Material.values
-      .filterNot(material => material.isInstanceOf[NoEnergy] || material.energy.nonEmpty)
+      .filterNot(material => material.hasNoEnergy || material.energy.nonEmpty)
       .foreach { material =>
         logging.Logger.info(s"Missing energy for $material")
         Recipe.recipes.filter(_.result == material).foreach(logging.Logger.info)
       }
-    Serialization.loadRunes()
+    Serialization.loadEverything()
 	}
 
   override def onDisable(): Unit = {
-    Serialization.saveRunes()
+    Serialization.saveEverything()
   }
 }

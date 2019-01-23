@@ -3,6 +3,7 @@ package me.amuxix.material
 import enumeratum._
 import me.amuxix.Named
 import me.amuxix.material.Generic._
+import me.amuxix.material.Properties._
 import me.amuxix.pattern.Element
 
 import scala.collection.immutable.IndexedSeq
@@ -58,6 +59,7 @@ sealed abstract case class Material(protected var _energy: Option[Int] = None) e
   def isAttachable: Boolean = isInstanceOf[Attaches]
   def isCrushable: Boolean = isInstanceOf[Crushable]
   def isGravity: Boolean = isInstanceOf[Gravity]
+  def hasNoEnergy: Boolean = isInstanceOf[NoEnergy]
   def hasEnergy: Boolean = !isInstanceOf[NoEnergy]
   def isUsable: Boolean = isInstanceOf[Usable]
 

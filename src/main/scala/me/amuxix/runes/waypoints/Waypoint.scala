@@ -4,12 +4,10 @@ import me.amuxix.block.Block.Location
 import me.amuxix.block.Block
 import me.amuxix._
 import me.amuxix.inventory.Item
-import me.amuxix.exceptions.InitializationException
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.Rune
 import me.amuxix.runes.waypoints.WaypointSize.Medium
-import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 03/01/2017.
@@ -48,16 +46,10 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
           with Persistent {
   override val size: WaypointSize = Medium
 
-  override def validateSignature(): Boolean = {
-    if (signatureIsEmpty) {
-      throw InitializationException("Signature is empty!")
-    } else if (signatureContains(tierMaterial)) {
-      throw InitializationException(tierMaterial.name + " can't be used on this rune because it is the same as the tier used in rune.")
-    } else if (Serialization.waypoints.contains(signature)) {
-      throw InitializationException("Signature already in use.")
-    }
-    true
-  }
+  override def validateSignature: Option[String] =
+    Option.when(signatureIsEmpty)("Signature is empty!")
+    .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this rune because it is the same as the tier used in rune.")
+    .orWhen(Serialization.waypoints.contains(signature))("Signature already in use.")
 
   /**
     * Checks whether this rune can be activated, should warn activator about the error that occurred
@@ -74,19 +66,17 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
     *
     * @param player Player who triggered the update
     */
-  override def update(player: Player): Boolean = {
-    if (signature == calculateSignature()) {
-      throw InitializationException("This " + getClass.getSimpleName + " is already active.")
+  override def update(player: Player): Either[String, Boolean] = {
+    if (signature == calculateSignature) {
+      Left("This " + getClass.getSimpleName + " is already active.")
     } else {
-      if (validateSignature()) {
-        signature = calculateSignature()
+      validateSignature.toLeft {
+        signature = calculateSignature
         player.notify("Signature updated.")
         if (player.uuid != activator.uuid) {
-          activator.notify(ChatColor.RED + "The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
+          activator.notifyError("The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
         }
         true
-      } else {
-        false
       }
     }
   }
@@ -96,9 +86,9 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
     */
   override def destroyRune(): Unit = Serialization.waypoints -= signature
 
-  override protected def onActivate(activationItem: Item): Boolean = {
+  override protected def onActivate(activationItem: Item): Either[String, Boolean] = {
     Serialization.waypoints += signature -> this
-    true
+    Right(true)
   }
 
   /**

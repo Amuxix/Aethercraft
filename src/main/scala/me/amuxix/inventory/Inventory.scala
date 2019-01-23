@@ -7,17 +7,20 @@ trait Inventory {
 
   def contents: Seq[Item]
 
-  def moveContentsTo(inventory: Inventory): Unit
+  /**
+    * Replaces the contents of the given inventory with the contents of this one.
+    * @param inventory Inventory to replace the contents of
+    */
+  def replaceContentsOf(inventory: Inventory): Unit
 
   def contains(item: Item): Boolean = contents.contains(item)
 
-  //TODO: Have this check if item can fill existing stacks even if inventory is full
   /**
     * Adds an item to the inventory if it can fit there.
     * @param item Item to be added
     * @return true if inventory had space to fit the item
     */
-  def add(item: Item): Boolean
+  def add(item: Item): Option[String]
 
   /**
     * Removes all items.

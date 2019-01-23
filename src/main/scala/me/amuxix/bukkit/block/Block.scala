@@ -13,6 +13,7 @@ import me.amuxix.{World => _, _}
 import org.bukkit.block.BlockState
 
 import scala.collection.immutable.HashMap
+import scala.util.Try
 
 
 object Block {
@@ -38,10 +39,10 @@ object Block {
 private[bukkit] class Block(val location: Location, var material: Material) extends block.Block with BukkitForm[BlockState] {
   protected val state: BlockState = location.world.asInstanceOf[World].world.getBlockAt(location.x, location.y, location.z).getState
 
-  override def setMaterial(material: Material): Unit = {
+  override def setMaterial(material: Material): Option[String] = {
     state.setType(material.bukkitForm)
-    state.update(true)
     this.material = material
+    Option.unless(state.update(true))(Aethercraft.defaultFailureMessage)
   }
 
   /**
@@ -51,32 +52,37 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
  *
     * @return true if the move was successful, false otherwise.
     */
-  override def move(displacementVector: Vector3[Int], player: Player): Boolean = moveTo(location + displacementVector, player)
+  override def move(displacementVector: Vector3[Int], player: Player): Option[String] = moveTo(location + displacementVector, player)
 
   /**
     * Attempts to move this block to the target location.
     * @param target Location where the block should be moved to.
     * @return true if the move was successful, false otherwise.
     */
-  override def moveTo(target: Location, player: Player): Boolean =
-    if (canMoveTo(target, player)) {
+  override def moveTo(target: Location, player: Player): Option[String] =
+    canMoveTo(target, player).orElse {
+      def moveInventory: Option[String] = this match {
+        case inv: Inventory =>
+          Try(Block(target, material).asInstanceOf[Chest]).toOption
+            .map { chest =>
+              inv.replaceContentsOf(chest.inventory)
+            } match {
+            case None => Some("Failed to move inventory.")
+            case Some(_) => None
+          }
+        case _ => None
+      }
+
       val targetBlock = target.block.asInstanceOf[Block]
       if (targetBlock.material.isCrushable) {
         Aethercraft.callEvent(new BlockBreak(target.block, player))
       }
       val replacedBlock = Block(target, targetBlock.material)
       Aethercraft.callEvent(new BlockPlace(target.block, replacedBlock, player))
+
       targetBlock.setMaterial(material)
-      this match {
-        case inv: Inventory =>
-          val targetInv = Block(target, material).asInstanceOf[Chest].inventory
-          inv.moveContentsTo(targetInv)
-        case _ =>
-      }
-      setMaterial(Air)
-      true
-    } else {
-      true
+        .orElse(moveInventory)
+        .orElse(setMaterial(Air))
     }
 
   /**
@@ -86,15 +92,13 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     * @param player Player who triggered the move
     * @return true if the player can move this block, false otherwise
     */
-  override def canMoveTo(target: Location, player: Player): Boolean = {
+  override def canMoveTo(target: Location, player: Player): Option[String] = {
     val targetBlock = target.block.asInstanceOf[Block]
-    if (targetBlock.material.isCrushable) {
-      val targetDestruction = if (targetBlock.material.isAir) {
-        true
-      } else {
+    Option.flatWhen(targetBlock.material.isCrushable) {
+      val targetDestruction = Option.flatWhen(targetBlock.material.isAir) {
         val breakEvent = new BlockBreak(targetBlock, player)
         Aethercraft.callEvent(breakEvent)
-        !breakEvent.isCancelled
+        Option.unless(breakEvent.isCancelled)( s"Failed to break $target")
       }
       val thisBreak = new BlockBreak(this, player)
       Aethercraft.callEvent(thisBreak)
@@ -102,8 +106,10 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
       val canBuild = new CanBuild(targetBlock, player, state.getBlockData)
       Aethercraft.callEvent(canBuild)
 
-      !thisBreak.isCancelled && targetDestruction && canBuild.isBuildable
-    } else false
+      Option.unless(thisBreak.isCancelled)(s"Failed to break $this")
+        .orElse(targetDestruction)
+        .orElse(Option.when(canBuild.isBuildable)(s"Failed to build $targetBlock"))
+    }
   }
 
   /**

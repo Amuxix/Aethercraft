@@ -9,9 +9,13 @@ import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.block.Block.BukkitBlockOps
 import org.bukkit.{World => BukkitWorld}
 
+import scala.collection.mutable
+
 object World {
+  private val worlds = mutable.Map.empty[UUID, World]
+
   implicit class BukkitWorldOps(world: BukkitWorld) extends Aetherizeable[World] {
-    def aetherize: World = new World(world)
+    def aetherize: World = worlds.getOrElseUpdate(world.getUID, new World(world))
   }
 }
 

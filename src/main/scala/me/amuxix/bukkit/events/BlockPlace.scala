@@ -14,7 +14,7 @@ class BlockPlace(block: Block, replacedBlock: Block, player: Player) extends
     block.asInstanceOf[BukkitBlock].bukkitForm.getBlock,
     replacedBlock.asInstanceOf[BukkitBlock].bukkitForm,
     replacedBlock.asInstanceOf[BukkitBlock].bukkitForm.getBlock,
-    player.itemInMainHand.fold[ItemStack](null)(_.asInstanceOf[Item].bukkitForm),
+    player.itemInMainHand.map(_.asInstanceOf[Item].bukkitForm).orNull,
     player.asInstanceOf[BPlayer].bukkitForm,
     true,
     HAND

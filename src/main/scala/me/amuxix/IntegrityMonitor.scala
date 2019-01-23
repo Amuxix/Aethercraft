@@ -44,7 +44,7 @@ object IntegrityMonitor {
     if (destructionBlocks.contains(block)) {
       val rune: Rune with Persistent = destructionBlocks(block)
       removeRune(rune)
-      player.notify(rune.destroyMessage)
+      player.notifyError(rune.destroyMessage)
     }
   }
 
@@ -62,7 +62,7 @@ object IntegrityMonitor {
       }
       if (runeMaterials.contains(block.material)) {
         removeRune(rune)
-        player.notify(rune.destroyMessage)
+        player.notifyError(rune.destroyMessage)
       }
     }
   }

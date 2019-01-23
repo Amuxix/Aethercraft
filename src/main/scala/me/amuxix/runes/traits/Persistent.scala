@@ -35,12 +35,12 @@ trait Persistent extends Rune {
     *
     * @param player Player who triggered the update
     */
-  def update(player: Player): Boolean
+  def update(player: Player): Either[String, Boolean]
 
   /**
     * Default message when a rune is destroyed.
     */
-  val destroyMessage: String = ChatColor.RED + name + " destroyed!"
+  val destroyMessage: String = name + " destroyed!"
 
   /** Adds the list of given blocks to the list of monitored blocks, if any of this blocks is destroyed, the rune
     * they create is destroyed */

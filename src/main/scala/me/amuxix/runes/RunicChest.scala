@@ -27,7 +27,7 @@ case class RunicChest(blocks: Array[Array[Array[Block]]], center: Location, crea
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  override protected def onActivate(activationItem: Item): Boolean =
-    center.block.asInstanceOf[Chest].consumeContents(activator) > 0
+  override protected def onActivate(activationItem: Item): Either[String, Boolean] =
+    Right(center.block.asInstanceOf[Chest].consumeContents(activator) > 0)
 }
 

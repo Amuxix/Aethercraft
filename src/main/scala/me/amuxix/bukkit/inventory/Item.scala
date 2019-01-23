@@ -68,29 +68,15 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
       }.orNull
     }
 
-  private def addToLore(string: String): Unit = {
-    lore = lore match {
-      case None => Seq(string)
-      case Some(lore) => lore :+ string
-    }
-  }
+  private def addToLore(string: String): Unit = lore = lore.toSeq.flatMap(_ :+ string)
 
   private def loreContains(string: String): Boolean =
-    lore match {
-      case None => false
-      case Some(l) => l.contains(string)
-    }
+    lore.exists(_.contains(string))
 
-  override def addRuneEnchant(enchant: Enchant): Boolean = if (enchant.canEnchant(material)) {
-    addToLore(enchant.name + "§k§r")
-    true
-  } else {
-    false
-  }
+  override def addRuneEnchant(enchant: Enchant): Option[String] =
+    enchant.canEnchant(this).toRight(addToLore(enchant.name + "§k§r")).toOption
 
-  override def hasRuneEnchant(enchant: Enchant): Boolean = {
-    loreContains(enchant.name + "§k§r")
-  }
+  override def hasRuneEnchant(enchant: Enchant): Boolean = loreContains(enchant.name + "§k§r")
 
   override def hasDisplayName: Boolean = meta.exists(_.hasDisplayName)
 

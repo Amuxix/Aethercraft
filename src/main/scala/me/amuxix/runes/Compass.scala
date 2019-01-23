@@ -25,22 +25,20 @@ object Compass extends RunePattern {
 
 case class Compass(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Tiered {
 
-  override protected def onActivate(activationItem: Item): Boolean = {
+  override protected def onActivate(activationItem: Item): Either[String, Boolean] = {
     //These lines below change the compass to make a sort of an arrow pointing north
     val arrowForming: Map[Block, Vector3[Int]] = Map(
       (center - SouthEast).block -> South,
       (center - SouthWest).block -> South,
       center.block -> North
     )
-    if (BlockUtils.moveSeveralBy(arrowForming, activator)) {
+    BlockUtils.moveSeveralBy(arrowForming, activator).toLeft {
       if (tierMaterial == Glass) {
         //If player used glass show the current version.
         activationMessage = Aethercraft.fullVersion
       }
-    } else {
-      activationMessage = ChatColor.RED + "Something blocks you from activating this compass."
+      true
     }
-    true
   }
 
   override val shouldUseTrueName: Boolean = false

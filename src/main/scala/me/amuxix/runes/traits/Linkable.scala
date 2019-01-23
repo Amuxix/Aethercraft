@@ -32,22 +32,24 @@ trait Linkable extends Rune {
     * Calculates the signature for this rune
     * @return The signature
     */
-  def calculateSignature(): Int = specialBlocks(Signature).map(_.material.name).sorted.hashCode
+  def calculateSignature: Int = specialBlocks(Signature).map(_.material.name).sorted.hashCode
 
-  var signature: Int = calculateSignature()
+  var signature: Int = calculateSignature
 
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     * @return true if signature is valid, false otherwise
     */
-  def validateSignature(): Boolean
+  def validateSignature: Option[String]
 
   /**
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  override def activate(activationItem: Item): Boolean = {
-    calculateSignature()
-    super.activate(activationItem)
-  }
+  override def activate(activationItem: Item): Either[String, Boolean] =
+  for {
+    _ <- validateSignature.toLeft(())
+    _ = calculateSignature
+    cancel <- super.activate(activationItem)
+  } yield cancel
 }

@@ -1,7 +1,7 @@
 package me.amuxix.runes.traits.enchants
 
 import me.amuxix.Named
-import me.amuxix.material.Material
+import me.amuxix.inventory.Item
 
 /**
   * Created by Amuxix on 09/02/2017.
@@ -11,7 +11,12 @@ import me.amuxix.material.Material
   * This is used by the companion object of runes that add enchants to items
   */
 trait Enchant extends Named {
-  def canEnchant(material: Material): Boolean
+  /**
+    * Check if the given item can be enchanted
+    * @param item Item to check
+    * @return None if it can be enchanted, otherwise a Some with an error message
+    */
+  def canEnchant(item: Item): Option[String]
 }
 
 object Enchant {

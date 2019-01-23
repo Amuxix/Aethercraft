@@ -1,19 +1,19 @@
 package me.amuxix.runes
 
-import me.amuxix.block.Block.Location
-import me.amuxix.bukkit.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
 import me.amuxix._
 import me.amuxix.block.Block
+import me.amuxix.block.Block.Location
+import me.amuxix.bukkit.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
 import me.amuxix.inventory.Item
-import me.amuxix.exceptions.InitializationException
+import me.amuxix.logging.Logger
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
-import me.amuxix.material.Solid
 import me.amuxix.pattern._
-import me.amuxix.runes.traits.{Consumable, Linkable, Tiered}
+import me.amuxix.runes.traits._
 import me.amuxix.runes.waypoints.GenericWaypoint
 
-import scala.math.Numeric.DoubleAsIfIntegral
+import scala.math.log10
+
 
 /**
   * Created by Amuxix on 03/01/2017.
@@ -31,61 +31,65 @@ object Teleporter extends RunePattern {
 }
 
 case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
-  private implicit val doubleAsIfIntegral = DoubleAsIfIntegral
-
-  override def validateSignature(): Boolean = {
-    if (signatureIsEmpty) {
-      throw InitializationException("Signature is empty!")
-    } else if (signatureContains(tierMaterial)) {
-      throw InitializationException(tierMaterial.name + " can't be used on this rune because it is the same as the tier used in rune.")
-    }
-    true
+  override def validateSignature: Option[String] = {
+    Option.when(signatureIsEmpty)("Signature is empty!")
+      .orWhen(signatureIsEmpty)("Signature is empty!")
+      .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this rune because it is the same as the tier used in rune.")
   }
 
   var finalTarget: Position[Double] = _
 
   override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
 
-  override protected def onActivate(activationItem: Item): Boolean = {
-    val possibleTargets: Map[Int, Rune with GenericWaypoint] = Serialization.waypoints
-    val targetWP: Rune with GenericWaypoint = possibleTargets.getOrElse(signature, throw InitializationException("Can't find your destination."))
-
+  override protected def onActivate(activationItem: Item): Either[String, Boolean] = {
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */
-    def target: Location = {
-      for (dist <- 1 to maxDistance) {
-        val possibleTarget: Location = targetWP.center + targetWP.direction * dist
-        if (possibleTarget.block.material.isInstanceOf[Solid] == false) {
-          if (possibleTarget.canFitPlayer) {
-            return targetWP.center + targetWP.direction * dist
-          } else {
-            throw InitializationException("The way is barred on the other side!")
-          }
+    def bounceTarget(target: GenericWaypoint): Either[String, Location] =
+      (1 to maxDistance).toStream
+        .map(target.center + target.direction * _)
+        .collectFirst {
+          case possibleTarget if possibleTarget.block.material.isSolid == false && possibleTarget.canFitPlayer =>
+            Right(possibleTarget)
         }
-      }
-      throw InitializationException("The way is barred on the other side!")
-    }
+        .getOrElse(Left("The way is barred on the other side!"))
 
-    val targetWPTier: Int = {
-      var targetTier = targetWP.tier
-      if (targetWP.center.world != center.world) targetTier += 1
-      targetTier + scala.math.min(0, scala.math.log10(center.distance(target) - 1000).toInt)
-    }
-
-    if (targetWPTier > tier && (tierMaterial != ChorusPlant || tierMaterial != ChorusFlower)) {
-      throw InitializationException("This teleporter is not powerful enough to reach the destination.")
-    } else {
-      val blockCenterOffset: Vector3[Double] = {
-        targetWP.direction match {
+    def calculateFinalTarget(bouncedTarget: Location, targetWaypoint: GenericWaypoint): Position[Double] = {
+      val blockCenterOffset: Vector3[Double] =
+        targetWaypoint.direction match {
           case Up | Down => Vector3[Double](0.5, 0, 0.5)
           case East | West => Vector3[Double](0, 0.5, 0.5)
           case North | South => Vector3[Double](0.5, 0.5, 0)
           case _ => Vector3[Double](0, 0, 0)
         }
-      }
-      finalTarget = Position[Double](target.world, Vector3[Double](target.x, target.y, target.z) + blockCenterOffset)
+      bouncedTarget.toDoublePosition + blockCenterOffset
     }
-    activator.teleportTo(finalTarget, activator.pitch, activator.yaw)
-    true
+
+    def checkTier(target: GenericWaypoint): Option[String] = {
+      /**
+        * This increases required tier by the 1 for each factor of 10 of the distance / 1000
+        * This means if distance is in [1000, 9999], the increase will be 1
+        * if distance is in [10000, 99999], the increase will be 2
+        * if distance is in [100000, 999999], the increase will be 3
+        * etc
+        */
+      val distance = center.distance(target.center)
+      val distanceModifier = if (distance >= 1000) log10(distance / 100).toInt else 0
+      val worldModifier = if (target.center.world != center.world) 1 else 0
+      val requiredTier = target.tier + distanceModifier + worldModifier
+      Option.when(requiredTier > tier && (tierMaterial != ChorusPlant || tierMaterial != ChorusFlower)) {
+        "This teleporter is not powerful enough to reach the destination."
+      }
+    }
+
+    for {
+      targetWaypoint <- Serialization.waypoints.get(signature).toRight("Can't find your destination.")
+      _ <- checkTier(targetWaypoint).toLeft(())
+      bouncedTarget <- bounceTarget(targetWaypoint)
+      finalTarget = calculateFinalTarget(bouncedTarget, targetWaypoint)
+      _ <- activator.teleportTo(finalTarget, activator.pitch, activator.yaw).toLeft(())
+    } yield {
+      this.finalTarget = finalTarget
+      true
+    }
   }
 
   /**

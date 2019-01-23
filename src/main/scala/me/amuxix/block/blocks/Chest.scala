@@ -10,7 +10,7 @@ trait Chest extends Inventory {
 
   override def contents: Seq[Item] = inventory.contents
 
-  override def moveContentsTo(inventory: Inventory): Unit = this.inventory.moveContentsTo(inventory)
+  override def replaceContentsOf(inventory: Inventory): Unit = this.inventory.replaceContentsOf(inventory)
 
   /**
     * Adds an item to the inventory if it can fit there.
@@ -19,7 +19,7 @@ trait Chest extends Inventory {
     *
     * @return true if inventory had space to fit the item
     */
-  override def add(item: Item): Boolean = inventory.add(item)
+  override def add(item: Item): Option[String] = inventory.add(item)
 
   /**
     * Clears the whole inventory

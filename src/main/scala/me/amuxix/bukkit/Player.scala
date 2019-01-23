@@ -32,12 +32,13 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
     }
   }
 
-  override def teleportTo(target: Location, pitch: Float, yaw: Float): Unit = player.foreach { player =>
-    val destination = target.bukkitForm
-    destination.setPitch(pitch)
-    destination.setYaw(yaw)
-    player.teleport(destination)
-  }
+  override def teleportTo(target: Location, pitch: Float, yaw: Float): Option[String] =
+    player.fold(_ => Some("Player is offline"), player => {
+      val destination = target.bukkitForm
+      destination.setPitch(pitch)
+      destination.setYaw(yaw)
+      Option.unless(player.teleport(destination))(Aethercraft.defaultFailureMessage)
+    })
 
   override def pitch: Float = player.fold(_ => 0, _.getLocation.getPitch)
 
@@ -58,6 +59,13 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
         }
       }
   }
+
+  /**
+    * Shows an error to this player
+    *
+    * @param text Message to be sent
+    */
+  override def notifyError(text: String): Unit = notify(ChatColor.DARK_RED + text)
 
   override def location: Option[Location] = player.map(_.getLocation.aetherize).toOption
 

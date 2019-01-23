@@ -1,13 +1,12 @@
 package me.amuxix.pattern
 
+import me.amuxix._
 import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
-import me.amuxix.exceptions.InitializationException
 import me.amuxix.logging.Logger.trace
-import me.amuxix.material.{Material, NoEnergy, Block => MBlock}
+import me.amuxix.material.Material
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.Rune
-import me.amuxix._
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -38,7 +37,7 @@ object Pattern {
                        verticality: Boolean = false,
                        directional: Boolean = false,
                        buildableOnCeiling: Boolean = true,
-                       activatesWith: PartialFunction[Material, Boolean] = { case m if !m.isInstanceOf[MBlock] => true })
+                       activatesWith: PartialFunction[Material, Boolean] = { case m if !m.isBlock => true })
                       (layers: BaseLayer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
     val finalWidth = width match {
@@ -47,14 +46,14 @@ object Pattern {
         if (sqrt.isValidInt) {
           sqrt.toInt
         } else {
-          throw InitializationException("Rune has invalid width!")
+          throw new Exception("Rune has invalid width!")
         }
-      case Some(width) if width % 2 == 0 => throw InitializationException("Rune width needs to be odd!")
+      case Some(width) if width % 2 == 0 => throw new Exception("Rune width needs to be odd!")
       case Some(width) => width
     }
 
     if (layers.exists(_.elements.size % finalWidth != 0)) {
-      throw InitializationException("At least a layer in the pattern does not form a rectangle!")
+      throw new Exception("At least a layer in the pattern does not form a rectangle!")
     }
     val hasTwoMirroredAxis = layers.forall(isMirrored(_, finalWidth))
     val elements = layers.map(_.toElementsArray(finalWidth))
@@ -109,7 +108,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     */
   def centerCanBe(centerMaterial: Material): Boolean = {
     centerElement match {
-      case material: Material if centerMaterial != material || centerMaterial.isInstanceOf[NoEnergy] => false
+      case material: Material if centerMaterial != material || centerMaterial.hasNoEnergy => false
       case Tier if patternMaterials.contains(centerMaterial) => false
       case _ => true
     }
@@ -187,7 +186,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
           //Material different from pattern
           trace("Material does not match")
           return false
-        case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.isInstanceOf[NoEnergy] =>
+        case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.hasNoEnergy =>
           trace("This block cannot be used as a tier material since its a rune material or an unconsumable material")
           return false
         case Tier =>

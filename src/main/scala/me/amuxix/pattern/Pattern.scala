@@ -3,7 +3,6 @@ package me.amuxix.pattern
 import me.amuxix._
 import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
-import me.amuxix.logging.Logger.trace
 import me.amuxix.material.Material
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.Rune
@@ -32,13 +31,14 @@ object Pattern {
     } yield layerArray(j)(w) == layerArray(width - j - 1)(w) && layerArray(h)(i) == layerArray(h)(height - i - 1)).forall(identity)
   }
 
-  def apply[R <: Rune](runeCreator: (Array[Array[Array[Block]]], Location, Player, Direction, Pattern) => R,
-                       width: Option[Int] = None,
-                       verticality: Boolean = false,
-                       directional: Boolean = false,
-                       buildableOnCeiling: Boolean = true,
-                       activatesWith: PartialFunction[Material, Boolean] = { case m if !m.isBlock => true })
-                      (layers: BaseLayer*): Pattern = {
+  def apply[R <: Rune](
+      runeCreator: (Array[Array[Array[Block]]], Location, Player, Direction, Pattern) => R,
+      width: Option[Int] = None,
+      verticality: Boolean = false,
+      directional: Boolean = false,
+      buildableOnCeiling: Boolean = true,
+      activatesWith: PartialFunction[Material, Boolean] = { case m if !m.isBlock => true })
+      (layers: BaseLayer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
     val finalWidth = width match {
       case None =>
@@ -120,119 +120,88 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     * @param boundingCube Cube to look for the pattern in
     * @return The rotation matrix the rune was found in
     */
-  def findRotation(boundingCube: BoundingCube): Option[Matrix4] = {
+  def findMatchingRotation(boundingCube: BoundingCube): Option[Matrix4] = {
     val rotationMatrix = Matrix4.IDENTITY
-    var possibleRotations: Seq[Matrix4] = Seq(rotationMatrix)
-    if (verticality) {
-      possibleRotations :+= rotationMatrix.rotateZ(90)
-      possibleRotations :+= rotationMatrix.rotateX(90)
-    }
-    if (height > 1) {
-      if (verticality) {
-        possibleRotations :+= rotationMatrix.rotateZ(-90)
-        possibleRotations :+= rotationMatrix.rotateX(-90)
+    def rotateZ(degrees: Int) = findMatchingHorizontalRotation(boundingCube, rotationMatrix.rotateZ(degrees))
+    def rotateX(degrees: Int) = findMatchingHorizontalRotation(boundingCube, rotationMatrix.rotateX(degrees))
+
+    findMatchingHorizontalRotation(boundingCube, rotationMatrix)
+      .orFlatWhen(verticality){
+        rotateZ(90)
+        rotateX(90)
+      }.orFlatWhen(height > 1) {
+        Option.flatWhen(verticality) {
+          rotateZ(-90)
+            .orElse(rotateX(-90))
+        }.orFlatWhen(buildableOnCeiling) {
+          rotateX(180)
+        }
       }
-      if (buildableOnCeiling) {
-        possibleRotations :+= rotationMatrix.rotateX(180)
-      }
-    }
-    possibleRotations.find(findHorizontalRotations(boundingCube, _))
   }
 
-  private def findHorizontalRotations(boundingCube: BoundingCube, rotationMatrix: Matrix4): Boolean = {
-    var possibleRotations = Seq(rotationMatrix)
-    if (directional == false) {
-      if (hasTwoMirroredAxis == false) {
-        possibleRotations :+= rotationMatrix.rotateY(90)
-        possibleRotations :+= rotationMatrix.rotateY(180)
-        possibleRotations :+= rotationMatrix.rotateY(270)
+  private def findMatchingHorizontalRotation(boundingCube: BoundingCube, rotationMatrix: Matrix4): Option[Matrix4] = {
+    def rotateY(degrees: Int) = find(boundingCube, rotationMatrix.rotateY(degrees))
+
+    find(boundingCube, rotationMatrix)
+      .orFlatUnless(directional) {
+        Option.flatUnless(hasTwoMirroredAxis) {
+          rotateY(90)
+            .orElse(rotateY(180))
+            .orElse(rotateY(270))
+        }.orFlatWhen(hasTwoMirroredAxis && width != depth)(rotateY(90))
       }
-      if (hasTwoMirroredAxis == true && width != depth) {
-        possibleRotations :+= rotationMatrix.rotateY(90)
-      }
-    }
-    possibleRotations.exists { matchesRotation(boundingCube, _) }
   }
 
-  private def matchesRotation(boundingCube: BoundingCube, rotationMatrix: Matrix4): Boolean = {
-    var firstTier: Option[Material] = None
-    var signature = Set.empty[Material]
-    var key = Set.empty[Material]
-    var notInRune = Set.empty[Material]
-    val offsetVector: Vector3[Int] = offsetVectorFor(boundingCube)
-    val rotate = rotationMatrix.rotateAbout(boundingCube.center) _
-    trace("Bounding cube dimension: " + boundingCube.dimension)
-    trace(s"Pattern dimensions" + Vector3[Int](depth, height, width))
-    trace("Offset Vector: " + offsetVector)
-    trace("Rotation Matrix: " + rotationMatrix)
-    //These offsets represent the difference in dimensions from the bounding cube to this pattern
-    for {
+  /**
+    * This method checks if the blocks in the boundingCube match this pattern,
+    *
+    * A pattern matches a rune if:
+    *  1) All materials specified in the pattern match the materials in the world
+    *  2) All [[MaterialChoice]]s must have a possibility matching the material in the world
+    *  3) All existing tier blocks are of the same material
+    *  4) All existing tier blocks must be of a different material to all of the specified materials and the choices for each [[MaterialChoice]]
+    *  5) Remaining elements must be of a different material from those covered in the above cases
+    *     meaning they must be different from all specific materials, choice for each [[MaterialChoice]] and material used for tier
+    */
+  private def find(boundingCube: BoundingCube, rotationMatrix: Matrix4): Option[Matrix4] = {
+    def rotatedPosition(line: Int, layer: Int, block: Int): Vector3[Int] = {
+      val relativePosition: Vector3[Int] = Vector3(line, layer, block) + offsetVectorFor(boundingCube)
+      rotationMatrix.rotateAbout(boundingCube.center)(relativePosition)
+    }
+
+    val superposition = for {
       //This order ensures the first line checked is the northern most on the lowest layer
-      layer <- 0 until height //Y
-      block <- 0 until width //Z
-      line <- 0 until depth //X
-    } {
-      val relativePosition: Vector3[Int] = Vector3(line, layer, block) + offsetVector
-      val rotatedPosition: Vector3[Int] = rotate(relativePosition)
-      trace(s"Relative Position: $relativePosition")
-      trace(s"Rotated Position: $rotatedPosition")
-      val blockAtRotatedPosition = boundingCube.blockAt(rotatedPosition)
-      val blockMaterial = blockAtRotatedPosition.material
-      trace(s"Block   Type: $blockMaterial")
-      trace(s"Pattern Type: ${elements(layer)(block)(line)}")
-      //Having elements checked in layer > block > line makes the pattern top line be the northern most one
-      elements(layer)(block)(line) match {
-        case material: Material if blockMaterial != material =>
-          //Material different from pattern
-          trace("Material does not match")
-          return false
-        case Tier if patternMaterials.contains(blockMaterial) || blockMaterial.hasNoEnergy =>
-          trace("This block cannot be used as a tier material since its a rune material or an unconsumable material")
-          return false
-        case Tier =>
-          if (firstTier.isDefined && blockMaterial != firstTier.get) {
-            trace("All Tier blocks must be of same material")
-            //All tier blocks must be the same material
-            return false
-          } else {
-            firstTier = Some(blockMaterial)
-            trace("Its a tier block")
-          }
-        case Signature if firstTier.isDefined && firstTier.get == blockMaterial =>
-          trace("This block cannot be used as a signature as its a already material used by the rune or is being used as tier")
-          return false
-        case Key if firstTier.isDefined && firstTier.get == blockMaterial =>
-          trace("This block cannot be used as a key as its a material already used by the rune or is being used as tier")
-          return false
-        case Signature =>
-          signature += blockMaterial
-          trace("Its a Signature block")
-        case Key =>
-          key += blockMaterial
-          trace("Its a Key block")
-        case NotInRune =>
-          notInRune += blockMaterial
-          trace("Its a NotInRune block")
-        case _ =>
-          trace("Material matches")
-      }
+      layer <- Stream.range(0, height) //Y
+      block <- Stream.range(0, width) //Z
+      line <- Stream.range(0, depth) //X
+    } yield {
+      val element = elements(layer)(block)(line)
+      val materialAtRotatedPosition = boundingCube.blockAt(rotatedPosition(line, layer, block)).material
+      element -> materialAtRotatedPosition
     }
 
-    if (firstTier.isDefined) {
-      val specialBlocks: Set[Material] = signature ++ key ++ notInRune
-      if (specialBlocks contains firstTier.get) {
-        //Signature, key and notInRune can't be the same as tier or specific materials
-        return false
-      }
-      if (patternMaterials.exists((specialBlocks ++ firstTier).contains)) {
-        //Checks if any of the special block is a pattern material, we don't want that to avoid possible missmatches
-        return false
-      }
+    lazy val specificMaterialsAndChoices = superposition.collect {
+      case (_: Material, specific) => specific
+      case (_: MaterialChoice, choice) => choice
     }
-    trace("Pattern matches")
-    true
+
+    lazy val tier = superposition.collectFirst {
+      case (`Tier`, tierMaterial) => tierMaterial
+    }
+
+    superposition.collectFirst {
+      case (specific: Material, material) if specific != material =>
+        "Specific materials must match."
+      case (MaterialChoice(possibilities @ _*), material) if possibilities.contains(material) == false =>
+        "Material choice must be one of the possibilities."
+      case (`Tier`, material) if !tier.contains(material) =>
+        "All tier blocks must be of the same material."
+      case (`Tier`, material) if specificMaterialsAndChoices.contains(material) =>
+        "Tier block material must not be one of the pattern specific materials or one of the choices to a MaterialChoice."
+      case (`Signature` | `Key` | `NotInRune`, material) if tier.contains(material) && specificMaterialsAndChoices.contains(material) =>
+        "Signature blocks, Key blocks and blocks nearby must not be of a material used by the rune or the material used as tier."
+    }.toLeft(rotationMatrix).toOption
   }
-
 
   /**
     * Applies the rotation given by the `rotationMatrix` to `point` about the `center` vector

@@ -13,12 +13,16 @@ import org.bukkit.{ChatColor, OfflinePlayer}
 import org.bukkit.entity.{Player => BPlayer}
 import org.bukkit.event.inventory.InventoryType
 
+import scala.collection.mutable
+
 /**
   * Created by Amuxix on 22/11/2016.
   */
 object Player {
+  private val players = mutable.Map.empty[UUID, Player]
+
   implicit class BukkitPlayerOps(player: BPlayer) extends Aetherizeable[Player] {
-    override def aetherize: Player = Player(player.getUniqueId)
+    override def aetherize: Player = players.getOrElseUpdate(player.getUniqueId, Player(player.getUniqueId))
   }
 }
 private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player with BukkitForm[BPlayer] {
@@ -80,4 +84,6 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
   override def itemInOffHand: Option[Item] = inventory.flatMap(_.itemInOffHand)
 
   override def bukkitForm: BPlayer = player.toOption.orNull
+
+
 }

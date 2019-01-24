@@ -5,7 +5,6 @@ import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
 import me.amuxix.inventory.Item
-import me.amuxix.logging.Logger
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
 import me.amuxix.pattern._
@@ -33,7 +32,6 @@ object Teleporter extends RunePattern {
 case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
   override def validateSignature: Option[String] = {
     Option.when(signatureIsEmpty)("Signature is empty!")
-      .orWhen(signatureIsEmpty)("Signature is empty!")
       .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this rune because it is the same as the tier used in rune.")
   }
 
@@ -63,14 +61,14 @@ case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, crea
       bouncedTarget.toDoublePosition + blockCenterOffset
     }
 
+    /**
+      * This increases required tier by the 1 for each factor of 10 of the distance / 1000
+      * This means if distance is in [1000, 9999], the increase will be 1
+      * if distance is in [10000, 99999], the increase will be 2
+      * if distance is in [100000, 999999], the increase will be 3
+      * etc
+      */
     def checkTier(target: GenericWaypoint): Option[String] = {
-      /**
-        * This increases required tier by the 1 for each factor of 10 of the distance / 1000
-        * This means if distance is in [1000, 9999], the increase will be 1
-        * if distance is in [10000, 99999], the increase will be 2
-        * if distance is in [100000, 999999], the increase will be 3
-        * etc
-        */
       val distance = center.distance(target.center)
       val distanceModifier = if (distance >= 1000) log10(distance / 100).toInt else 0
       val worldModifier = if (target.center.world != center.world) 1 else 0

@@ -29,4 +29,11 @@ private[bukkit] class World(val world: BukkitWorld) extends amuxix.World with Bu
   override def bukkitForm: BukkitWorld = world
 
   override def worldFolder: File = world.getWorldFolder
+
+  override def equals(other: Any): Boolean = other match {
+    case that: World => this.uuid == that.uuid
+    case _ => false
+  }
+
+  override def hashCode(): Int = uuid.hashCode()
 }

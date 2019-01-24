@@ -45,9 +45,9 @@ object Matcher {
     trace(s"There are ${filteredPatterns.length} registered patterns with this item and center.")
     val boundingCube = BoundingCube(location, filteredPatterns)
     filteredPatterns.toStream.map { pattern =>
-      pattern.findRotation(boundingCube).map { matrix =>
+      pattern.findMatchingRotation(boundingCube).map { matrix =>
         pattern.createRune(pattern.runeBlocks(boundingCube, matrix.rotateAbout(boundingCube.center)), location, activator, direction)
       }
-    } collectFirst { case Some(pattern) => pattern }
+    } collectFirst { case Some(rune) => rune }
   }
 }

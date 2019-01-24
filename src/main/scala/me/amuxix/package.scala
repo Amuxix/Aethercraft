@@ -14,6 +14,9 @@ package object amuxix {
 
   implicit class OptionOps[T](option: Option[T]) {
     def orWhen(condition: Boolean)(t: => T): Option[T] = option.orElse(Option.when(condition)(t))
+    def orFlatWhen(condition: Boolean)(t: => Option[T]): Option[T] = option.orElse(Option.flatWhen(condition)(t))
+
     def orUnless(condition: Boolean)(t: => T): Option[T] = option.orElse(Option.unless(condition)(t))
+    def orFlatUnless(condition: Boolean)(t: => Option[T]): Option[T] = option.orElse(Option.flatUnless(condition)(t))
   }
 }

@@ -32,14 +32,14 @@ object Teleporter extends RunePattern {
 case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
   override def validateSignature: Option[String] = {
     Option.when(signatureIsEmpty)("Signature is empty!")
-      .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this rune because it is the same as the tier used in rune.")
+      .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this Teleporter because it is the same as the tier used in rune.")
   }
 
   var finalTarget: Position[Double] = _
 
   override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
 
-  override protected def onActivate(activationItem: Item): Either[String, Boolean] = {
+  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */
     def bounceTarget(target: GenericWaypoint): Either[String, Location] =
       (1 to maxDistance).toStream

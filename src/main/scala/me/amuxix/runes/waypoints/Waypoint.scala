@@ -48,7 +48,7 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
 
   override def validateSignature: Option[String] =
     Option.when(signatureIsEmpty)("Signature is empty!")
-    .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this rune because it is the same as the tier used in rune.")
+    .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this Waypoint because it is the same as the tier used in rune.")
     .orWhen(Serialization.waypoints.contains(signature))("Signature already in use.")
 
   /**
@@ -86,7 +86,7 @@ case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creato
     */
   override def destroyRune(): Unit = Serialization.waypoints -= signature
 
-  override protected def onActivate(activationItem: Item): Either[String, Boolean] = {
+  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
     Serialization.waypoints += signature -> this
     Right(true)
   }

@@ -92,10 +92,9 @@ object Serialization {
   private def loadReservoirs(): Unit = {
     val reservoirsFolder = new File(Aethercraft.self.getDataFolder, reservoirsFileName)
     if (thingsExist(reservoirsFolder)) {
-      info("Loading reservoirs")
       load[(Player, EnergyReservoir)](reservoirsFolder, reservoirsFileName).foreach { reservoirs =>
         EnergyReservoir.energyReservoirs ++ reservoirs.toMap
-        info(s"  - Loaded ${reservoirs.size} $reservoirsFileName")
+        info(s"Loaded ${reservoirs.size} $reservoirsFileName")
       }
     }
   }

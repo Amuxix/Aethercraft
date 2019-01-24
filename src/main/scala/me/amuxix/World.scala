@@ -13,10 +13,8 @@ object World {
   implicit val decoder: Decoder[World] = Decoder.forProduct1("uuid")(Aethercraft.getWorld)
 }
 
-trait World {
+trait World extends BlockAt {
   def uuid: UUID
-
-  def blockAt(location: Location): Block
 
   def name: String
 

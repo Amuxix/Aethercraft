@@ -11,9 +11,9 @@ import me.amuxix.runes.Rune
   */
 trait Tool { this: Rune =>
 
-  override def validateActivationItem(activationItem: Item): Option[String] =
+  override def validateActivationItem(activationItem: Option[Item]): Option[String] =
     activationItem match {
-      case item if item.material.isTool => None
+      case Some(item) if item.material.isTool => None
       case _ => Some("This rune must be activated with a tool")
     }
 }

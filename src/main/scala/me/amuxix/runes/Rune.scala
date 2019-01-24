@@ -17,12 +17,13 @@ abstract class Rune extends Named {
   val creator: Player
   val direction: Direction
   val pattern: Pattern
+  //val rotation: Matrix4
 
   /**
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  def activate(activationItem: Item): Either[String, Boolean] =
+  def activate(activationItem: Option[Item]): Either[String, Boolean] =
   for {
     _ <- validateActivationItem(activationItem).toLeft(())
     cancel <- onActivate(activationItem)
@@ -63,14 +64,14 @@ abstract class Rune extends Named {
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  protected def onActivate(activationItem: Item): Either[String, Boolean]
+  protected def onActivate(activationItem: Option[Item]): Either[String, Boolean]
 
   /**
     * Checks if rune can be activated with the given item.
     * @param activationItem Item used to activate this rune
     * @return None if activation item is ok, Some with an error if activation should fail
     */
-  protected def validateActivationItem(activationItem: Item): Option[String] = None
+  protected def validateActivationItem(activationItem: Option[Item]): Option[String] = None
 
   protected var activationMessage: String = name + " activated"
 

@@ -60,7 +60,7 @@ case class TrueName(blocks: Array[Array[Array[Block]]], center: Location, creato
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  override protected def onActivate(activationItem: Item): Either[String, Boolean] =
+  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] =
     if (direction == Self) {
       Left("This rune cannot be automated.")
     } else {

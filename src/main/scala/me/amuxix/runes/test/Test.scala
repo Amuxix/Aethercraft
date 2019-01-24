@@ -38,7 +38,7 @@ case class Test(blocks: Array[Array[Array[Block]]], center: Location, creator: P
     */
   override def validateSignature: Option[String] = None
 
-  override protected def onActivate(activationItem: Item): Either[String, Boolean] = Right(true)
+  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = Right(true)
 
   /**
     * Should this rune use a true name if the activator is wearing one?

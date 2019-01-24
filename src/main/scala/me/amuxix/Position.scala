@@ -2,7 +2,6 @@ package me.amuxix
 
 import io.circe.{Decoder, Encoder}
 import me.amuxix.block.Block
-import me.amuxix.block.Block.Location
 
 import scala.math.{pow, sqrt}
 
@@ -30,7 +29,7 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
 
   def block(implicit ev: T =:= Int): Block = {
     ev(_) // there I used it
-    world.blockAt(this.asInstanceOf[Location])
+    world.blockAt(coordinates.asInstanceOf[Vector3[Int]])
   }
 
   /**

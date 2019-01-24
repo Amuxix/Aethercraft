@@ -10,7 +10,6 @@ import me.amuxix.bukkit._
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
 import me.amuxix.pattern.matching.Matcher
-import org.bukkit.ChatColor
 import org.bukkit.entity.EntityType.DROPPED_ITEM
 import org.bukkit.entity.{Item => BItem}
 import org.bukkit.event.EventHandler
@@ -42,14 +41,14 @@ object Listener extends org.bukkit.event.Listener {
         event.setCancelled(cancel)
         lastActivatedRune -= player.uuid
       } else {
-        val itemInHand: Item = event.getPlayer.getInventory.getItemInMainHand.aetherize
-        if (event.getHand == HAND && itemInHand.material.isSolid == false) {
-          (if (Serialization.persistentRunes.contains(clickedBlockLocation)) {
+        val itemInHand: Option[Item] = Option(event.getItem).map(_.aetherize)
+        if (event.getHand == HAND) {
+          (if (Serialization.persistentRunes.contains(clickedBlockLocation) && itemInHand.fold(true)(_.material.isSolid == false)) {
             //There is a rune at this location, update it.
             Some(Serialization.persistentRunes(clickedBlockLocation).update(player))
           } else {
             //Look for new runes
-            Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace)
+            Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand)
               .map(_.activate(itemInHand))
           }).map {
             case Right(cancel) => event.setCancelled(cancel)

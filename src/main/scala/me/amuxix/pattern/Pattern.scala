@@ -3,9 +3,13 @@ package me.amuxix.pattern
 import me.amuxix._
 import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
+import me.amuxix.inventory.Item
+import me.amuxix.logging.Logger
 import me.amuxix.material.Material
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.Rune
+
+import scala.language.reflectiveCalls
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -37,7 +41,10 @@ object Pattern {
       verticality: Boolean = false,
       directional: Boolean = false,
       buildableOnCeiling: Boolean = true,
-      activatesWith: PartialFunction[Material, Boolean] = { case m if !m.isBlock => true })
+      activatesWith: PartialFunction[Option[Item], Boolean] = {
+        case Some(item) => !item.material.isBlock
+        case None => true //Empty hand
+      })
       (layers: BaseLayer*): Pattern = {
     val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
     val finalWidth = width match {
@@ -76,7 +83,7 @@ object Pattern {
   * @param buildableOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
   */
 abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], hasTwoMirroredAxis: Boolean, verticality: Boolean, directional: Boolean,
-                       buildableOnCeiling: Boolean, val activatesWith: PartialFunction[Material, Boolean]) extends Ordered[Pattern] {
+                       buildableOnCeiling: Boolean, activatesWith: PartialFunction[Option[Item], Boolean]) extends Ordered[Pattern] {
 	/* IN GAME AXIS
 		 *          Y axis
 		 *          |
@@ -107,12 +114,14 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     * @return true if this pattern can be made with the center of the given material
     */
   def centerCanBe(centerMaterial: Material): Boolean = {
-    centerElement match {
+    elements(activationLayer)(width / 2)(depth / 2) match {
       case material: Material if centerMaterial != material || centerMaterial.hasNoEnergy => false
       case Tier if patternMaterials.contains(centerMaterial) => false
       case _ => true
     }
   }
+
+  def canBeActivatedWith(item: Option[Item]): Boolean = activatesWith.applyOrElse(item, (_: Option[Item]) => true)
 
 
   /**
@@ -128,7 +137,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     findMatchingHorizontalRotation(boundingCube, rotationMatrix)
       .orFlatWhen(verticality){
         rotateZ(90)
-        rotateX(90)
+          .orElse(rotateX(90))
       }.orFlatWhen(height > 1) {
         Option.flatWhen(verticality) {
           rotateZ(-90)
@@ -152,6 +161,24 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
       }
   }
 
+  private def centerOffsets(rotation: Matrix4) = {
+    val center = Vector3(depth / 2, activationLayer, width / 2)
+    val zero = Vector3(0, 0, 0)
+    for {
+      //This order ensures the first line checked is the northern most on the lowest layer
+      layer <- Stream.range(0, height) //Y
+      block <- Stream.range(0, width) //Z
+      line <- Stream.range(0, depth) //X
+      element = elements(layer)(block)(line)
+      offset = rotation.rotateAbout(zero)(Vector3(line, layer, block) - center)
+    } yield offset -> element
+  }
+
+  def superimposition(rotation: Matrix4, center: Vector3[Int], world: BlockAt, filter: Element => Boolean = _ => true): Stream[(Element, Block)] =
+    centerOffsets(rotation).collect {
+      case (offset, element) if filter(element) => element -> world.blockAt(center + offset)
+    }
+
   /**
     * This method checks if the blocks in the boundingCube match this pattern,
     *
@@ -164,32 +191,20 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     *     meaning they must be different from all specific materials, choice for each [[MaterialChoice]] and material used for tier
     */
   private def find(boundingCube: BoundingCube, rotationMatrix: Matrix4): Option[Matrix4] = {
-    def rotatedPosition(line: Int, layer: Int, block: Int): Vector3[Int] = {
-      val relativePosition: Vector3[Int] = Vector3(line, layer, block) + offsetVectorFor(boundingCube)
-      rotationMatrix.rotateAbout(boundingCube.center)(relativePosition)
+    val superimposed: Stream[(Element, Material)] = superimposition(rotationMatrix, boundingCube.center, boundingCube).map {
+      case (element, block) => element -> block.material
     }
 
-    val superposition = for {
-      //This order ensures the first line checked is the northern most on the lowest layer
-      layer <- Stream.range(0, height) //Y
-      block <- Stream.range(0, width) //Z
-      line <- Stream.range(0, depth) //X
-    } yield {
-      val element = elements(layer)(block)(line)
-      val materialAtRotatedPosition = boundingCube.blockAt(rotatedPosition(line, layer, block)).material
-      element -> materialAtRotatedPosition
-    }
-
-    lazy val specificMaterialsAndChoices = superposition.collect {
+    lazy val specificMaterialsAndChoices = superimposed.collect {
       case (_: Material, specific) => specific
       case (_: MaterialChoice, choice) => choice
     }
 
-    lazy val tier = superposition.collectFirst {
+    lazy val tier = superimposed.collectFirst {
       case (`Tier`, tierMaterial) => tierMaterial
     }
 
-    superposition.collectFirst {
+    val error = superimposed.collectFirst {
       case (specific: Material, material) if specific != material =>
         "Specific materials must match."
       case (MaterialChoice(possibilities @ _*), material) if possibilities.contains(material) == false =>
@@ -198,9 +213,11 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
         "All tier blocks must be of the same material."
       case (`Tier`, material) if specificMaterialsAndChoices.contains(material) =>
         "Tier block material must not be one of the pattern specific materials or one of the choices to a MaterialChoice."
-      case (`Signature` | `Key` | `NotInRune`, material) if tier.contains(material) && specificMaterialsAndChoices.contains(material) =>
+      case (`Signature` | `Key` | `NotInRune`, material) if tier.contains(material) || specificMaterialsAndChoices.contains(material) =>
         "Signature blocks, Key blocks and blocks nearby must not be of a material used by the rune or the material used as tier."
-    }.toLeft(rotationMatrix).toOption
+    }
+
+    error.toLeft(rotationMatrix).toOption
   }
 
   /**
@@ -261,8 +278,6 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
       el = elements(layer)(block)(line) if el != NotInRune
     } yield Vector3(line, layer, block)
   }
-
-	def centerElement: Element = elements(activationLayer)(width / 2)(depth / 2)
 
   override def compare(that: Pattern): Int = this.volume.compare(that.volume) * -1
 }

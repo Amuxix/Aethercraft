@@ -4,8 +4,7 @@ import java.io.File
 import java.util.UUID
 
 import me.amuxix
-import me.amuxix.Aetherizeable
-import me.amuxix.block.Block.Location
+import me.amuxix.{Aetherizeable, Vector3}
 import me.amuxix.bukkit.block.Block.BukkitBlockOps
 import org.bukkit.{World => BukkitWorld}
 
@@ -22,7 +21,7 @@ object World {
 private[bukkit] class World(val world: BukkitWorld) extends amuxix.World with BukkitForm[BukkitWorld] {
   override def uuid: UUID = world.getUID
 
-  override def blockAt(location: Location): block.Block = world.getBlockAt(location.x, location.y, location.z).aetherize
+  override def blockAt(position: Vector3[Int]): block.Block = world.getBlockAt(position.x, position.y, position.z).aetherize
 
   override def name: String = world.getName
 

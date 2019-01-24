@@ -46,7 +46,7 @@ trait Linkable extends Rune {
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  override def activate(activationItem: Item): Either[String, Boolean] =
+  override def activate(activationItem: Option[Item]): Either[String, Boolean] =
   for {
     _ <- validateSignature.toLeft(())
     _ = calculateSignature

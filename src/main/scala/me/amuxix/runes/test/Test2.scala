@@ -13,7 +13,7 @@ import me.amuxix.{Direction, Player}
   * Created by Amuxix on 01/12/2016.
   */
 object Test2 extends RunePattern {
-  val pattern: Pattern = Pattern(Test2.apply, activatesWith = { case material if material.isSword => true })(
+  val pattern: Pattern = Pattern(Test2.apply, activatesWith = { case Some(item) if item.material.isSword => true })(
     ActivationLayer(
       Glass, NotInRune, EndStone, NotInRune, Glass,
       NotInRune, Glass, NotInRune, Glass, NotInRune,
@@ -25,7 +25,7 @@ object Test2 extends RunePattern {
 }
 
 case class Test2(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Consumable {
-  override protected def onActivate(activationItem: Item): Either[String, Boolean] = Right(true)
+  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = Right(true)
 
   /**
     * Should this rune use a true name if the activator is wearing one?

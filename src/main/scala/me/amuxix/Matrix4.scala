@@ -1,13 +1,15 @@
 package me.amuxix
 
 import scala.math.{cos, sin}
+import io.circe.generic.semiauto.{deriveEncoder, deriveDecoder}
+import io.circe.{Decoder, Encoder}
 
 /**
   * Defines a 4x4 matrix.
   * @param data a 16-item array containing the matrix in row-major
   *             order, i.e. indices 0-3 are the first row, 4-7 the second row, etc.
   */
-class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
+case class Matrix4 (data: Array[Int]) {
 
   if (data.length != 16)
     throw new IllegalArgumentException("Dim of matrix array != 16")
@@ -30,7 +32,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     newData
   }
 
-  def *(right: Matrix4) = new Matrix4(mult(data, right.data))
+  def *(right: Matrix4) = Matrix4(mult(data, right.data))
 
   def *(u: Vector3[Int]): Vector3[Int] = {
     Vector3(u.x * this(0, 0) + u.y * this(0, 1) + u.z * this(0, 2) + this(0, 3),
@@ -176,7 +178,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
       for (i <- 0 until 16) {
         newData(i) /= det
       }
-      new Matrix4(newData)
+      Matrix4(newData)
     }
   }
 
@@ -193,7 +195,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
         newData(idx(i, j)) = data(idx(j, i))
       }
     }
-    new Matrix4(newData)
+    Matrix4(newData)
   }
 
   /**
@@ -203,7 +205,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param degrees the Euler angles of the rotation; rotation is performed in XYZ order
     * @return the new transformation matrix
     */
-  def rotate(degrees: Vector3[Int]) = new Matrix4(mult(Matrix4.rotate(degrees).data, data))
+  def rotate(degrees: Vector3[Int]) = Matrix4(mult(Matrix4.rotate(degrees).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
@@ -212,7 +214,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param degrees the degrees to rotate clockwise along the +X-axis
     * @return the new transformation matrix
     */
-  def rotateX(degrees: Int) = new Matrix4(mult(Matrix4.rotateX(degrees).data, data))
+  def rotateX(degrees: Int) = Matrix4(mult(Matrix4.rotateX(degrees).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
@@ -221,7 +223,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param degrees the degrees to rotate clockwise along the +Y-axis
     * @return the new transformation matrix
     */
-  def rotateY(degrees: Int) = new Matrix4(mult(Matrix4.rotateY(degrees).data, data))
+  def rotateY(degrees: Int) = Matrix4(mult(Matrix4.rotateY(degrees).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
@@ -230,7 +232,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param degrees the degrees to rotate clockwise along the +Z-axis
     * @return the new transformation matrix
     */
-  def rotateZ(degrees: Int) = new Matrix4(mult(Matrix4.rotateZ(degrees).data, data))
+  def rotateZ(degrees: Int) = Matrix4(mult(Matrix4.rotateZ(degrees).data, data))
 
 
   /**
@@ -249,7 +251,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param t the direction to translate in
     * @return the new transformation matrix
     */
-  def translate(t: Vector3[Int]) = new Matrix4(mult(Matrix4.translate(t).data, data))
+  def translate(t: Vector3[Int]) = Matrix4(mult(Matrix4.translate(t).data, data))
 
   /**
     * Produces a new transformation matrix that does all of the previous transformations,
@@ -258,7 +260,7 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param s the amount to scale along each axis
     * @return the new transformation matrix
     */
-  def scale(s: Vector3[Int]) = new Matrix4(mult(Matrix4.scale(s).data, data))
+  def scale(s: Vector3[Int]) = Matrix4(mult(Matrix4.scale(s).data, data))
 
   /**
     * Gets the value of the matrix at the specified translation.
@@ -266,13 +268,13 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
     * @param col the column of the desired value
     * @return the desired value
     */
-  def apply(row: Int, col: Int) = data(idx(row, col))
+  def apply(row: Int, col: Int): Int = data(idx(row, col))
 
   /**
     * Gets the value of the parameter at the given time.
     * @return the value of the parameter
     */
-  def apply() = this
+  def apply(): Matrix4 = this
 
   override def toString: String = {
     val m00 = apply(0, 0)
@@ -300,12 +302,14 @@ class Matrix4(val data: Array[Int] = Array.ofDim[Int](16)) {
 }
 
 object Matrix4 {
+  implicit val encoder: Encoder[Matrix4] = deriveEncoder
+  implicit val decoder: Decoder[Matrix4] = deriveDecoder
 
   /**
     * The identity matrix. When any matrix M is right- or left-multiplied
     * by the identity, M is returned.
     */
-  val IDENTITY = new Matrix4(Array(
+  val IDENTITY = Matrix4(Array(
     1, 0, 0, 0,
     0, 1, 0, 0,
     0, 0, 1, 0,
@@ -316,7 +320,7 @@ object Matrix4 {
     * The matrix composed of all zero values. When any matrix M is right- or
     * left-multiplied by the zero matrix, the zero matrix is returned.
     */
-  val ZERO = new Matrix4(Array(
+  val ZERO = Matrix4(Array(
     0, 0, 0, 0,
     0, 0, 0, 0,
     0, 0, 0, 0,
@@ -331,11 +335,11 @@ object Matrix4 {
     * @param degrees the angle to rotate
     * @return the rotation matrix
     */
-  def rotateX(degrees: Int) = {
+  def rotateX(degrees: Int): Matrix4 = {
     val c: Int = cos(degrees.toRadians).round.toInt
     val s: Int = sin(degrees.toRadians).round.toInt
 
-    new Matrix4(Array(
+    Matrix4(Array(
       1, 0,  0, 0,
       0, c, -s, 0,
       0, s,  c, 0,
@@ -351,11 +355,11 @@ object Matrix4 {
     * @param degrees the angle to rotate
     * @return the rotation matrix
     */
-  def rotateY(degrees: Int) = {
+  def rotateY(degrees: Int): Matrix4 = {
     val c: Int = cos(degrees.toRadians).round.toInt
     val s: Int = sin(degrees.toRadians).round.toInt
 
-    new Matrix4(Array(
+    Matrix4(Array(
       c,  0, s, 0,
       0,  1, 0, 0,
       -s, 0, c, 0,
@@ -371,11 +375,11 @@ object Matrix4 {
     * @param degrees the angle to rotate
     * @return the rotation matrix
     */
-  def rotateZ(degrees: Int) = {
+  def rotateZ(degrees: Int): Matrix4 = {
     val c: Int = cos(degrees.toRadians).round.toInt
     val s: Int = sin(degrees.toRadians).round.toInt
 
-    new Matrix4(Array(
+    Matrix4(Array(
       c, -s,0, 0,
       s, c, 0, 0,
       0, 0, 1, 0,
@@ -389,7 +393,7 @@ object Matrix4 {
     * @param degrees a vector containing the rotation orders
     * @return the rotation matrix
     */
-  def rotate(degrees: Vector3[Int]) = {
+  def rotate(degrees: Vector3[Int]): Matrix4 = {
     rotateZ(degrees.z) * rotateY(degrees.y) * rotateX(degrees.x)
   }
 
@@ -398,8 +402,8 @@ object Matrix4 {
     * @param amount the amount to translate along each axis
     * @return the translation matrix
     */
-  def translate(amount: Vector3[Int]) = {
-    new Matrix4(Array(
+  def translate(amount: Vector3[Int]): Matrix4 = {
+    Matrix4(Array(
       1, 0, 0, amount.x,
       0, 1, 0, amount.y,
       0, 0, 1, amount.z,
@@ -412,8 +416,8 @@ object Matrix4 {
     * @param factor the factor to scale by along each axis
     * @return the scaling matrix
     */
-  def scale(factor: Vector3[Int]) = {
-    new Matrix4(Array(
+  def scale(factor: Vector3[Int]): Matrix4 = {
+    Matrix4(Array(
       factor.x, 0,        0,        0,
       0,        factor.y, 0,        0,
       0,        0,        factor.z, 0,

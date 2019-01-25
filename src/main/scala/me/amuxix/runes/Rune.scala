@@ -12,12 +12,11 @@ import me.amuxix.pattern._
   * Created by Amuxix on 22/11/2016.
   */
 abstract class Rune extends Named {
-  val blocks: Array[Array[Array[Block]]]
   val center: Location
   val creator: Player
   val direction: Direction
+  val rotation: Matrix4
   val pattern: Pattern
-  //val rotation: Matrix4
 
   /**
     * This is where the rune effects when the rune is first activated go.
@@ -77,11 +76,11 @@ abstract class Rune extends Named {
 
   protected def notifyActivator(): Unit = activator.notify(activationMessage)
 
-  protected def logRuneActivation(): Unit = info(s"${activator.name} activated $name at $center")
+  protected def logRuneActivation(): Unit = info(s"${activator.name} activated ${if ("aeiouy".contains(name.head)) "an" else "a"} $name at $center")
 
-  protected def specialBlocks(element: Element): Seq[Block] = pattern.specialBlockVectors(element).map(blockAt)
+  protected def allRuneBlocks: Seq[Block] = pattern.allRuneBlocks(rotation, center)
 
-  protected def nonSpecialBlocks: Seq[Block] = pattern.nonSpecialBlockVectors.map(blockAt)
+  protected def specialBlocks(element: Element): Seq[Block] = pattern.specialBlocks(rotation, center, element)
 
-  protected[runes] def blockAt(position: Vector3[Int]): Block = blocks(position.x)(position.y)(position.z)
+  protected def nonSpecialBlocks: Seq[Block] = pattern.nonSpecialBlocks(rotation, center)
 }

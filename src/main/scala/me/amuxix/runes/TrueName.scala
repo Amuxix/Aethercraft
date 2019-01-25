@@ -54,7 +54,7 @@ object TrueName extends RunePattern with Enchant with BlockPlaceTrigger {
     }
 }
 
-case class TrueName(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Consumable {
+case class TrueName(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Consumable {
   override val shouldUseTrueName: Boolean = false
 
   /**

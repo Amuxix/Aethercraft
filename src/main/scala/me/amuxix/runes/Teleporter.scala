@@ -29,7 +29,7 @@ object Teleporter extends RunePattern {
   )
 }
 
-case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
+case class Teleporter(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
   override def validateSignature: Option[String] = {
     Option.when(signatureIsEmpty)("Signature is empty!")
       .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this Teleporter because it is the same as the tier used in rune.")
@@ -37,7 +37,7 @@ case class Teleporter(blocks: Array[Array[Array[Block]]], center: Location, crea
 
   var finalTarget: Position[Double] = _
 
-  override def logRuneActivation(): Unit = info(activator.name + " teleport from " + center + " to " + finalTarget)
+  override def logRuneActivation(): Unit = info(activator.name + " teleported from " + center + " to " + finalTarget)
 
   override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */

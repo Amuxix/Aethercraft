@@ -10,7 +10,7 @@ import me.amuxix.runes.Rune
   * Defines a trait for runes that can have all their blocks consumed, ie: faith when activated consumes all blocks
   */
 trait Consumable extends Rune {
-	def consumeRuneBlocks(): Unit = pattern.allRuneBlockVectors.map(blockAt).foreach(_.consume(activator))
-  def consumeSignatureBlocks(): Unit = pattern.specialBlockVectors(Signature).map(blockAt).foreach(_.consume(activator))
-  def consumeKeyBlocks(): Unit = pattern.specialBlockVectors(Key).map(blockAt).foreach(_.consume(activator))
+	def consumeRuneBlocks(): Unit = allRuneBlocks.foreach(_.consume(activator))
+  def consumeSignatureBlocks(): Unit = specialBlocks(Signature).foreach(_.consume(activator))
+  def consumeKeyBlocks(): Unit = specialBlocks(Key).foreach(_.consume(activator))
 }

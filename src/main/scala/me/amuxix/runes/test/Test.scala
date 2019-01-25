@@ -2,7 +2,7 @@ package me.amuxix.runes.test
 
 import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
-import me.amuxix.{Direction, Player}
+import me.amuxix.{Direction, Matrix4, Player}
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
@@ -30,7 +30,7 @@ object Test extends RunePattern {
   )
 }
 
-case class Test(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
+case class Test(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     *

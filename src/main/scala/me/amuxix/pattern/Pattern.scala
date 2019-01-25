@@ -4,12 +4,9 @@ import me.amuxix._
 import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
-import me.amuxix.logging.Logger
 import me.amuxix.material.Material
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.runes.Rune
-
-import scala.language.reflectiveCalls
 
 /**
   * Created by Amuxix on 21/11/2016.
@@ -36,7 +33,7 @@ object Pattern {
   }
 
   def apply[R <: Rune](
-      runeCreator: (Array[Array[Array[Block]]], Location, Player, Direction, Pattern) => R,
+      runeCreator: (Location, Player, Direction, Matrix4, Pattern) => R,
       width: Option[Int] = None,
       verticality: Boolean = false,
       directional: Boolean = false,
@@ -65,8 +62,8 @@ object Pattern {
     val hasTwoMirroredAxis = layers.forall(isMirrored(_, finalWidth))
     val elements = layers.map(_.toElementsArray(finalWidth))
     new Pattern(activationLayer, elements, hasTwoMirroredAxis, verticality, directional, buildableOnCeiling, activatesWith) {
-      override def createRune(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction): Rune = {
-        runeCreator(blocks, center, creator, direction, this)
+      override def createRune(center: Location, creator: Player, direction: Direction, rotation: Matrix4): Rune = {
+        runeCreator(center, creator, direction, rotation, this)
       }
     }
   }
@@ -102,10 +99,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
   val volume: Int = height * width * depth
 	val patternMaterials: Set[Material] = elements.flatten.flatten.collect { case m: Material => m }.toSet //Set of materials the rune contains
 
-  /**
-    * Attempts to create the rune, may fail.
-    */
-  protected[pattern] def createRune(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction): Rune
+  protected[pattern] def createRune(center: Location, creator: Player, direction: Direction, rotation: Matrix4): Rune
 
 
   /**
@@ -174,7 +168,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     } yield offset -> element
   }
 
-  def superimposition(rotation: Matrix4, center: Vector3[Int], world: BlockAt, filter: Element => Boolean = _ => true): Stream[(Element, Block)] =
+  private def superimposition(rotation: Matrix4, center: Vector3[Int], world: BlockAt, filter: Element => Boolean = _ => true): Stream[(Element, Block)] =
     centerOffsets(rotation).collect {
       case (offset, element) if filter(element) => element -> world.blockAt(center + offset)
     }
@@ -220,64 +214,18 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     error.toLeft(rotationMatrix).toOption
   }
 
-  /**
-    * Applies the rotation given by the `rotationMatrix` to `point` about the `center` vector
-    * @param center A vector to rotate the point about
-    * @param rotationMatrix The matrix that defines the rotation
-    * @param point Point to be rotated
-    * @return A point rotated about the center with the given rotation matrix
-    */
-  def conjugateMatrix(center: Vector3[Int], rotationMatrix: Matrix4, point: Vector3[Int]): Vector3[Int] = {
-    Matrix4.IDENTITY.translate(center) * rotationMatrix * Matrix4.IDENTITY.translate(center * -1) * point
-  }
+  def nonSpecialBlocks(rotation: Matrix4, center: Location): Seq[Block] = superimposition(rotation, center.coordinates, center.world, {
+    case _: Material => true
+    case _: MaterialChoice => true
+    case _ => false
+    }).map(_._2)
 
-  /**
-    * Calculates a vector that gives an offset to the position this pattern is inside the given bounding cube
-    * @param boundingCube Bounding cube that contains the rune
-    * @return OffsetVector
-    */
-  def offsetVectorFor(boundingCube: BoundingCube): Vector3[Int] = {
-    Vector3(boundingCube.dimension - depth,  boundingCube.dimension - lowHeight, boundingCube.dimension - width) / 2
-  }
+  def specialBlocks(rotation: Matrix4, center: Location, element: Element): Seq[Block] = superimposition(rotation, center.coordinates, center.world, {
+    case `element` => true
+    case _ => false
+  }).map(_._2)
 
-  /**
-    * Gets the blocks that belong to this pattern
-    * @param boundingCube Cube this pattern fits in
-    * @return Blocks that are inside the bounding cube that belong to this rune.
-    */
-  def runeBlocks(boundingCube: BoundingCube, rotate: Vector3[Int] => Vector3[Int]): Array[Array[Array[Block]]] = {
-    val offsetVector: Vector3[Int] = offsetVectorFor(boundingCube)
-    Array.tabulate(depth, height, width) { case (x, y, z) =>
-      boundingCube.blockAt(rotate(offsetVector + Vector3(x, y, z)))
-    }
-  }
-
-  def nonSpecialBlockVectors: Seq[Vector3[Int]] = {
-    for {
-      layer <- 0 until height
-      line <- 0 until depth
-      block <- 0 until width
-      el = elements(layer)(block)(line) if el.isInstanceOf[Material]
-    } yield Vector3(line, layer, block)
-  }
-
-  def specialBlockVectors(element: Element): Seq[Vector3[Int]] = {
-    for {
-      layer <- 0 until height
-      line <- 0 until depth
-      block <- 0 until width
-      el = elements(layer)(block)(line) if el == element
-    } yield Vector3(line, layer, block)
-  }
-
-  def allRuneBlockVectors: Seq[Vector3[Int]] = {
-    for {
-      layer <- 0 until height
-      line <- 0 until depth
-      block <- 0 until width
-      el = elements(layer)(block)(line) if el != NotInRune
-    } yield Vector3(line, layer, block)
-  }
+  def allRuneBlocks(rotation: Matrix4, center: Location): Seq[Block] = specialBlocks(rotation, center, NotInRune)
 
   override def compare(that: Pattern): Int = this.volume.compare(that.volume) * -1
 }

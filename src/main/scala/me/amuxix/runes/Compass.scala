@@ -23,7 +23,7 @@ object Compass extends RunePattern {
   )
 }
 
-case class Compass(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Tiered {
+case class Compass(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Tiered {
 
   override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
     //These lines below change the compass to make a sort of an arrow pointing north

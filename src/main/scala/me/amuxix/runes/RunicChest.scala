@@ -1,7 +1,6 @@
 package me.amuxix.runes
 
-import me.amuxix.{Direction, Player}
-import me.amuxix.block.Block
+import me.amuxix.{Direction, Matrix4, Player}
 import me.amuxix.block.Block.Location
 import me.amuxix.material.Material.{Chest, MagmaBlock, Obsidian}
 import me.amuxix.block.blocks.Chest
@@ -18,7 +17,7 @@ object RunicChest extends RunePattern {
   )
 }
 
-case class RunicChest(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune {
+case class RunicChest(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune {
   /**
     * Should this rune use a true name if the activator is wearing one?
     */

@@ -1,13 +1,12 @@
 package me.amuxix.runes
 
-import me.amuxix.{Direction, Player}
+import me.amuxix.{Direction, Matrix4, OptionObjectOps, Player}
 import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{Redstone, RedstoneTorch}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.{Consumable, Tool}
-import me.amuxix.OptionObjectOps
 import me.amuxix.runes.traits.enchants.{BlockBreakTrigger, Enchant}
 
 /**
@@ -30,7 +29,7 @@ object SuperTool extends RunePattern with Enchant with BlockBreakTrigger {
   override def onBlockBreak(player: Player, brokenBlock: Block): Boolean = ???
 }
 
-case class SuperTool(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern) extends Rune with Consumable with Tool {
+case class SuperTool(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Consumable with Tool {
 
   /**
     * Internal activate method that should contain all code to activate a rune.

@@ -1,7 +1,6 @@
 package me.amuxix.runes.waypoints
 
 import me.amuxix.block.Block.Location
-import me.amuxix.block.Block
 import me.amuxix._
 import me.amuxix.inventory.Item
 import me.amuxix.pattern._
@@ -32,14 +31,14 @@ object Waypoint extends RunePattern {
     * @param signature Signature of the waypoint
     * @return A waypoint instance with the given parameters.
     */
-  def deserialize(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, signature: Int): Waypoint = {
-    val waypoint = Waypoint(blocks, center, creator, direction, pattern)
+  def deserialize(center: Location, creator: Player, direction: Direction, rotation: Matrix4, signature: Int): Waypoint = {
+    val waypoint = Waypoint(center, creator, direction, rotation, pattern)
     waypoint.signature = signature
     waypoint
   }
 }
 
-case class Waypoint(blocks: Array[Array[Array[Block]]], center: Location, creator: Player, direction: Direction, pattern: Pattern)
+case class Waypoint(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern)
   extends Rune
           with GenericWaypoint
           with Linkable

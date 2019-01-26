@@ -1,5 +1,9 @@
 package me.amuxix.runes.traits
 
+import cats.data.OptionT
+import cats.effect.IO
+import cats.implicits._
+import me.amuxix.Consumable
 import me.amuxix.block.Block
 import me.amuxix.material.Material
 import me.amuxix.pattern.Tier
@@ -12,11 +16,11 @@ import me.amuxix.runes.Rune
   * Used by runes that have a tier associated with them
   */
 trait Tiered extends Rune {
-  def consumeTierBlocks(): Unit = tierBlocks.foreach(_.consume(activator))
+  def consumeTierBlocks: OptionT[IO, Int] = Consumable.consume[Stream](tierBlocks)
 
-  val tierBlocks: Seq[Block] = specialBlocks(Tier)
+  lazy val tierBlocks: Stream[Block] = filteredRuneBlocksByElement(Tier)
 
-  val tierMaterial: Material = tierBlocks.head.material
+  lazy val tierMaterial: Material = tierBlocks.head.material
 
-	val tier: Int = tierMaterial.tier.get
+  lazy val tier: Int = tierMaterial.tier.get
 }

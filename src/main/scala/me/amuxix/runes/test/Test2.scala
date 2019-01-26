@@ -1,12 +1,13 @@
 package me.amuxix.runes.test
 
-import me.amuxix.block.Block
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.Rune
-import me.amuxix.runes.traits.Consumable
+import me.amuxix.runes.traits.ConsumableBlocks
 import me.amuxix.{Direction, Matrix4, Player}
 
 /**
@@ -24,8 +25,8 @@ object Test2 extends RunePattern {
   )
 }
 
-case class Test2(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Consumable {
-  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = Right(true)
+case class Test2(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with ConsumableBlocks {
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = EitherT.rightT(true)
 
   /**
     * Should this rune use a true name if the activator is wearing one?

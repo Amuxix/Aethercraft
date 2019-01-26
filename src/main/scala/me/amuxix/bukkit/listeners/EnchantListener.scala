@@ -1,24 +1,40 @@
 package me.amuxix.bukkit.listeners
 
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.Direction
 import me.amuxix.bukkit.Player
 import me.amuxix.bukkit.Player.BukkitPlayerOps
 import me.amuxix.bukkit.block.Block
 import me.amuxix.bukkit.block.Block.BukkitBlockOps
+import me.amuxix.bukkit.inventory.Item
+import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
 import me.amuxix.runes.traits.enchants.Enchant._
-import org.bukkit.event.EventHandler
+import org.bukkit.event.{Cancellable, EventHandler, Listener => BukkitListener}
 import org.bukkit.event.EventPriority.LOWEST
 import org.bukkit.event.block.Action._
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.inventory.EquipmentSlot.HAND
 
-object EnchantListener extends org.bukkit.event.Listener {
+object EnchantListener extends BukkitListener {
+  private def runEnchantsAndCancel(enchants: Stream[EitherT[IO, String, Boolean]], event: Cancellable, player: Player): Unit = {
+    val cancel = enchants
+      .map { _.value.map {
+        case Left(error) =>
+          player.notifyError(error)
+          false
+        case Right(cancel) => cancel
+      }}
+      .foldLeft(event.isCancelled)(_ || _.unsafeRunSync())
+    event.setCancelled(cancel)
+  }
 
   @EventHandler(priority = LOWEST)
   def onBlockBreakEvent(event: BlockBreakEvent): Unit = {
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
-    event.setCancelled(blockBreakEnchants.foldLeft(event.isCancelled)(_ || _.onBlockBreak(event.getPlayer.aetherize, event.getBlock.aetherize)))
+    val player = event.getPlayer.aetherize
+    val enchants = blockBreakEnchants.map(_.onBlockBreak(player, event.getBlock.aetherize))
+    runEnchantsAndCancel(enchants, event, player)
   }
 
   @EventHandler(priority = LOWEST)
@@ -26,34 +42,28 @@ object EnchantListener extends org.bukkit.event.Listener {
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
     val player: Player = event.getPlayer.aetherize
     val placedBlock: Block = event.getBlock.aetherize
-    val itemPlaced = if (event.getHand == HAND) {
-      player.itemInMainHand
-    } else {
-      player.itemInOffHand
-    }
-    event.setCancelled(blockPlaceEnchants.foldLeft(event.isCancelled)(_ || _.onBlockPlace(player, placedBlock, event.getBlockAgainst.aetherize, itemPlaced)))
+    val itemPlaced: Option[Item] = Option(event.getItemInHand).map(_.aetherize)
+    val enchants = blockPlaceEnchants.map(_.onBlockPlace(player, placedBlock, event.getBlockAgainst.aetherize, itemPlaced))
+    runEnchantsAndCancel(enchants, event, player)
   }
 
   @EventHandler(priority = LOWEST)
   def onPlayerInteract(event: PlayerInteractEvent): Unit = {
     val player: Player = event.getPlayer.aetherize
     val blockFace: Direction = event.getBlockFace
-    val itemInHand = if (event.getHand == HAND) {
-      player.itemInMainHand
-    } else {
-      player.itemInOffHand
-    }
+    val itemInHand: Option[Item] = Option(event.getItem).map(_.aetherize)
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
-    event.getAction match {
+    val enchants = event.getAction match {
       case RIGHT_CLICK_BLOCK =>
-        event.setCancelled(blockInteractEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onBlockInteract(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
+        blockInteractEnchants.map(_.onBlockInteract(player, itemInHand, event.getClickedBlock.aetherize, blockFace))
       case LEFT_CLICK_BLOCK =>
-        event.setCancelled(blockDamageEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onBlockDamage(player, itemInHand, event.getClickedBlock.aetherize, blockFace)))
+        blockDamageEnchants.map(_.onBlockDamage(player, itemInHand, event.getClickedBlock.aetherize, blockFace))
       case RIGHT_CLICK_AIR =>
-        event.setCancelled(airInteractEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onAirInteract(player, itemInHand)))
+        airInteractEnchants.map(_.onAirInteract(player, itemInHand))
       case LEFT_CLICK_AIR =>
-        event.setCancelled(airSwingEnchants.foldLeft(event.isDoubleCancelled)(_ || _.onAirSwing(player, itemInHand)))
-      case _ => //Do Nothing
+        airSwingEnchants.map(_.onAirSwing(player, itemInHand))
+      case _ => Stream.empty//Do Nothing
     }
+    runEnchantsAndCancel(enchants, event, player)
   }
 }

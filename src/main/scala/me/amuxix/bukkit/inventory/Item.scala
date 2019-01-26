@@ -1,6 +1,6 @@
 package me.amuxix.bukkit.inventory
 
-import me.amuxix.bukkit.BukkitForm
+import me.amuxix.bukkit.{Aethercraft, BukkitForm}
 import me.amuxix.bukkit.Material.{BukkitMaterialOps, MaterialOps}
 import me.amuxix.bukkit.inventory.items.PlayerHead
 import me.amuxix.material.Material
@@ -68,7 +68,7 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
       }.orNull
     }
 
-  private def addToLore(string: String): Unit = lore = lore.toSeq.flatMap(_ :+ string)
+  private def addToLore(string: String): Unit = lore = lore.fold(Seq(string))(_ :+ string)
 
   private def loreContains(string: String): Boolean =
     lore.exists(_.contains(string))

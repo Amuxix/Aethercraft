@@ -1,11 +1,14 @@
 package me.amuxix.runes.waypoints
 
-import me.amuxix.block.Block.Location
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix._
+import me.amuxix.block.Block.Location
+import me.amuxix.bukkit.Aethercraft
 import me.amuxix.inventory.Item
 import me.amuxix.pattern._
-import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.Rune
+import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.waypoints.WaypointSize.Medium
 
 /**
@@ -24,10 +27,10 @@ object Waypoint extends RunePattern {
 
   /**
     * This knows how to load a waypoint with the given parameters.
-    * @param blocks Blocks that make up the rune
     * @param center Center of the rune
     * @param creator Who owns this rune
     * @param direction Activation this teleport will teleport to
+    * @param rotation The rotation this waypoint was created in
     * @param signature Signature of the waypoint
     * @return A waypoint instance with the given parameters.
     */
@@ -55,8 +58,8 @@ case class Waypoint(center: Location, creator: Player, direction: Direction, rot
     *
     * @return true if rune can be activated, false if an error occurred
     */
-  override def notifyActivator(): Unit = {
-    super.notifyActivator()
+  override def notifyActivator: IO[Unit] = {
+    super.notifyActivator
     activator.notify("Signature is no longer needed here.")
   }
 
@@ -65,17 +68,18 @@ case class Waypoint(center: Location, creator: Player, direction: Direction, rot
     *
     * @param player Player who triggered the update
     */
-  override def update(player: Player): Either[String, Boolean] = {
+  override def update(player: Player): EitherT[IO, String, Boolean] = {
     if (signature == calculateSignature) {
-      Left("This " + getClass.getSimpleName + " is already active.")
+      EitherT.leftT(s"This $name is already active.")
     } else {
-      validateSignature.toLeft {
-        signature = calculateSignature
-        player.notify("Signature updated.")
-        if (player.uuid != activator.uuid) {
-          activator.notifyError("The signature of your " + getClass.getSimpleName + " in " + center + " was changed!")
-        }
-        true
+      EitherT.fromEither {
+        validateSignature
+          .orElse(Option.when(player.uuid != activator.uuid)(s"The signature of your $name in $center was changed!"))
+          .toLeft{
+            signature = calculateSignature
+            this.activationMessage = "Signature updated."
+            true
+          }
       }
     }
   }
@@ -85,9 +89,11 @@ case class Waypoint(center: Location, creator: Player, direction: Direction, rot
     */
   override def destroyRune(): Unit = Serialization.waypoints -= signature
 
-  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
-    Serialization.waypoints += signature -> this
-    Right(true)
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
+    EitherT.rightT {
+      Serialization.waypoints += signature -> this
+      true
+    }
   }
 
   /**

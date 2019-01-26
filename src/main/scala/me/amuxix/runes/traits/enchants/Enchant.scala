@@ -20,11 +20,11 @@ trait Enchant extends Named {
 }
 
 object Enchant {
-  var blockBreakEnchants = Seq.empty[Enchant with BlockBreakTrigger]
-  var blockPlaceEnchants = Seq.empty[Enchant with BlockPlaceTrigger]
+  var blockBreakEnchants: Stream[Enchant with BlockBreakTrigger] = Stream.empty
+  var blockPlaceEnchants: Stream[Enchant with BlockPlaceTrigger] = Stream.empty
 
-  var blockInteractEnchants = Seq.empty[Enchant with BlockInteractTrigger]
-  var blockDamageEnchants = Seq.empty[Enchant with BlockDamageTrigger]
-  var airInteractEnchants = Seq.empty[Enchant with AirInteractTrigger]
-  var airSwingEnchants = Seq.empty[Enchant with AirSwingTrigger]
+  var blockInteractEnchants: Stream[Enchant with BlockInteractTrigger] = Stream.empty
+  var blockDamageEnchants: Stream[Enchant with BlockDamageTrigger] = Stream.empty
+  var airInteractEnchants: Stream[Enchant with AirInteractTrigger] = Stream.empty
+  var airSwingEnchants: Stream[Enchant with AirSwingTrigger] = Stream.empty
 }

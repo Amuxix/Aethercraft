@@ -1,5 +1,7 @@
 package me.amuxix.block
 
+import cats.data.OptionT
+import cats.effect.IO
 import me.amuxix.block.Block.Location
 import me.amuxix.{Player, Vector3}
 
@@ -13,16 +15,15 @@ object BlockUtils {
     * @param player Player who triggered the move
     * @return None if all blocks were moved successfully, a Some with a error message otherwise
     */
-  def moveSeveralTo(blockToTarget: Map[Block, Location], player: Player): Option[String] =
-    blockToTarget
+  def moveSeveralTo(blockToTarget: Map[Block, Location], player: Player): OptionT[IO, String] =
+    OptionT.fromOption[IO](blockToTarget
       .toStream
       .map { case (block, location) => block.canMoveTo(location, player) }
-      .collectFirst { case Some(error) => error}
+      .collectFirst { case Some(error) => error})
       .orElse {
-        blockToTarget
-          .toStream
-          .map { case (block, location) => block.moveTo(location, player) }
-          .collectFirst { case Some(error) => error}
+        blockToTarget.foldLeft(OptionT.none[IO, String]) {
+          case (acc, (block, location)) => acc.orElse(block.moveTo(location, player))
+        }
       }
 
   /**
@@ -32,7 +33,7 @@ object BlockUtils {
     * @param player Player who triggered the move
     * @return None if all blocks were moved successfully, a Some with a error message otherwise
     */
-  def moveSeveral(blocks: Seq[Block], moveVector: Vector3[Int], player: Player): Option[String] = {
+  def moveSeveral(blocks: Seq[Block], moveVector: Vector3[Int], player: Player): OptionT[IO, String] = {
     val blockToTarget = blocks.map { block =>
       (block, block.location + moveVector)
     }.toMap
@@ -45,7 +46,7 @@ object BlockUtils {
     * @param player Player who triggered the move
     * @return None if all blocks were moved successfully, a Some with a error message otherwise
     */
-  def moveSeveralBy(blockToDirection: Map[Block, Vector3[Int]], player: Player): Option[String] = {
+  def moveSeveralBy(blockToDirection: Map[Block, Vector3[Int]], player: Player): OptionT[IO, String] = {
     val blockToTarget = blockToDirection.map {
       case (block, direction) => (block, block.location + direction)
     }

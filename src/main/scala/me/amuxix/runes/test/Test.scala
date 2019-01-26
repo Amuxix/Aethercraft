@@ -1,13 +1,14 @@
 package me.amuxix.runes.test
 
-import me.amuxix.block.Block
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.block.Block.Location
-import me.amuxix.{Direction, Matrix4, Player}
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
-import me.amuxix.runes.traits._
 import me.amuxix.runes.Rune
+import me.amuxix.runes.traits._
+import me.amuxix.{Direction, Matrix4, Player}
 
 /**
   * Created by Amuxix on 26/11/2016.
@@ -30,7 +31,7 @@ object Test extends RunePattern {
   )
 }
 
-case class Test(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
+case class Test(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Tiered with ConsumableBlocks with Linkable {
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     *
@@ -38,7 +39,7 @@ case class Test(center: Location, creator: Player, direction: Direction, rotatio
     */
   override def validateSignature: Option[String] = None
 
-  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = Right(true)
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = EitherT.rightT(true)
 
   /**
     * Should this rune use a true name if the activator is wearing one?

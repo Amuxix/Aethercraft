@@ -50,10 +50,10 @@ object Listener extends org.bukkit.event.Listener {
             //Look for new runes
             Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand)
               .map(_.activate(itemInHand))
-          }).map {
+          }).map { _.value.unsafeRunSync() match {
             case Right(cancel) => event.setCancelled(cancel)
-            case Left(error) => player.notifyError(error)
-          }.foreach(_ => lastActivatedRune += player.uuid -> clickedBlockLocation)
+            case Left(error) => player.notifyError(error).unsafeRunSync()
+          }}.foreach(_ => lastActivatedRune += player.uuid -> clickedBlockLocation)
         }
       }
     }
@@ -67,7 +67,7 @@ object Listener extends org.bukkit.event.Listener {
       if (item.material.hasEnergy) {
         val itemPosition = entity.getLocation.aetherize
         findClosestPlayerTo(itemPosition, Configuration.maxBurnDistance).foreach { player =>
-          item.consume(player)
+          item.consume.flatMap(player.addEnergy).value.unsafeRunSync()
         }
       }
     }

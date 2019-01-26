@@ -1,5 +1,7 @@
 package me.amuxix.bukkit.block
 
+import cats.data.OptionT
+import cats.effect.IO
 import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.Location.BukkitIntPositionOps
 import me.amuxix.bukkit.Material.{BukkitMaterialOps, MaterialOps}
@@ -52,15 +54,16 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
  *
     * @return true if the move was successful, false otherwise.
     */
-  override def move(displacementVector: Vector3[Int], player: Player): Option[String] = moveTo(location + displacementVector, player)
+  override def move(displacementVector: Vector3[Int], player: Player): OptionT[IO, String] = moveTo(location + displacementVector, player)
 
   /**
     * Attempts to move this block to the target location.
     * @param target Location where the block should be moved to.
     * @return true if the move was successful, false otherwise.
     */
-  override def moveTo(target: Location, player: Player): Option[String] =
-    canMoveTo(target, player).orElse {
+  override def moveTo(target: Location, player: Player): OptionT[IO, String] =
+    OptionT.fromOption {
+      canMoveTo(target, player).orElse {
       def moveInventory: Option[String] = this match {
         case inv: Inventory =>
           Try(Block(target, material).asInstanceOf[Chest]).toOption
@@ -83,7 +86,7 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
       targetBlock.setMaterial(material)
         .orElse(moveInventory)
         .orElse(setMaterial(Air))
-    }
+    }}
 
   /**
     * Checks if the player can move this block to the target location, it check if the block can be destroyed at
@@ -112,24 +115,31 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     }
   }
 
-  /**
-    * Consumes this block and gives energy to the player
-    *
-    * @param player Player who receives the energy for consuming this block
-    * @return Energy received by the player, 0 if material cannot be consumed
-    */
-  override def consume(player: Player): Int = (material match {
+  private def replaceMaterial: Option[Material] = material match {
+    case `Stone` => Some(Air)
     case m if m.hasEnergy && m.isAttachable => Some(Air)
     case m if m.hasEnergy && m.isSolid => Some(Stone)
     case m if m.hasEnergy && m.isSolid == false => Some(Air)
     case _ => None
-  }).fold(0) { mat =>
-    this match {
-      case inv: Inventory => inv.consumeContents(player)
-      case _ => //Do nothing
+  }
+
+  /**
+    * Changes this material to air or stone depending on if the material is solid or not and returns the worth of this block.
+    * If this block has an inventory and one of the items has no energy it will do nothing
+    * @return An IO that when ran tries to consume this block
+    */
+  override def consume: OptionT[IO, Int] = OptionT.fromOption[IO](replaceMaterial).flatMap { mat =>
+    val consumeInventory= this match {
+      case inv: Inventory => inv.consume
+      case _ => OptionT.pure[IO](0)
     }
-    setMaterial(mat)
-    player.addEnergy(material.energy.getOrElse(0))
+    for {
+      inventoryEnergy <- consumeInventory
+      materialEnergy <- OptionT.fromOption[IO](material.energy)
+    } yield {
+      setMaterial(mat)
+      inventoryEnergy + materialEnergy
+    }
   }
 
   override def toString: String = s"(${location.toString}, ${material.toString})"

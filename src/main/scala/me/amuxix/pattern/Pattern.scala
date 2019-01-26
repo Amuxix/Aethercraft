@@ -214,18 +214,21 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     error.toLeft(rotationMatrix).toOption
   }
 
-  def nonSpecialBlocks(rotation: Matrix4, center: Location): Seq[Block] = superimposition(rotation, center.coordinates, center.world, {
+  def nonSpecialBlocks(rotation: Matrix4, center: Location): Stream[Block] = superimposition(rotation, center.coordinates, center.world, {
     case _: Material => true
     case _: MaterialChoice => true
     case _ => false
     }).map(_._2)
 
-  def specialBlocks(rotation: Matrix4, center: Location, element: Element): Seq[Block] = superimposition(rotation, center.coordinates, center.world, {
+  def specialBlocks(rotation: Matrix4, center: Location, element: Element): Stream[Block] = superimposition(rotation, center.coordinates, center.world, {
     case `element` => true
     case _ => false
   }).map(_._2)
 
-  def allRuneBlocks(rotation: Matrix4, center: Location): Seq[Block] = specialBlocks(rotation, center, NotInRune)
+  def allRuneBlocks(rotation: Matrix4, center: Location): Stream[Block] = superimposition(rotation, center.coordinates, center.world, {
+    case `NotInRune` => false
+    case _ => true
+  }).map(_._2)
 
   override def compare(that: Pattern): Int = this.volume.compare(that.volume) * -1
 }

@@ -1,9 +1,15 @@
 package me.amuxix.inventory
 
-import me.amuxix.Player
+import cats.data.OptionT
+import cats.effect.IO
+import cats.implicits._
+import me.amuxix.Consumable
 
-trait Inventory {
+
+trait Inventory extends Consumable {
   def isFull: Boolean
+
+  def isEmpty: Boolean = contents.isEmpty
 
   def contents: Seq[Item]
 
@@ -35,17 +41,9 @@ trait Inventory {
   }
 
   /**
-    * Consumes all items with Some energy
-    * @param player Player to give the energy to
-    * @return The energy given to the player
+    * Removes or replaces this from wherever it may be and returns its energy value
+    *
+    * @return The energy value
     */
-  def consumeContents(player: Player): Int = {
-    val totalEnergy = contents.foldLeft(0) {
-      case (acc, item) => acc + item.energy.fold(0) { energy =>
-        item.destroy()
-        energy
-      }
-    }
-    player.addEnergy(totalEnergy)
-  }
+  override def consume: OptionT[IO, Int] = Consumable.consume[List](contents.toList)
 }

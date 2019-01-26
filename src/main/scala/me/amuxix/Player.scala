@@ -2,6 +2,8 @@ package me.amuxix
 
 import java.util.UUID
 
+import cats.data.OptionT
+import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix.Player.Location
 import me.amuxix.bukkit.{Player => BPlayer}
@@ -16,7 +18,7 @@ object Player {
 trait Player {
   def uuid: UUID
 
-  def teleportTo(target: Location, pitch: Float, yaw: Float): Option[String]
+  def teleportTo(target: Location, pitch: Float, yaw: Float): OptionT[IO, String]
 
   def pitch: Float
 
@@ -27,20 +29,22 @@ trait Player {
     *
     * @param text Message to be sent
     */
-  def notify(text: String): Unit
+  def notify(text: String): IO[Unit]
 
   /**
     * Shows an error to this player
     *
     * @param text Message to be sent
     */
-  def notifyError(text: String): Unit
+  def notifyError(text: String): IO[Unit]
 
   def location: Option[Any]
 
   def name: String
 
   def inventory: Option[PlayerInventory]
+
+  def add(item: Item): OptionT[IO, String] = OptionT.fromOption(inventory.flatMap(_.add(item)))
 
   def helmet: Option[Item]
 
@@ -50,9 +54,9 @@ trait Player {
 
   private lazy val energyReservoir: EnergyReservoir = EnergyReservoir(this)
 
-  def addEnergy(energy: Int): Int = energyReservoir.add(energy)
+  def addEnergy(energy: Int): OptionT[IO, String] = energyReservoir.add(energy)
 
   def hasAtLeast(energy: Int): Boolean = energyReservoir.hasAtLeast(energy)
 
-  def removeEnergy(energy: Int): Int = energyReservoir.remove(energy)
+  def removeEnergy(energy: Int): OptionT[IO, String] = energyReservoir.remove(energy)
 }

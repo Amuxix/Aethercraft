@@ -1,10 +1,12 @@
 package me.amuxix.runes
 
-import me.amuxix.block.Block.Location
+import cats.data.{EitherT, OptionT}
+import cats.effect.IO
 import me.amuxix._
 import me.amuxix.block.Block
-import me.amuxix.inventory.items.PlayerHead
+import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
+import me.amuxix.inventory.items.PlayerHead
 import me.amuxix.logging.Logger.info
 import me.amuxix.pattern._
 
@@ -22,13 +24,13 @@ abstract class Rune extends Named {
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  def activate(activationItem: Option[Item]): Either[String, Boolean] =
+  def activate(activationItem: Option[Item]): EitherT[IO, String, Boolean] =
   for {
-    _ <- validateActivationItem(activationItem).toLeft(())
+    _ <- EitherT.fromEither[IO](validateActivationItem(activationItem).toLeft(()))
     cancel <- onActivate(activationItem)
-    _ = consumeTrueName()
-    _ = logRuneActivation()
-    _ = notifyActivator()
+    _ <- EitherT.liftF(consumeTrueName)
+    _ <- EitherT.liftF(logRuneActivation)
+    _ <- EitherT.liftF(notifyActivator)
   } yield cancel
 
   /**
@@ -53,17 +55,18 @@ abstract class Rune extends Named {
   /**
     * Consumes a true name on the real activator of this rune
     */
-  private def consumeTrueName(): Unit =
-    creator.helmet.collect {
+  private def consumeTrueName: IO[Unit] = {
+    IO(creator.helmet.collect {
       case playerHead: PlayerHead if playerHead.hasRuneEnchant(TrueName) =>
         playerHead.amount -= 1
         creator.notify(s"The magic of this rune is activated in ${playerHead.owner}'s name and the true name shatters")
-    }
+    })
+  }
 
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  protected def onActivate(activationItem: Option[Item]): Either[String, Boolean]
+  protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean]
 
   /**
     * Checks if rune can be activated with the given item.
@@ -74,13 +77,13 @@ abstract class Rune extends Named {
 
   protected var activationMessage: String = name + " activated"
 
-  protected def notifyActivator(): Unit = activator.notify(activationMessage)
+  protected def notifyActivator: IO[Unit] = IO(activator.notify(activationMessage))
 
-  protected def logRuneActivation(): Unit = info(s"${activator.name} activated ${if ("aeiouy".contains(name.head)) "an" else "a"} $name at $center")
+  protected def logRuneActivation: IO[Unit] = info(s"${activator.name} activated ${if ("aeiouy".contains(name.head)) "an" else "a"} $name at $center")
 
-  protected def allRuneBlocks: Seq[Block] = pattern.allRuneBlocks(rotation, center)
+  protected def allRuneBlocks: Stream[Block] = pattern.allRuneBlocks(rotation, center)
 
-  protected def specialBlocks(element: Element): Seq[Block] = pattern.specialBlocks(rotation, center, element)
+  protected def filteredRuneBlocksByElement(element: Element): Stream[Block] = pattern.specialBlocks(rotation, center, element)
 
-  protected def nonSpecialBlocks: Seq[Block] = pattern.nonSpecialBlocks(rotation, center)
+  protected def nonSpecialBlocks: Stream[Block] = pattern.nonSpecialBlocks(rotation, center)
 }

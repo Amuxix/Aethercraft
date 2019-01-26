@@ -1,14 +1,15 @@
 package me.amuxix.runes
 
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.block.Block.Location
-import me.amuxix.{Player, _}
 import me.amuxix.block.{Block, BlockUtils}
 import me.amuxix.bukkit._
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{Air, Glass}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits.Tiered
-import org.bukkit.ChatColor
+import me.amuxix.{Player, _}
 
 /**
   * Created by Amuxix on 02/01/2017.
@@ -25,7 +26,7 @@ object Compass extends RunePattern {
 
 case class Compass(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Tiered {
 
-  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
     //These lines below change the compass to make a sort of an arrow pointing north
     val arrowForming: Map[Block, Vector3[Int]] = Map(
       (center - SouthEast).block -> South,

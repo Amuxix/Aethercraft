@@ -1,10 +1,12 @@
 package me.amuxix.inventory
 
-import me.amuxix.Player
+import cats.data.OptionT
+import cats.effect.IO
+import me.amuxix.Consumable
 import me.amuxix.material.Material
 import me.amuxix.runes.traits.enchants.Enchant
 
-trait Item {
+trait Item extends Consumable {
   val material: Material
 
   def amount: Int
@@ -30,12 +32,12 @@ trait Item {
 
   /**
     * Consumes the item if it has Some energy (even 0), does nothing otherwise
-    * @param player Player to give the energy to
     * @return The energy given to the player, 0 if item had None energy
     */
-  def consume(player: Player): Int = energy.fold(0) { energy =>
-    player.addEnergy(energy)
-    destroy()
-    energy
+  override def consume: OptionT[IO, Int] = OptionT.fromOption {
+    energy.map { energy =>
+      destroy()
+      energy
+    }
   }
 }

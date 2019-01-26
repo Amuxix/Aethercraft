@@ -1,5 +1,7 @@
 package me.amuxix.block
 
+import cats.data.OptionT
+import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix._
 import me.amuxix.block.Block.Location
@@ -14,7 +16,7 @@ object Block {
   implicit val decodeBlock: Decoder[Block] = Decoder.forProduct2("location", "material"){BBlock.apply}
 }
 
-trait Block {
+trait Block extends Consumable {
   val location: Location
   var material: Material
 
@@ -26,7 +28,7 @@ trait Block {
     * @param displacementVector Vector that defines the move.
     * @return true if the move was successful, false otherwise.
     */
-  def move(displacementVector: Vector3[Int], player: Player): Option[String]
+  def move(displacementVector: Vector3[Int], player: Player): OptionT[IO, String]
 
   /**
     * Attempts to move this block to the target location.
@@ -34,7 +36,7 @@ trait Block {
     * @param target Location where the block should be moved to.
     * @return true if the move was successful, false otherwise.
     */
-  def moveTo(target: Location, player: Player): Option[String]
+  def moveTo(target: Location, player: Player): OptionT[IO, String]
 
   /**
     * Checks if the player can move this block to the target location, it check if the block can be destroyed at
@@ -44,12 +46,4 @@ trait Block {
     * @return true if the player can move this block, false otherwise
     */
   def canMoveTo(target: Location, player: Player): Option[String]
-
-  /**
-    * Consumes this block and gives energy to the player
-    *
-    * @param player Player who receives the energy for consuming this block
-    * @return Energy received by the player, 0 if material cannot be consumed
-    */
-  def consume(player: Player): Int
 }

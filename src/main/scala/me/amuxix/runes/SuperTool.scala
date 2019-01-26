@@ -1,12 +1,14 @@
 package me.amuxix.runes
 
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.{Direction, Matrix4, OptionObjectOps, Player}
 import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{Redstone, RedstoneTorch}
 import me.amuxix.pattern._
-import me.amuxix.runes.traits.{Consumable, Tool}
+import me.amuxix.runes.traits.{ConsumableBlocks, Tool}
 import me.amuxix.runes.traits.enchants.{BlockBreakTrigger, Enchant}
 
 /**
@@ -26,15 +28,15 @@ object SuperTool extends RunePattern with Enchant with BlockBreakTrigger {
   override def canEnchant(item: Item): Option[String] = Option.unless(item.material.isTool)("This rune can only be applied to tools.")
 
   /** This should run the effect of the enchant and return whether to cancel the event or not */
-  override def onBlockBreak(player: Player, brokenBlock: Block): Boolean = ???
+  override def onBlockBreak(player: Player, brokenBlock: Block): EitherT[IO, String, Boolean] = ???
 }
 
-case class SuperTool(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Consumable with Tool {
+case class SuperTool(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with ConsumableBlocks with Tool {
 
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
     /*checkActivationItem(activationItem)
     val meta = activationItem.meta
     val lore: Seq[String] = if (meta.hasLore) {
@@ -43,7 +45,7 @@ case class SuperTool(center: Location, creator: Player, direction: Direction, ro
       Seq(name)
     }
     meta.setLore(lore.toList.asJava)*/
-    Right(true)
+    EitherT.rightT(true)
   }
 
   /**

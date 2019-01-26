@@ -13,7 +13,7 @@ import org.bukkit.inventory.meta.SkullMeta
   * Created by Amuxix on 02/02/2017.
   */
 private[bukkit] class PlayerHead(itemStack: ItemStack) extends Item(itemStack) with items.PlayerHead {
-  private def skullMeta = meta.asInstanceOf[SkullMeta]
+  private def skullMeta: SkullMeta = meta.get.asInstanceOf[SkullMeta]
 
   override def hasOwner: Boolean = skullMeta.hasOwner
 

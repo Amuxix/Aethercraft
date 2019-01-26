@@ -2,6 +2,8 @@ package me.amuxix.bukkit
 
 import java.util.UUID
 
+import cats.data.OptionT
+import cats.effect.IO
 import me.amuxix
 import me.amuxix.Player.Location
 import me.amuxix._
@@ -36,12 +38,12 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
     }
   }
 
-  override def teleportTo(target: Location, pitch: Float, yaw: Float): Option[String] =
-    player.fold(_ => Some("Player is offline"), player => {
+  override def teleportTo(target: Location, pitch: Float, yaw: Float): OptionT[IO, String] =
+    player.fold(_ => OptionT.pure("Player is offline"), player => {
       val destination = target.bukkitForm
       destination.setPitch(pitch)
       destination.setYaw(yaw)
-      Option.unless(player.teleport(destination))(Aethercraft.defaultFailureMessage)
+      OptionT.fromOption(Option.unless(player.teleport(destination))(Aethercraft.defaultFailureMessage))
     })
 
   override def pitch: Float = player.fold(_ => 0, _.getLocation.getPitch)
@@ -52,24 +54,25 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
     * Shows a message in the action bar position for the player.
     * @param text Message to be sent
     */
-  override def notify(text: String): Unit =
-    Aethercraft.runTask {
+  override def notify(text: String): IO[Unit] =
+    IO(Aethercraft.runTask {
       player.foreach { player =>
-        val inventoryType = player.getOpenInventory.getType
+        player.sendMessage(ChatColor.GREEN + text)
+        /*val inventoryType = player.getOpenInventory.getType
         if (inventoryType == InventoryType.CRAFTING || inventoryType == InventoryType.CREATIVE) {
           JSONMessage.create(text).color(ChatColor.GREEN).actionbar(player)
         } else {
           player.sendMessage(ChatColor.GREEN + text)
-        }
+        }*/
       }
-  }
+  })
 
   /**
     * Shows an error to this player
     *
     * @param text Message to be sent
     */
-  override def notifyError(text: String): Unit = notify(ChatColor.DARK_RED + text)
+  override def notifyError(text: String): IO[Unit] = notify(ChatColor.DARK_RED + text)
 
   override def location: Option[Location] = player.map(_.getLocation.aetherize).toOption
 

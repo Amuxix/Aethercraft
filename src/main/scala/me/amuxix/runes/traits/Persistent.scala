@@ -1,11 +1,12 @@
 package me.amuxix.runes.traits
 
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.Player
 import me.amuxix.block.Block
 import me.amuxix.IntegrityMonitor
 import me.amuxix.pattern.NotInRune
 import me.amuxix.runes.Rune
-import org.bukkit.ChatColor
 
 /**
   * Created by Amuxix on 26/11/2016.
@@ -23,7 +24,7 @@ trait Persistent extends Rune {
 
   /** Blocks to be monitored for building, if a material that is part of the rune is placed here the rune is destroyed
     */
-  lazy val monitoredBuildBlocks: Seq[Block] = specialBlocks(NotInRune)
+  lazy val monitoredBuildBlocks: Seq[Block] = filteredRuneBlocksByElement(NotInRune)
 
   /**
     * Destroys the rune effect. This should undo all lasting effects this rune introduced
@@ -35,7 +36,7 @@ trait Persistent extends Rune {
     *
     * @param player Player who triggered the update
     */
-  def update(player: Player): Either[String, Boolean]
+  def update(player: Player): EitherT[IO, String, Boolean]
 
   /**
     * Default message when a rune is destroyed.

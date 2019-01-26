@@ -1,5 +1,7 @@
 package me.amuxix.runes.traits
 
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.block.Block
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material
@@ -14,7 +16,7 @@ import me.amuxix.runes.Rune
   * Defines a trait for runes that use signature blocks to link to other stuff: ie: Teleports, Waypoints
   */
 trait Linkable extends Rune {
-  val signatureBlocks: Seq[Block] = specialBlocks(Signature)
+  val signatureBlocks: Seq[Block] = filteredRuneBlocksByElement(Signature)
 
   //This is true if the set only contains true, meaning all blocks are air
   def signatureIsEmpty: Boolean = signatureBlocks.forall(_.material == Air)
@@ -32,7 +34,7 @@ trait Linkable extends Rune {
     * Calculates the signature for this rune
     * @return The signature
     */
-  def calculateSignature: Int = specialBlocks(Signature).map(_.material.name).sorted.hashCode
+  def calculateSignature: Int = filteredRuneBlocksByElement(Signature).map(_.material.name).sorted.hashCode
 
   var signature: Int = calculateSignature
 
@@ -46,9 +48,9 @@ trait Linkable extends Rune {
     * This is where the rune effects when the rune is first activated go.
     * This must always be extended when overriding,
     */
-  override def activate(activationItem: Option[Item]): Either[String, Boolean] =
+  override def activate(activationItem: Option[Item]): EitherT[IO, String, Boolean] =
   for {
-    _ <- validateSignature.toLeft(())
+    _ <- EitherT.fromEither[IO](validateSignature.toLeft(()))
     _ = calculateSignature
     cancel <- super.activate(activationItem)
   } yield cancel

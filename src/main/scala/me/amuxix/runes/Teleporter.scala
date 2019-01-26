@@ -1,7 +1,8 @@
 package me.amuxix.runes
 
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix._
-import me.amuxix.block.Block
 import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.Configuration.{maxBlocksBouncedByTeleporter => maxDistance}
 import me.amuxix.inventory.Item
@@ -29,7 +30,7 @@ object Teleporter extends RunePattern {
   )
 }
 
-case class Teleporter(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Tiered with Consumable with Linkable {
+case class Teleporter(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Tiered with ConsumableBlocks with Linkable {
   override def validateSignature: Option[String] = {
     Option.when(signatureIsEmpty)("Signature is empty!")
       .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this Teleporter because it is the same as the tier used in rune.")
@@ -37,9 +38,9 @@ case class Teleporter(center: Location, creator: Player, direction: Direction, r
 
   var finalTarget: Position[Double] = _
 
-  override def logRuneActivation(): Unit = info(activator.name + " teleported from " + center + " to " + finalTarget)
+  override def logRuneActivation: IO[Unit] = info(s"${activator.name} teleported from $center to $finalTarget")
 
-  override protected def onActivate(activationItem: Option[Item]): Either[String, Boolean] = {
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
     /** Location where this teleport will teleport to. Warns rune activator is cannot find a location */
     def bounceTarget(target: GenericWaypoint): Either[String, Location] =
       (1 to maxDistance).toStream
@@ -79,9 +80,9 @@ case class Teleporter(center: Location, creator: Player, direction: Direction, r
     }
 
     for {
-      targetWaypoint <- Serialization.waypoints.get(signature).toRight("Can't find your destination.")
-      _ <- checkTier(targetWaypoint).toLeft(())
-      bouncedTarget <- bounceTarget(targetWaypoint)
+      targetWaypoint <- EitherT.fromEither[IO](Serialization.waypoints.get(signature).toRight("Can't find your destination."))
+      _ <- EitherT.fromEither[IO](checkTier(targetWaypoint).toLeft(()))
+      bouncedTarget <- EitherT.fromEither[IO](bounceTarget(targetWaypoint))
       finalTarget = calculateFinalTarget(bouncedTarget, targetWaypoint)
       _ <- activator.teleportTo(finalTarget, activator.pitch, activator.yaw).toLeft(())
     } yield {

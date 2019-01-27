@@ -2,7 +2,7 @@ package me.amuxix
 
 import java.util.UUID
 
-import cats.data.OptionT
+import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix.Player.Location
@@ -54,9 +54,9 @@ trait Player {
 
   private lazy val energyReservoir: EnergyReservoir = EnergyReservoir(this)
 
-  def addEnergy(energy: Int): OptionT[IO, String] = energyReservoir.add(energy)
+  def addEnergy(energy: Int): EitherT[IO, String, Int] = energyReservoir.add(energy)
 
   def hasAtLeast(energy: Int): Boolean = energyReservoir.hasAtLeast(energy)
 
-  def removeEnergy(energy: Int): OptionT[IO, String] = energyReservoir.remove(energy)
+  def removeEnergy(energy: Int): EitherT[IO, String, Int] = energyReservoir.remove(energy)
 }

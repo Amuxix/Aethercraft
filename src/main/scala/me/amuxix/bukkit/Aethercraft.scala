@@ -3,10 +3,12 @@ package me.amuxix.bukkit
 import java.util.UUID
 import java.util.logging.Logger
 
+import cats.effect.IO
 import me.amuxix._
 import me.amuxix.bukkit.listeners._
 import me.amuxix.material._
 import me.amuxix.bukkit.World.BukkitWorldOps
+import me.amuxix.logging.Logger.info
 import org.bukkit.event.Event
 import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.{Bukkit, Server}
@@ -47,16 +49,26 @@ class Aethercraft extends JavaPlugin {
     while(Recipe.recipes.count(_.updateResultEnergy) > 0) {
       //Keep updating energy from recipes while at least one energy value is changed.
     }
-    material.Material.values
-      .filterNot(material => material.hasNoEnergy || material.energy.nonEmpty)
-      .foreach { material =>
-        logging.Logger.info(s"Missing energy for $material")
-        Recipe.recipes.filter(_.result == material).foreach(logging.Logger.info)
-      }
-    Serialization.loadEverything()
+    val load = for {
+      _ <- checkMissingMaterialEnergy
+      _ <- Serialization.loadEverything
+    } yield ()
+
+    load.unsafeRunSync()
 	}
 
+  private def checkMissingMaterialEnergy = {
+    material.Material.values.filterNot(material => material.hasNoEnergy || material.energy.nonEmpty).foldLeft(IO.unit) { (acc, material) =>
+      acc.flatMap { _ =>
+        info(s"Missing energy for $material").flatMap { _ =>
+          Recipe.recipes.filter(_.result == material).foldLeft(IO.unit) { (acc, recipe) => acc.flatMap(_ => info(recipe))
+          }
+        }
+      }
+    }
+  }
+
   override def onDisable(): Unit = {
-    Serialization.saveEverything()
+    Serialization.saveEverything.unsafeRunSync()
   }
 }

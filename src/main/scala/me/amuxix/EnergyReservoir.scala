@@ -1,6 +1,6 @@
 package me.amuxix
 
-import cats.data.OptionT
+import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix.logging.Logger
@@ -27,43 +27,39 @@ class EnergyReservoir private(private val player: Player, private var energy: In
     * @param energy Amount of energy to add
     * @return The energy added to this reservoir
     */
-  def add(energy: Int): OptionT[IO, String] = OptionT.fromOption[IO]{
-    Option.when(energy < 0) {
-      "Cannot add negative energy."
-    }.orWhen(energy == 0) {
-      "No energy to add."
-    }.orWhen(this.energy > energy) {
-      "This surpasses your energy cap."
-    }.orElse {
-      if (energy > 0) {
-        Logger.info(s"${player.name} added $energy energy.")
-        player.notify(s"Added $energy energy.")
-      }
+  def add(energy: Int): EitherT[IO, String, Int] =
+    if (energy < 0) {
+      EitherT.leftT("Cannot add negative energy.")
+    } else if (energy == 0) {
+      EitherT.rightT(this.energy)
+    } else if (this.energy + energy > cap) {
+      EitherT.leftT("This surpasses your energy cap.")
+    } else {
       this.energy += energy
-      None
+      EitherT.liftF {
+        for {
+          _ <- Logger.info(s"${player.name} added $energy energy.")
+          _ <- player.notify(s"Added $energy energy.")
+        } yield this.energy
+      }
     }
-  }
 
   /**
     * Attempts to remove energy from a player's reservoir
     * @param energy Amount of energy to add
     * @return The energy removed from this reservoir
     */
-  def remove(energy: Int): OptionT[IO, String] = OptionT.fromOption[IO]{
-    Option.when(energy < 0) {
-      "Cannot remove negative energy."
-    }.orWhen(energy == 0) {
-      "No energy to add."
-    }.orWhen(this.energy > energy) {
-      s"You don't have enough energy, you need at least $energy"
-    }.orElse {
-      if (energy > 0) {
-        Logger.info(s"${player.name} used $energy energy.")
-      }
+  def remove(energy: Int): EitherT[IO, String, Int] =
+    if (energy < 0) {
+      EitherT.leftT("Cannot add negative energy.")
+    } else if (energy == 0) {
+      EitherT.rightT(this.energy)
+    } else if (this.energy > energy) {
+      EitherT.leftT(s"You don't have enough energy, you need at least $energy")
+    } else {
       this.energy -= energy
-      None
+      EitherT.liftF(Logger.info(s"${player.name} used $energy energy.").map(_ => this.energy))
     }
-  }
 
 
   def hasAtLeast(energy: Int): Boolean = this.energy >= energy

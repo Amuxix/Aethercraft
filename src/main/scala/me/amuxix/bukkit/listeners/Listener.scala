@@ -2,6 +2,8 @@ package me.amuxix.bukkit.listeners
 
 import java.util.UUID
 
+import cats.data.EitherT
+import cats.effect.IO
 import me.amuxix.Serialization
 import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.Location.BukkitIntPositionOps
@@ -37,23 +39,28 @@ object Listener extends org.bukkit.event.Listener {
       val player: Player = event.getPlayer.aetherize
       if (event.getHand == OFF_HAND) {
         //If the player activates a rune with the main hand and places a block with the offhand we cancel the block placement.
-        val cancel = lastActivatedRune.exists(_.==((player.uuid, clickedBlockLocation)))
+        val cancel = lastActivatedRune.get(player.uuid).contains(clickedBlockLocation)
         event.setCancelled(cancel)
         lastActivatedRune -= player.uuid
       } else {
         val itemInHand: Option[Item] = Option(event.getItem).map(_.aetherize)
         if (event.getHand == HAND) {
-          (if (Serialization.persistentRunes.contains(clickedBlockLocation) && itemInHand.fold(true)(_.material.isSolid == false)) {
+          (if (Serialization.persistentRunes.contains(clickedBlockLocation) && itemInHand.forall(_.material.isSolid == false)) {
             //There is a rune at this location, update it.
-            Some(Serialization.persistentRunes(clickedBlockLocation).update(player))
+            lastActivatedRune += player.uuid -> clickedBlockLocation
+            Serialization.persistentRunes(clickedBlockLocation).update(player)
           } else {
             //Look for new runes
-            Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand)
-              .map(_.activate(itemInHand))
-          }).map { _.value.unsafeRunSync() match {
-            case Right(cancel) => event.setCancelled(cancel)
-            case Left(error) => player.notifyError(error).unsafeRunSync()
-          }}.foreach(_ => lastActivatedRune += player.uuid -> clickedBlockLocation)
+            Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand).map(_.activate(itemInHand)) match {
+              case None => EitherT.rightT[IO, String](event.isCancelled)
+              case Some(rune) =>
+                lastActivatedRune += player.uuid -> clickedBlockLocation
+                rune
+            }
+          }).value.flatMap {
+            case Right(cancel) => IO(event.setCancelled(cancel))
+            case Left(error) => player.notifyError(error)
+          }.unsafeRunSync()
         }
       }
     }
@@ -67,7 +74,10 @@ object Listener extends org.bukkit.event.Listener {
       if (item.material.hasEnergy) {
         val itemPosition = entity.getLocation.aetherize
         findClosestPlayerTo(itemPosition, Configuration.maxBurnDistance).foreach { player =>
-          item.consume.flatMap(player.addEnergy).value.unsafeRunSync()
+          item.consume.toRight(s"${item.material} has no energy").flatMap(player.addEnergy).value.flatMap {
+            case Right(_) => IO.unit
+            case Left(error) => player.notifyError(error)
+          }.unsafeRunSync()
         }
       }
     }

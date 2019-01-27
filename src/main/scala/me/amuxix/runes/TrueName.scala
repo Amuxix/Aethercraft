@@ -68,7 +68,7 @@ case class TrueName(center: Location, creator: Player, direction: Direction, rot
       EitherT.leftT("This rune cannot be automated.")
     } else {
       for {
-        _ <- consume.flatMap(activator.addEnergy).toLeft(())
+        _ <- EitherT(consume.value.flatMap(optionEnergy => activator.addEnergy(optionEnergy.getOrElse(0)).value))
         _ <- activator.add(TrueName.createTrueNameOf(activator)).toLeft(())
       } yield true
     }

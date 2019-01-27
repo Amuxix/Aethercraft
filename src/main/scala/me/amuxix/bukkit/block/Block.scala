@@ -101,7 +101,7 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
       val targetDestruction = Option.flatWhen(targetBlock.material.isAir) {
         val breakEvent = new BlockBreak(targetBlock, player)
         Aethercraft.callEvent(breakEvent)
-        Option.unless(breakEvent.isCancelled)( s"Failed to break $target")
+        Option.when(breakEvent.isCancelled)( s"Failed to break $target")
       }
       val thisBreak = new BlockBreak(this, player)
       Aethercraft.callEvent(thisBreak)
@@ -109,9 +109,9 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
       val canBuild = new CanBuild(targetBlock, player, state.getBlockData)
       Aethercraft.callEvent(canBuild)
 
-      Option.unless(thisBreak.isCancelled)(s"Failed to break $this")
+      Option.when(thisBreak.isCancelled)(s"Failed to break $this")
         .orElse(targetDestruction)
-        .orElse(Option.when(canBuild.isBuildable)(s"Failed to build $targetBlock"))
+        .orElse(Option.unless(canBuild.isBuildable)(s"Failed to build $targetBlock"))
     }
   }
 

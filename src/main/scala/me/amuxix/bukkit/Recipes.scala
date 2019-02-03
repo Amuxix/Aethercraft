@@ -39,7 +39,7 @@ object Recipes {
       }
   }
 
-  val bukkitRecipes: Set[Recipe] = Aethercraft.server.recipeIterator.asScala
+  val bukkitRecipes: Set[Recipe] = Bukkit.server.recipeIterator.asScala
     .flatMap {
       case recipe: ShapedRecipe =>
         recipe.getChoiceMap.values.asScala.toList.toMaterialList.flatMap { ingredients =>

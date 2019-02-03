@@ -7,10 +7,10 @@ import me.amuxix.block.blocks.Chest
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{Chest, MagmaBlock, Obsidian}
 import me.amuxix.pattern._
-import me.amuxix.{Direction, Matrix4, Player}
+import me.amuxix.{Direction, Energy, Matrix4, Player}
 
 object RunicChest extends RunePattern {
-  val pattern: Pattern = Pattern(RunicChest.apply)(
+  val pattern: Pattern = Pattern(RunicChest.apply, activatesWith = {case _ => true})(
     ActivationLayer(
       MagmaBlock, Obsidian, MagmaBlock,
       Obsidian,   Chest,    Obsidian,
@@ -28,11 +28,13 @@ case class RunicChest(center: Location, creator: Player, direction: Direction, r
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = EitherT {
-    center.block.asInstanceOf[Chest].consume.value.flatMap {
-      case Some(0) => IO(Right(false)) //No energy to add, open the chest
-      case Some(energy) => activator.addEnergy(energy).map(_ => true).value
-      case _ => IO(Right(false))
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
+    EitherT {
+      activator.addMaximumEnergyFrom(center.block.asInstanceOf[Chest].consume).value.flatMap[Either[String, Boolean]] {
+        case Right(Energy(0)) => IO(Right(false)) //No energy to add, open the chest
+        case Right(_) => IO(Right(true))
+        case _ => IO(Right(false))
+      }
     }
   }
 }

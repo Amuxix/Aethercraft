@@ -20,7 +20,7 @@ trait Block extends Consumable {
   val location: Location
   var material: Material
 
-  def setMaterial(material: Material): Option[String]
+  def setMaterial(material: Material): OptionT[IO, String]
 
   /**
     * Attempts to move this block by the displacement vector.

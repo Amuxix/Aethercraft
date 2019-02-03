@@ -1,8 +1,5 @@
 package me.amuxix.runes.traits
 
-import cats.data.OptionT
-import cats.effect.IO
-import cats.implicits._
 import me.amuxix.Consumable
 import me.amuxix.pattern.{Key, Signature}
 import me.amuxix.runes.Rune
@@ -14,7 +11,8 @@ import me.amuxix.runes.Rune
   * Defines a trait for runes that can have all their blocks consumed, ie: faith when activated consumes all blocks
   */
 trait ConsumableBlocks extends Rune with Consumable {
-	override def consume: OptionT[IO, Int] = Consumable.consume[Stream](allRuneBlocks)
-  def consumeSignatureBlocks: OptionT[IO, Int] = Consumable.consume[Stream](filteredRuneBlocksByElement(Signature))
-  def consumeKeyBlocks: OptionT[IO, Int] = Consumable.consume[Stream](filteredRuneBlocksByElement(Key))
+	//override def consumeAtomically: Option[(Energy, OptionT[IO, String])] = Consumable.consumeAtomically[Stream](allRuneBlocks)
+	override def consume: List[(List[ConsumeIO], Option[ConsumeIO])] = allRuneBlocks.toList.flatMap(_.consume)
+  def consumeSignatureBlocks: List[(List[ConsumeIO], Option[ConsumeIO])] = filteredRuneBlocksByElement(Signature).toList.flatMap(_.consume)
+  def consumeKeyBlocks: List[(List[ConsumeIO], Option[ConsumeIO])] = filteredRuneBlocksByElement(Key).toList.flatMap(_.consume)
 }

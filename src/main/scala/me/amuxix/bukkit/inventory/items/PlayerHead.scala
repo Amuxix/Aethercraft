@@ -1,5 +1,6 @@
 package me.amuxix.bukkit.inventory.items
 
+import cats.effect.IO
 import me.amuxix.Player
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.{Player => BPlayer, _}
@@ -13,18 +14,16 @@ import org.bukkit.inventory.meta.SkullMeta
   * Created by Amuxix on 02/02/2017.
   */
 private[bukkit] class PlayerHead(itemStack: ItemStack) extends Item(itemStack) with items.PlayerHead {
-  private def skullMeta: SkullMeta = meta.get.asInstanceOf[SkullMeta]
+  private lazy val skullMeta: SkullMeta = meta.asInstanceOf[SkullMeta]
 
   override def hasOwner: Boolean = skullMeta.hasOwner
 
   override def owner: Option[Player] = Option(skullMeta.getOwningPlayer).map(owner => BPlayer(owner.getUniqueId))
 
-  override def owner_=(player: Player): Unit = {
-    meta = {
-      val newMeta = skullMeta
-      newMeta.setOwningPlayer(Aethercraft.server.getOfflinePlayer(player.uuid))
-      newMeta
-    }
+  override def setOwner(player: Player): IO[Unit] = {
+    val offlinePlayer = Bukkit.server.getOfflinePlayer(player.uuid)
+    skullMeta.setOwningPlayer(offlinePlayer)
+    setMeta(skullMeta)
   }
 
   override def isTrueNameOf(player: Player): Boolean =

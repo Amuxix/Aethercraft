@@ -1,6 +1,6 @@
 package me.amuxix.runes
 
-import cats.data.{EitherT, OptionT}
+import cats.data.EitherT
 import cats.effect.IO
 import me.amuxix._
 import me.amuxix.block.Block
@@ -58,7 +58,7 @@ abstract class Rune extends Named {
   private def consumeTrueName: IO[Unit] = {
     IO(creator.helmet.collect {
       case playerHead: PlayerHead if playerHead.hasRuneEnchant(TrueName) =>
-        playerHead.amount -= 1
+        playerHead.destroy(1)
         creator.notify(s"The magic of this rune is activated in ${playerHead.owner}'s name and the true name shatters")
     })
   }
@@ -77,7 +77,7 @@ abstract class Rune extends Named {
 
   protected var activationMessage: String = name + " activated"
 
-  protected def notifyActivator: IO[Unit] = IO(activator.notify(activationMessage))
+  protected def notifyActivator: IO[Unit] = activator.notify(activationMessage)
 
   protected def logRuneActivation: IO[Unit] = info(s"${activator.name} activated ${if ("aeiouy".contains(name.head)) "an" else "a"} $name at $center")
 

@@ -1,7 +1,7 @@
 package me.amuxix.material
 
 import enumeratum._
-import me.amuxix.Named
+import me.amuxix.{Energy, Named}
 import me.amuxix.material.Generic._
 import me.amuxix.material.Properties._
 import me.amuxix.pattern.Element
@@ -14,19 +14,19 @@ import scala.reflect.ClassTag
   * Created by Amuxix on 04/01/2017.
   */
 
-sealed abstract case class Material(protected var _energy: Option[Int] = None) extends EnumEntry with Element with Named {
-  def this(energy: Int) = this(Some(energy))
+sealed abstract case class Material(protected var _energy: Option[Energy] = None) extends EnumEntry with Element with Named {
+  def this(energy: Energy) = this(Some(energy))
   def this(tier: BaseTier) = this(Some(tier.energy))
 
   lazy val tier: Option[Int] = {
     _energy match {
-      case Some(e) => Some((log(e) / log(E * 2)).round.toInt)
+      case Some(e) => Some((log(e.value) / log(E * 2)).round.toInt)
       case None => None
     }
   }
 
-  def energy: Option[Int] = _energy
-  def energy_=(energy: Int): Unit = {
+  def energy: Option[Energy] = _energy
+  def energy_=(energy: Energy): Unit = {
     require(hasEnergy, s"Something tried to modify energy of $name which has NoEnergy trait.")
     _energy = Some(energy)
   }

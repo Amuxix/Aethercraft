@@ -7,7 +7,6 @@ import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.{Player => BPlayer}
 import org.bukkit.event.block.{BlockPlaceEvent => BukkitBlockPlaceEvent}
 import org.bukkit.inventory.EquipmentSlot.HAND
-import org.bukkit.inventory.ItemStack
 
 class BlockPlace(block: Block, replacedBlock: Block, player: Player) extends
   BukkitBlockPlaceEvent(

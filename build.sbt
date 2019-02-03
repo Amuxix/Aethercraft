@@ -20,11 +20,11 @@ scalacOptions ++= Seq(
   "-Xfuture",                          // Turn on future language features.
   "-Ypartial-unification",             // Enable partial unification in type constructor inference
   "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
-  //"-Xlint",                            // Enables every warning. scala -Xlint:help for a list and explanation
+  "-Xlint",                            // Enables every warning. scala -Xlint:help for a list and explanation
   "-Xlint:_,-unused",                  // Enables every warning except "unused". scala -Xlint:help for a list and explanation
   "-Ywarn-dead-code",                  // Warn when dead code is identified.
   "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
-  //"-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
+  "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
   "-Ywarn-unused:privates",            // Warn if a private member is unused.
   "-Ywarn-unused:locals",              // Warn if a local definition is unused.
   "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
@@ -32,7 +32,7 @@ scalacOptions ++= Seq(
   "-Ybackend-parallelism", "12",        // Maximum worker threads for backend
 )
 
-resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/groups/public/"
+resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
 val circeVersion = "0.11.1"
 libraryDependencies ++= Seq(
   "org.bukkit" % "bukkit" % "1.13.2-R0.1-SNAPSHOT" % Provided,
@@ -57,9 +57,9 @@ resourceGenerators in Compile += Def.task {
     s"""name: Aethercraft
         |version: ${version.value}-$date
         |author: Amuxix
-        |main: me.amuxix.bukkit.Aethercraft
+        |main: me.amuxix.bukkit.Bukkit
         |api-version: 1.13
-     """.stripMargin
+        |""".stripMargin
   IO.write(file, pluginYml)
   Seq(file)
 }.taskValue

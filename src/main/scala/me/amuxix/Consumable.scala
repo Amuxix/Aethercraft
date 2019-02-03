@@ -1,25 +1,31 @@
 package me.amuxix
 
-import cats.Traverse
 import cats.data.OptionT
 import cats.effect.IO
-import cats.implicits._
+
 
 trait Consumable {
+  type ConsumeIO = (Energy, OptionT[IO, String])
   /**
-    * Removes or replaces this from wherever it may be and returns its energy value
-    * @return The energy value
+    * Returns an Option of tuple from energy to an IO that attempts to fully consume this, the IO returns an Option containing any error if it fails.
+    * The outer Option is empty if this can't be consumed.
+    * The difference from [[consume]] and this is that this either consumes this completely or nothing at all.
     */
-  def consume: OptionT[IO, Int]
+  //def consumeAtomically: Option[(Energy, OptionT[IO, String])]
+
+  /**
+    * Returns a ListMap from energy to an IO that attempts to consume this, the IO returns an Option containing any error if it fails.
+    * The listMap is empty if no part of this can be consumed.
+    * The difference from [[consumeAtomically]] and this is that this will consume the maximum it can, even if this means not all is consumed.
+    */
+  def consume: List[(List[ConsumeIO], Option[ConsumeIO])]
 }
 
 object Consumable {
-  def consume[F[_] : Traverse](consumables: F[Consumable]): OptionT[IO, Int] =
-    consumables.map(_.consume).foldLeft(OptionT.pure[IO](0)) {
-      case (accumulator, energyItem) =>
-        for {
-          acc <- accumulator
-          energy <- energyItem
-        } yield acc + energy
+  /*def consumeAtomically[F[_] : Traverse](consumables: F[Consumable]): Option[(Energy, OptionT[IO, String])] =
+    consumables.traverse(_.consumeAtomically).map {
+    _.foldLeft((0 Energy, OptionT.none[IO, String])) {
+      case ((energyAcc, ioAcc), (energy, io)) => (energyAcc + energy, ioAcc.orElse(io))
     }
+  }*/
 }

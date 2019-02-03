@@ -4,7 +4,6 @@ import cats.data.EitherT
 import cats.effect.IO
 import me.amuxix.block.Block.Location
 import me.amuxix.block.{Block, BlockUtils}
-import me.amuxix.bukkit._
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{Air, Glass}
 import me.amuxix.pattern._

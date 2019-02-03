@@ -1,7 +1,7 @@
 package me.amuxix.logging
 
 import cats.effect.IO
-import me.amuxix.bukkit.Aethercraft
+import me.amuxix.Aethercraft
 
 /**
   * Created by Amuxix on 15/12/2016.

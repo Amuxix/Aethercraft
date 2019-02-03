@@ -1,10 +1,11 @@
 package me.amuxix.bukkit
 
+import me.amuxix.bukkit.Bukkit.config
+
 /**
   * Created by Amuxix on 03/01/2017.
   */
 object Configuration {
-  private lazy val config = Aethercraft.self.getConfig
   lazy val maxBlocksBouncedByTeleporter: Int = config.getInt("teleporter.maxBounce", 256)
   // Ores are worth this much more than their item counterparts
   lazy val oreMultiplier: Double = config.getDouble("energy.multipliers.ore", 1.5)

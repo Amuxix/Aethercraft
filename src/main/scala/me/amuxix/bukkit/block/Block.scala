@@ -15,7 +15,7 @@ import me.amuxix.{World => _, _}
 import org.bukkit.block.BlockState
 
 import scala.collection.immutable.HashMap
-import scala.util.Try
+import scala.util._
 
 
 object Block {
@@ -41,7 +41,7 @@ object Block {
 private[bukkit] class Block(val location: Location, var material: Material) extends block.Block with BukkitForm[BlockState] {
   protected val state: BlockState = location.world.asInstanceOf[World].world.getBlockAt(location.x, location.y, location.z).getState
 
-  override def setMaterial(material: Material): Option[String] = {
+  override def setMaterial(material: Material): OptionT[IO, String] = OptionT.fromOption[IO]{
     state.setType(material.bukkitForm)
     this.material = material
     Option.unless(state.update(true))(Aethercraft.defaultFailureMessage)
@@ -62,31 +62,27 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     * @return true if the move was successful, false otherwise.
     */
   override def moveTo(target: Location, player: Player): OptionT[IO, String] =
-    OptionT.fromOption {
-      canMoveTo(target, player).orElse {
-      def moveInventory: Option[String] = this match {
+      OptionT.fromOption[IO](canMoveTo(target, player)).orElse {
+      val moveInventory: OptionT[IO, String] = this match {
         case inv: Inventory =>
-          Try(Block(target, material).asInstanceOf[Chest]).toOption
-            .map { chest =>
-              inv.replaceContentsOf(chest.inventory)
-            } match {
-            case None => Some("Failed to move inventory.")
-            case Some(_) => None
-          }
-        case _ => None
+          Try(Block(target, material).asInstanceOf[Chest]).fold(
+            _ => OptionT.pure[IO]("Failed to move inventory."),
+            chest => OptionT(inv.replaceContentsOf(chest.inventory).map(_ => Option.empty[String]))
+          )
+        case _ => OptionT.none
       }
 
       val targetBlock = target.block.asInstanceOf[Block]
       if (targetBlock.material.isCrushable) {
-        Aethercraft.callEvent(new BlockBreak(target.block, player))
+        Bukkit.callEvent(new BlockBreak(target.block, player))
       }
       val replacedBlock = Block(target, targetBlock.material)
-      Aethercraft.callEvent(new BlockPlace(target.block, replacedBlock, player))
+      Bukkit.callEvent(new BlockPlace(target.block, replacedBlock, player))
 
       targetBlock.setMaterial(material)
         .orElse(moveInventory)
         .orElse(setMaterial(Air))
-    }}
+    }
 
   /**
     * Checks if the player can move this block to the target location, it check if the block can be destroyed at
@@ -100,14 +96,14 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     Option.flatWhen(targetBlock.material.isCrushable) {
       val targetDestruction = Option.flatWhen(targetBlock.material.isAir) {
         val breakEvent = new BlockBreak(targetBlock, player)
-        Aethercraft.callEvent(breakEvent)
+        Bukkit.callEvent(breakEvent)
         Option.when(breakEvent.isCancelled)( s"Failed to break $target")
       }
       val thisBreak = new BlockBreak(this, player)
-      Aethercraft.callEvent(thisBreak)
+      Bukkit.callEvent(thisBreak)
 
       val canBuild = new CanBuild(targetBlock, player, state.getBlockData)
-      Aethercraft.callEvent(canBuild)
+      Bukkit.callEvent(canBuild)
 
       Option.when(thisBreak.isCancelled)(s"Failed to break $this")
         .orElse(targetDestruction)
@@ -115,7 +111,7 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     }
   }
 
-  private def replaceMaterial: Option[Material] = material match {
+  private def replacementMaterial: Option[Material] = material match {
     case `Stone` => Some(Air)
     case m if m.hasEnergy && m.isAttachable => Some(Air)
     case m if m.hasEnergy && m.isSolid => Some(Stone)
@@ -123,40 +119,55 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     case _ => None
   }
 
+
+  private def consumeBlockMaterial: Option[ConsumeIO] =
+    replacementMaterial.flatMap { replacementMaterial =>
+      for {
+        replacementEnergy <- replacementMaterial.energy
+        materialEnergy <- material.energy
+      } yield (materialEnergy - replacementEnergy) -> setMaterial(replacementMaterial)
+    }
+
   /**
     * Changes this material to air or stone depending on if the material is solid or not and returns the worth of this block.
     * If this block has an inventory and one of the items has no energy it will do nothing
     * @return An IO that when ran tries to consume this block
     */
-  override def consume: OptionT[IO, Int] = OptionT.fromOption[IO](replaceMaterial).flatMap { mat =>
-    val consumeInventory= this match {
-      case inv: Inventory => inv.consume
-      case _ => OptionT.pure[IO](0)
+/*  override def consumeAtomically: Option[(Energy, OptionT[IO, String])] = {
+    val consumeInventory: Option[(Energy, OptionT[IO, String])] = this match {
+      case inv: Inventory => inv.consumeAtomically
+      case _ => Some((0 Energy, OptionT.none))
+    }
+    consumeBlockMaterial.flatMap {
+      case (energy, io) => consumeInventory.map {
+        (invEnergy, invIO) => (energy + invEnergy, io)
+      }
     }
     for {
       inventoryEnergy <- consumeInventory
-      materialEnergy <- OptionT.fromOption[IO](material.energy)
-    } yield {
-      setMaterial(mat)
-      inventoryEnergy + materialEnergy
+      blockEnergy <- consumeBlockMaterial
+    } yield inventoryEnergy + blockEnergy
+  }*/
+
+  /**
+    * Returns a List of IO to consume each part individually, this is consumed from left to right
+    */
+  override def consume: List[(List[ConsumeIO], Option[ConsumeIO])] = {
+    val consumeInventory: List[ConsumeIO] = this match {
+      case inv: Inventory => inv.consume.head._1
+      case _ => List.empty
     }
+    List((consumeInventory, consumeBlockMaterial))
   }
 
   override def toString: String = s"(${location.toString}, ${material.toString})"
 
-  def canEqual(other: Any): Boolean = other.isInstanceOf[Block]
-
   override def equals(other: Any): Boolean = other match {
-    case that: Block =>
-      (that canEqual this) &&
-        location.equals(that.location)
+    case that: Block => location.equals(that.location)
     case _ => false
   }
 
-  override def hashCode(): Int = {
-    val state = Seq(location)
-    state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
-  }
+  override def hashCode(): Int = location.hashCode()
 
   override def bukkitForm: BlockState = state
 }

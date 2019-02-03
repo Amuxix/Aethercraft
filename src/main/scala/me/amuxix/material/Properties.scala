@@ -1,4 +1,5 @@
 package me.amuxix.material
+import me.amuxix.Energy
 
 /**
   * Created by Amuxix on 14/02/2017.
@@ -42,7 +43,7 @@ private[material] object Properties {
     /**
       * Energy required to smelt 1 item using this fuel
       */
-    def smeltEnergy: Option[Int] = energy.map(_ * 200 / this.burnTicks)
+    def smeltEnergy: Option[Energy] = energy.map(_ * 200 / this.burnTicks)
 
     /**
       * Number of ticks this fuel lasts for.

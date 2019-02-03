@@ -10,7 +10,7 @@ import me.amuxix.logging.Logger.info
 import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
 import me.amuxix.pattern._
 import me.amuxix.runes.traits._
-import me.amuxix.runes.waypoints.GenericWaypoint
+import me.amuxix.runes.waypoints.{GenericWaypoint, Waypoint}
 
 import scala.math.log10
 
@@ -80,7 +80,7 @@ case class Teleporter(center: Location, creator: Player, direction: Direction, r
     }
 
     for {
-      targetWaypoint <- EitherT.fromEither[IO](Serialization.waypoints.get(signature).toRight("Can't find your destination."))
+      targetWaypoint <- EitherT.fromEither[IO](Waypoint.waypoints.get(signature).toRight("Can't find your destination."))
       _ <- EitherT.fromEither[IO](checkTier(targetWaypoint).toLeft(()))
       bouncedTarget <- EitherT.fromEither[IO](bounceTarget(targetWaypoint))
       finalTarget = calculateFinalTarget(bouncedTarget, targetWaypoint)

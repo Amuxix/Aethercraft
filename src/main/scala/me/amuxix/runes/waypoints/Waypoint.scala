@@ -4,7 +4,6 @@ import cats.data.EitherT
 import cats.effect.IO
 import me.amuxix._
 import me.amuxix.block.Block.Location
-import me.amuxix.bukkit.Aethercraft
 import me.amuxix.inventory.Item
 import me.amuxix.pattern._
 import me.amuxix.runes.Rune
@@ -39,6 +38,9 @@ object Waypoint extends RunePattern {
     waypoint.signature = signature
     waypoint
   }
+
+  /** The map key is the [[me.amuxix.runes.traits.Linkable.signature]] of the waypoint */
+  var waypoints = Map.empty[Int, GenericWaypoint]
 }
 
 case class Waypoint(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern)
@@ -51,17 +53,14 @@ case class Waypoint(center: Location, creator: Player, direction: Direction, rot
   override def validateSignature: Option[String] =
     Option.when(signatureIsEmpty)("Signature is empty!")
     .orWhen(signatureContains(tierMaterial))(s"${tierMaterial.name} can't be used on this Waypoint because it is the same as the tier used in rune.")
-    .orWhen(Serialization.waypoints.contains(signature))("Signature already in use.")
+    .orWhen(Waypoint.waypoints.contains(signature))("Signature already in use.")
 
   /**
     * Checks whether this rune can be activated, should warn activator about the error that occurred
     *
     * @return true if rune can be activated, false if an error occurred
     */
-  override def notifyActivator: IO[Unit] = {
-    super.notifyActivator
-    activator.notify("Signature is no longer needed here.")
-  }
+  override def notifyActivator: IO[Unit] = super.notifyActivator.flatMap(_ => activator.notify("Signature is no longer needed here."))
 
   /**
     * Updates the rune with the new changes and notifies the player who triggered the update
@@ -87,12 +86,13 @@ case class Waypoint(center: Location, creator: Player, direction: Direction, rot
   /**
     * Destroys the rune effect. This should undo all lasting effects this rune introduced.
     */
-  override def destroyRune(): Unit = Serialization.waypoints -= signature
+  override def destroyRune(): Unit = Waypoint.waypoints -= signature
 
   override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
-    EitherT.rightT {
-      Serialization.waypoints += signature -> this
-      true
+    EitherT.liftF {
+      Waypoint.waypoints += signature -> this
+      Serialization.saveWaypoints(true)
+        .map(_ => true)
     }
   }
 

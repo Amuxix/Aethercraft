@@ -44,7 +44,7 @@ trait Player {
 
   def inventory: Option[PlayerInventory]
 
-  def add(item: Item): OptionT[IO, String] = OptionT.fromOption(inventory.flatMap(_.add(item)))
+  def add(item: Item): OptionT[IO, String] = OptionT.fromOption[IO](inventory).flatMap(_.add(item))
 
   def helmet: Option[Item]
 
@@ -54,9 +54,11 @@ trait Player {
 
   private lazy val energyReservoir: EnergyReservoir = EnergyReservoir(this)
 
-  def addEnergy(energy: Int): EitherT[IO, String, Int] = energyReservoir.add(energy)
+  def addMaximumEnergyFrom(consumables: List[(List[Consumable#ConsumeIO], Option[Consumable#ConsumeIO])]): EitherT[IO, String, Energy] = energyReservoir.addMaximumEnergyFrom(consumables)
 
-  def hasAtLeast(energy: Int): Boolean = energyReservoir.hasAtLeast(energy)
+  def addEnergy(energy: Energy): EitherT[IO, String, Energy] = energyReservoir.add(energy)
 
-  def removeEnergy(energy: Int): EitherT[IO, String, Int] = energyReservoir.remove(energy)
+  def hasAtLeast(energy: Energy): Boolean = energyReservoir.hasAtLeast(energy)
+
+  def removeEnergy(energy: Energy): EitherT[IO, String, Energy] = energyReservoir.remove(energy)
 }

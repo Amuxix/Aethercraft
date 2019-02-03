@@ -1,9 +1,11 @@
 package me.amuxix.material
 
+import me.amuxix.Energy
+
 import scala.math.E
 
 sealed case class BaseTier(tier: Int) {
-  val energy: Int = Math.pow(2 * E, tier).round.toInt
+  val energy: Energy = Math.pow(2 * E, tier).round.toInt
 }
 
 object T0 extends BaseTier(0)

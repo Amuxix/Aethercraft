@@ -1,6 +1,7 @@
 package me.amuxix
 
 import me.amuxix.block.Block
+import me.amuxix.block.Block.Location
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.{Persistent, Tiered}
 
@@ -14,6 +15,12 @@ object IntegrityMonitor {
   private var destructionBlocks: HashMap[Block, Rune with Persistent] = HashMap.empty
   private var buildBlocks: HashMap[Block, Rune with Persistent] = HashMap.empty
 
+
+  /**
+    * Lists of persistent runes that will be serialized
+    */
+  var persistentRunes = HashMap.empty[Location, Persistent]
+
   /**
     * Registers a persistent rune for its blocks to be monitored
     * @param rune Rune whose blocks should be monitored
@@ -21,7 +28,7 @@ object IntegrityMonitor {
   def addRune(rune: Rune with Persistent): Unit = {
     destructionBlocks ++= rune.monitoredDestroyBlocks.map(_ -> rune)
     buildBlocks ++= rune.monitoredBuildBlocks.map(_ -> rune)
-    Serialization.persistentRunes += rune.center -> rune
+    persistentRunes += rune.center -> rune
   }
 
   /**
@@ -32,7 +39,7 @@ object IntegrityMonitor {
     rune.destroyRune()
     destructionBlocks --= rune.monitoredDestroyBlocks
     buildBlocks --= rune.monitoredBuildBlocks
-    Serialization.persistentRunes -= rune.center
+    persistentRunes -= rune.center
   }
 
   /**

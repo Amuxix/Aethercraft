@@ -1,5 +1,6 @@
 package me.amuxix.material
 
+import me.amuxix.Energy
 import me.amuxix.material.Properties._
 
 private[material] object Generic {
@@ -56,7 +57,7 @@ private[material] object Generic {
     * Cheapest cost to smelt something, this assumes at least 1 fuel has a energy value when tis is called.
     * @return The lowest energy to smelt something
     */
-  def cheapestSmeltEnergy: Int = fuels.flatMap(_.smeltEnergy).min
+  def cheapestSmeltEnergy: Energy = fuels.flatMap(_.smeltEnergy).min
 
   sealed trait Generic
 

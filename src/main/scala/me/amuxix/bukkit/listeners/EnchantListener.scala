@@ -3,7 +3,7 @@ package me.amuxix.bukkit.listeners
 import cats.data.EitherT
 import cats.effect.IO
 import me.amuxix.Direction
-import me.amuxix.bukkit.Player
+import me.amuxix.Player
 import me.amuxix.bukkit.Player.BukkitPlayerOps
 import me.amuxix.bukkit.block.Block
 import me.amuxix.bukkit.block.Block.BukkitBlockOps

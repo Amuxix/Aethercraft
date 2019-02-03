@@ -4,14 +4,14 @@ import java.util.UUID
 
 import cats.data.EitherT
 import cats.effect.IO
-import me.amuxix.Serialization
 import me.amuxix.block.Block.Location
+import me.amuxix.bukkit.{Bukkit, Configuration}
 import me.amuxix.bukkit.Location.BukkitIntPositionOps
 import me.amuxix.bukkit.Player.BukkitPlayerOps
-import me.amuxix.bukkit._
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
 import me.amuxix.pattern.matching.Matcher
+import me.amuxix.{IntegrityMonitor, OptionObjectOps, Player}
 import org.bukkit.entity.EntityType.DROPPED_ITEM
 import org.bukkit.entity.{Item => BItem}
 import org.bukkit.event.EventHandler
@@ -45,10 +45,10 @@ object Listener extends org.bukkit.event.Listener {
       } else {
         val itemInHand: Option[Item] = Option(event.getItem).map(_.aetherize)
         if (event.getHand == HAND) {
-          (if (Serialization.persistentRunes.contains(clickedBlockLocation) && itemInHand.forall(_.material.isSolid == false)) {
+          (if (IntegrityMonitor.persistentRunes.contains(clickedBlockLocation) && itemInHand.forall(_.material.isSolid == false)) {
             //There is a rune at this location, update it.
             lastActivatedRune += player.uuid -> clickedBlockLocation
-            Serialization.persistentRunes(clickedBlockLocation).update(player)
+            IntegrityMonitor.persistentRunes(clickedBlockLocation).update(player)
           } else {
             //Look for new runes
             Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand).map(_.activate(itemInHand)) match {
@@ -74,25 +74,18 @@ object Listener extends org.bukkit.event.Listener {
       if (item.material.hasEnergy) {
         val itemPosition = entity.getLocation.aetherize
         findClosestPlayerTo(itemPosition, Configuration.maxBurnDistance).foreach { player =>
-          item.consume.toRight(s"${item.material} has no energy").flatMap(player.addEnergy).value.flatMap {
-            case Right(_) => IO.unit
-            case Left(error) => player.notifyError(error)
-          }.unsafeRunSync()
+          player.addMaximumEnergyFrom(item.consume).value.unsafeRunSync()
         }
       }
     }
 
   }
 
-  private def findClosestPlayerTo(where: Location, maxDistance: Double): Option[Player] = {
-    Aethercraft.server.getOnlinePlayers.asScala
+  private def findClosestPlayerTo(where: Location, maxDistance: Double): Option[Player] =
+    Bukkit.server.getOnlinePlayers.asScala
       .foldLeft(Option.empty[(Player, Double)]) { case (None, player) =>
         val distance = player.getLocation.aetherize.distance(where)
-        if (distance <= maxDistance) {
-          Some((player.aetherize, distance))
-        } else {
-          None
-        }
+        Option.when(distance <= maxDistance)((player.aetherize, distance))
       case (closest @ Some((_, closestPlayerDistance)), player) =>
         val distance = player.getLocation.aetherize.distance(where)
         if (distance < closestPlayerDistance) {
@@ -101,5 +94,4 @@ object Listener extends org.bukkit.event.Listener {
           closest
         }
       }.map(_._1)
-  }
 }

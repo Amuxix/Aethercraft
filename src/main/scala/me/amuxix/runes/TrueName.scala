@@ -30,13 +30,13 @@ object TrueName extends RunePattern with Enchant with BlockPlaceTrigger {
 
   override def canEnchant(item: Item): Option[String] = Option.unless(item.material == PlayerHeadMaterial)("True name can only be applied to player's heads")
 
-  def createTrueNameOf(player: Player): PlayerHead = {
-
+  def createTrueNameOf(player: Player): IO[PlayerHead] = {
     val trueName: PlayerHead = Item(PlayerHeadMaterial).asInstanceOf[PlayerHead]
-    trueName.owner = player
-    trueName.displayName = trueNameDisplayFor(player)
-    trueName.addRuneEnchant(TrueName)
-    trueName
+    for {
+      _ <- trueName.setOwner(player)
+      _ <- trueName.setDisplayName(trueNameDisplayFor(player))
+      _ <- trueName.addRuneEnchant(TrueName).value
+    } yield trueName
   }
 
   def trueNameDisplayFor(player: Player): String = {
@@ -50,9 +50,8 @@ object TrueName extends RunePattern with Enchant with BlockPlaceTrigger {
         //False means we do not cancel the place event.
       case Some(head: PlayerHead) if head.isTrueNameOf(player) => EitherT.rightT(false) //Trying to place own true name, allow this.
       case Some(head: PlayerHead) if head.hasRuneEnchant(this) => //Trying to place someone else's true name, destroy it.
-        player.notifyError(s"As you place ${head.displayName.get} it crumbles to dust.")
-        head.destroy()
-        EitherT.rightT(true)
+        player.notifyError(s"As you place ${head.displayName} it crumbles to dust.")
+        EitherT(head.destroyAll.map[Either[String, Boolean]](_ => Right(true)))
       case _ => EitherT.rightT(false)
     }
 }
@@ -68,8 +67,9 @@ case class TrueName(center: Location, creator: Player, direction: Direction, rot
       EitherT.leftT("This rune cannot be automated.")
     } else {
       for {
-        _ <- EitherT(consume.value.flatMap(optionEnergy => activator.addEnergy(optionEnergy.getOrElse(0)).value))
-        _ <- activator.add(TrueName.createTrueNameOf(activator)).toLeft(())
+        _ <- activator.addMaximumEnergyFrom(consume)
+        trueName <- EitherT.liftF(TrueName.createTrueNameOf(activator))
+        _ <- activator.add(trueName).toLeft(())
       } yield true
     }
 }

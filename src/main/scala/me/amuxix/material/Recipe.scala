@@ -1,6 +1,7 @@
 package me.amuxix.material
 
 import cats.data.NonEmptyList
+import me.amuxix.Energy
 import me.amuxix.bukkit.{Configuration, Recipes}
 import me.amuxix.logging.Logger
 import me.amuxix.material.Generic.Slab
@@ -221,14 +222,13 @@ case class Recipe(ingredients: NonEmptyList[NonEmptyList[Material]], result: Mat
       false
     } else {
       val ingredientsEnergy = ingredients.foldLeft(0.0) {
-        case (total, possibilities) => total + possibilities.toList.flatMap(_.energy).min
+        case (total, possibilities) => total + possibilities.toList.flatMap(_.energy).map(_.value).min
       }
-      val fuelEnergy = if (requiresFuel) Generic.cheapestSmeltEnergy else 0
-      val newEnergy = ((ingredientsEnergy / craftedAmount) * Configuration.craftingMultiplier + fuelEnergy).ceil.toInt
+      val fuelEnergy: Energy = if (requiresFuel) Generic.cheapestSmeltEnergy else 0 Energy
+      val newEnergy: Energy = ((ingredientsEnergy / craftedAmount) * Configuration.craftingMultiplier + fuelEnergy.value).ceil.toInt
 
       result.energy.filter(newEnergy >= _).fold {
         Logger.trace(s"${result.name}: ${result.energy.getOrElse("No Set")} -> $newEnergy")
-        //noinspection UnitInMap
         result.energy = newEnergy
         true
       }(_ => false)

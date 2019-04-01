@@ -30,6 +30,8 @@ object TrueName extends RunePattern with Enchant with BlockPlaceTrigger {
 
   override def canEnchant(item: Item): Option[String] = Option.unless(item.material == PlayerHeadMaterial)("True name can only be applied to player's heads")
 
+  override def incompatibleEnchants: Set[Enchant] = Set.empty
+
   def createTrueNameOf(player: Player): IO[PlayerHead] = {
     val trueName: PlayerHead = Item(PlayerHeadMaterial).asInstanceOf[PlayerHead]
     for {

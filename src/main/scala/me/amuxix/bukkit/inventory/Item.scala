@@ -9,6 +9,7 @@ import me.amuxix.material.Material
 import me.amuxix.material.Material.{PlayerHead => PlayerHeadMaterial}
 import me.amuxix.runes.traits.enchants.Enchant
 import me.amuxix.{Aetherizeable, inventory}
+import me.amuxix.bukkit.inventory.Item.enchantNameSuffix
 import org.bukkit.inventory.ItemStack
 import org.bukkit.inventory.meta.ItemMeta
 
@@ -41,6 +42,8 @@ object Item {
   def apply(itemStack: ItemStack): Item =
     materials.getOrElse(itemStack.getType.aetherize, new Item(_))(itemStack)
 
+  val enchantNameSuffix = "§k§r"
+
 }
 
 protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.Item with BukkitForm[ItemStack] {
@@ -67,14 +70,23 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
 
   private def addToLore(string: String): IO[Unit] = setLore(lore.fold(List(string))(_ :+ string))
 
-  private def loreContains(string: String): Boolean =
-    lore.exists(_.contains(string))
+  private def loreContains(string: String): Boolean = lore.exists(_.contains(string))
 
-  override def addRuneEnchant(enchant: Enchant): OptionT[IO, String] = enchant.canEnchant(this).fold {
-    OptionT(addToLore(enchant.name + "§k§r").map(_ => Option.empty[String]))
-  }(error => OptionT.pure(error))
+  override def enchants: Set[Enchant] = Enchant.enchants.filter(hasRuneEnchant).toSet
 
-  override def hasRuneEnchant(enchant: Enchant): Boolean = loreContains(enchant.name + "§k§r")
+  override def hasRuneEnchant(enchant: Enchant): Boolean = loreContains(enchant.name + enchantNameSuffix)
+
+  override def addRuneEnchant(enchant: Enchant): OptionT[IO, String] = {
+    val incompatibleEnchant = enchants.collectFirst {
+      case existingEnchant if enchant.incompatibleEnchants.contains(existingEnchant) =>
+        s"${existingEnchant.name} is incompatible with ${enchant.name}"
+    }
+    enchant.canEnchant(this)
+      .orElse(incompatibleEnchant)
+      .fold {
+        OptionT(addToLore(enchant.name + enchantNameSuffix).map(_ => Option.empty[String]))
+      }(OptionT.pure(_))
+  }
 
   override def hasDisplayName: Boolean = meta.hasDisplayName
 

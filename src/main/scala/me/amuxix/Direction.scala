@@ -37,6 +37,28 @@ object Direction {
     case _ => throw new Exception("Cardinal point with this vector does not exist")
   }
 
+  val directNeighbours = List(
+    North,
+    South,
+    East,
+    West,
+    Up,
+    Down,
+  )
+  
+  val indirectNeighbours = List(
+    NorthWest,
+    NorthEast,
+    SouthEast,
+    SouthWest,
+    UpWest,
+    UpEast,
+    DownEast,
+    DownWest,
+  )
+
+  val allNeighbours: List[Direction] = directNeighbours ++ indirectNeighbours
+
   implicit val encoder: Encoder[Direction] = deriveEncoder
   implicit val decoder: Decoder[Direction] = deriveDecoder
 }

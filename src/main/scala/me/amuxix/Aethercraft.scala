@@ -5,10 +5,13 @@ import java.util.logging.Logger
 
 import cats.effect.IO
 import cats.implicits._
+import me.amuxix.bukkit.Bukkit
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Recipe
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.global
+import scala.concurrent.Future
 
 object Aethercraft {
   val defaultFailureMessage = "Some unknown force blocks you."
@@ -18,9 +21,19 @@ object Aethercraft {
   var fullVersion: String = _
   lazy val simpleVersion: String = fullVersion.split("-").head
   val players = mutable.Map.empty[UUID, Player]
+  implicit val ec = global
 
-  var runTaskSync: IO[Unit] => Unit = _
-  var runTaskAsync: IO[Unit] => Unit = _
+  def runTaskSync(task: IO[Unit]): Unit = Bukkit.runTaskSync(task)
+
+  def runTimedTask(tasks: List[IO[Unit]], interval: Int): Unit = {
+    tasks.foldLeft(0) {
+      (delay, task) =>
+        Bukkit.runTaskLater(task, delay)
+        delay + interval
+    }
+  }
+
+  def runTaskAsync(task: IO[Unit]): Unit = Future(task)
 
   var worlds: Map[UUID, World] = _
 
@@ -32,18 +45,14 @@ object Aethercraft {
     * @param version The version
     * @param worlds List of Worlds the server has loaded.
     * @param reservoirsFolder Folder to store player's energy reservoirs
-    * @param runTaskSync Function that runs an IO synchronously
-    * @param runTaskAsync Function that runs an IO assynchronously
     * @param saveDefaultConfig IO to generate default config.
     * @param registerEvents IO that registers all event listeners.
     */
-  def load(
+  def load[S, A](
     logger: Logger,
     version: String,
     worlds: List[World],
     reservoirsFolder: File,
-    runTaskSync: IO[Unit] => Unit,
-    runTaskAsync: IO[Unit] => Unit,
     saveDefaultConfig: IO[Unit],
     registerEvents: IO[Unit]
   ): Unit = {
@@ -51,8 +60,6 @@ object Aethercraft {
     this.fullVersion = version
     this.worlds = worlds.map(w => w.uuid -> w).toMap
     Serialization.reservoirsFile = reservoirsFolder
-    this.runTaskSync = runTaskSync
-    this.runTaskAsync = runTaskAsync
 
     val updateEnergies = IO {
       while(Recipe.recipes.count(_.updateResultEnergy) > 0) {

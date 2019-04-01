@@ -5,11 +5,11 @@ import java.util.UUID
 import cats.data.EitherT
 import cats.effect.IO
 import me.amuxix.block.Block.Location
-import me.amuxix.bukkit.{Bukkit, Configuration}
 import me.amuxix.bukkit.Location.BukkitIntPositionOps
 import me.amuxix.bukkit.Player.BukkitPlayerOps
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
+import me.amuxix.bukkit.{Bukkit, Configuration}
 import me.amuxix.pattern.matching.Matcher
 import me.amuxix.{IntegrityMonitor, OptionObjectOps, Player}
 import org.bukkit.entity.EntityType.DROPPED_ITEM

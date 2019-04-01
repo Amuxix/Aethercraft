@@ -8,7 +8,7 @@ import me.amuxix.bukkit.Material.{BukkitMaterialOps, MaterialOps}
 import me.amuxix.bukkit.block.blocks.Chest
 import me.amuxix.bukkit.events._
 import me.amuxix.bukkit.{Player => _, block => _, _}
-import me.amuxix.inventory.Inventory
+import me.amuxix.inventory.{Inventory, Item}
 import me.amuxix.material.Material
 import me.amuxix.material.Material._
 import me.amuxix.{World => _, _}
@@ -84,6 +84,12 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
         .orElse(setMaterial(Air))
     }
 
+  protected def canBreak(player: Player): Option[String] = {
+    val breakEvent = new BlockBreak(this, player)
+    Bukkit.callEvent(breakEvent)
+    Option.when(breakEvent.isCancelled)(s"Failed to break $this")
+  }
+
   /**
     * Checks if the player can move this block to the target location, it check if the block can be destroyed at
     * the original location and placed at the target.
@@ -94,19 +100,11 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
   override def canMoveTo(target: Location, player: Player): Option[String] = {
     val targetBlock = target.block.asInstanceOf[Block]
     Option.flatWhen(targetBlock.material.isCrushable) {
-      val targetDestruction = Option.flatWhen(targetBlock.material.isAir) {
-        val breakEvent = new BlockBreak(targetBlock, player)
-        Bukkit.callEvent(breakEvent)
-        Option.when(breakEvent.isCancelled)( s"Failed to break $target")
-      }
-      val thisBreak = new BlockBreak(this, player)
-      Bukkit.callEvent(thisBreak)
-
       val canBuild = new CanBuild(targetBlock, player, state.getBlockData)
       Bukkit.callEvent(canBuild)
 
-      Option.when(thisBreak.isCancelled)(s"Failed to break $this")
-        .orElse(targetDestruction)
+      canBreak(player)
+        .orElse(targetBlock.canBreak(player))
         .orElse(Option.unless(canBuild.isBuildable)(s"Failed to build $targetBlock"))
     }
   }
@@ -119,7 +117,7 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     case _ => None
   }
 
-
+  //TODO check if this block can be broken before consuming
   private def consumeBlockMaterial: Option[ConsumeIO] =
     replacementMaterial.flatMap { replacementMaterial =>
       for {
@@ -159,6 +157,13 @@ private[bukkit] class Block(val location: Location, var material: Material) exte
     }
     List((consumeInventory, consumeBlockMaterial))
   }
+
+
+
+  override def breakUsing(player: Player, item: Item): OptionT[IO, String] =
+    OptionT.fromOption[IO](canBreak(player).orElse {
+      Option.unless(bukkitForm.getBlock.breakNaturally(item.asInstanceOf[bukkit.inventory.Item].bukkitForm))(Aethercraft.defaultFailureMessage)
+    })
 
   override def toString: String = s"(${location.toString}, ${material.toString})"
 

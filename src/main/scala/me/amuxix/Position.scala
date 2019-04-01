@@ -58,4 +58,10 @@ case class Position[T : Integral](world: World, coordinates: Vector3[T]) {
     val state = Seq(world.uuid, coordinates)
     state.map(_.hashCode()).foldLeft(0)((a, b) => 31 * a + b)
   }
+
+  def directNeighbours(implicit ev: T =:= Int): List[Position[Int]] = Direction.directNeighbours.map(this.asInstanceOf[Position[Int]] + _)
+
+  def indirectNeighbours(implicit ev: T =:= Int): List[Position[Int]] = Direction.indirectNeighbours.map(this.asInstanceOf[Position[Int]] + _)
+
+  def allNeighbours(implicit ev: T =:= Int): List[Position[Int]] = directNeighbours ++ indirectNeighbours
 }

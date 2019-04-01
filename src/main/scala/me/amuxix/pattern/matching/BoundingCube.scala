@@ -1,7 +1,7 @@
 package me.amuxix.pattern.matching
 
-import me.amuxix.block.Block.Location
 import me.amuxix.block.Block
+import me.amuxix.block.Block.Location
 import me.amuxix.logging.Logger.trace
 import me.amuxix.pattern.Pattern
 import me.amuxix.{BlockAt, Vector3}

@@ -1,7 +1,7 @@
 package me.amuxix.pattern.matching
 
-import me.amuxix.block.Block.Location
 import me.amuxix._
+import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
 import me.amuxix.logging.Logger.trace
 import me.amuxix.pattern.{Pattern, RunePattern}
@@ -14,9 +14,9 @@ import me.amuxix.runes.waypoints.Waypoint
   * This is the class that knows how to look for runes in the world
   */
 object Matcher {
-  private val defaultRunePatterns: Seq[RunePattern] = List(Test, Test2, Waypoint, Teleporter, Compass, TrueName, RunicChest)
+  private val defaultRunePatterns: Stream[RunePattern] = Stream(Test, Test2, Waypoint, Teleporter, Compass, TrueName, RunicChest)
 
-  private var patterns: Seq[Pattern] = defaultRunePatterns.map(_.pattern)
+  private var patterns: Stream[Pattern] = defaultRunePatterns.map(_.pattern)
 
   /**
     * Adds a rune with the given pattern to list of known runes
@@ -30,7 +30,7 @@ object Matcher {
     * Looks for runes at the given location
     */
   def lookForRunesAt(location: Location, activator: Player, direction: Direction, itemInHand: Option[Item]): Option[Rune] = {
-    val possiblePatterns: Seq[Pattern] = patterns.filter(_.canBeActivatedWith(itemInHand))
+    val possiblePatterns: Stream[Pattern] = patterns.filter(_.canBeActivatedWith(itemInHand))
     //val possiblePatterns: Seq[Pattern] = patterns
     matchRunes(location, activator, direction, possiblePatterns)
       .orElse {
@@ -39,12 +39,12 @@ object Matcher {
       }
   }
 
-  def matchRunes(location: Location, activator: Player, direction: Direction, possiblePatterns: Seq[Pattern]): Option[Rune] = {
-    val filteredPatterns: Seq[Pattern] = possiblePatterns.filter(_.centerCanBe(location.block.material)).sorted
+  def matchRunes(location: Location, activator: Player, direction: Direction, possiblePatterns: Stream[Pattern]): Option[Rune] = {
+    val filteredPatterns: Stream[Pattern] = possiblePatterns.filter(_.centerCanBe(location.block.material)).sorted
     Option.flatUnless(filteredPatterns.isEmpty) {
       trace(s"There are ${filteredPatterns.length} registered patterns with this item and center.")
       val boundingCube = BoundingCube(location, filteredPatterns)
-      filteredPatterns.toStream.map { pattern =>
+      filteredPatterns.map { pattern =>
         pattern.findMatchingRotation(boundingCube).map { rotation =>
           pattern.createRune(location, activator, direction, rotation)
         }

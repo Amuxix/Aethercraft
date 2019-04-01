@@ -3,6 +3,9 @@ package me.amuxix.runes.traits.enchants
 import me.amuxix.Named
 import me.amuxix.inventory.Item
 
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 /**
   * Created by Amuxix on 09/02/2017.
   */
@@ -17,14 +20,20 @@ trait Enchant extends Named {
     * @return None if it can be enchanted, otherwise a Some with an error message
     */
   def canEnchant(item: Item): Option[String]
+
+  def incompatibleEnchants: Set[Enchant]
+
+  Enchant.enchants.append(this)
 }
 
 object Enchant {
-  var blockBreakEnchants: Stream[Enchant with BlockBreakTrigger] = Stream.empty
-  var blockPlaceEnchants: Stream[Enchant with BlockPlaceTrigger] = Stream.empty
+  val enchants: ListBuffer[Enchant] = mutable.ListBuffer.empty[Enchant]
 
-  var blockInteractEnchants: Stream[Enchant with BlockInteractTrigger] = Stream.empty
-  var blockDamageEnchants: Stream[Enchant with BlockDamageTrigger] = Stream.empty
-  var airInteractEnchants: Stream[Enchant with AirInteractTrigger] = Stream.empty
-  var airSwingEnchants: Stream[Enchant with AirSwingTrigger] = Stream.empty
+  val blockBreakEnchants: ListBuffer[Enchant with BlockBreakTrigger] = ListBuffer.empty
+  val blockPlaceEnchants: ListBuffer[Enchant with BlockPlaceTrigger] = ListBuffer.empty
+
+  val blockInteractEnchants: ListBuffer[Enchant with BlockInteractTrigger] = ListBuffer.empty
+  val blockDamageEnchants: ListBuffer[Enchant with BlockDamageTrigger] = ListBuffer.empty
+  val airInteractEnchants: ListBuffer[Enchant with AirInteractTrigger] = ListBuffer.empty
+  val airSwingEnchants: ListBuffer[Enchant with AirSwingTrigger] = ListBuffer.empty
 }

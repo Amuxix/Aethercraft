@@ -15,33 +15,35 @@ import scala.collection.JavaConverters._
 object Bukkit {
   private[bukkit] var server: Server = _
   private[bukkit] var config: FileConfiguration = _
+  private[bukkit] var self: JavaPlugin = _
 
   def callEvent(event: Event): Unit = server.getPluginManager.callEvent(event)
+
+  def runTaskSync(task: IO[Unit]): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = task.unsafeRunSync()
+      runTask(self)
+    }
+  }
+
+  def runTaskLater(task: IO[Unit], delay: Int): Unit = {
+    new BukkitRunnable {
+      override def run(): Unit = task.unsafeRunSync()
+      runTaskLater(self, delay)
+    }
+  }
 }
 
 /**
   * Created by Amuxix on 21/11/2016.
   */
-class Bukkit extends JavaPlugin { outer =>
+class Bukkit extends JavaPlugin {
 	/**
 	  * This register this file as a listener to all of bukkit events.
 	  */
 	override def onEnable(): Unit = {
-    def runTaskSync(task: IO[Unit]): Unit = {
-      new BukkitRunnable {
-        override def run(): Unit = task.unsafeRunSync()
-        runTask(outer)
-      }
-    }
-
-    def runTaskAsync(task: IO[Unit]): Unit = {
-      new BukkitRunnable {
-        override def run(): Unit = task.unsafeRunSync()
-        runTaskAsynchronously(outer)
-      }
-    }
-
     Bukkit.server = getServer
+    Bukkit.self = this
     Bukkit.config = getConfig
 
     val registerEvents = IO {
@@ -55,8 +57,6 @@ class Bukkit extends JavaPlugin { outer =>
       version = getDescription.getFullName,
       worlds = getServer.getWorlds.asScala.toList.map(_.aetherize),
       reservoirsFolder = getDataFolder,
-      runTaskSync = runTaskSync,
-      runTaskAsync = runTaskAsync,
       saveDefaultConfig = IO(saveDefaultConfig()),
       registerEvents = registerEvents
     )

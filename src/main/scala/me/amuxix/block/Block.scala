@@ -6,6 +6,7 @@ import io.circe.{Decoder, Encoder}
 import me.amuxix._
 import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.block.{Block => BBlock}
+import me.amuxix.inventory.Item
 import me.amuxix.material.Material
 
 object Block {
@@ -46,4 +47,12 @@ trait Block extends Consumable {
     * @return true if the player can move this block, false otherwise
     */
   def canMoveTo(target: Location, player: Player): Option[String]
+
+  def directNeighbours: List[Block] = location.directNeighbours.map(_.block)
+
+  def indirectNeighbours: List[Block] = location.indirectNeighbours.map(_.block)
+
+  def allNeighbours: List[Block] = directNeighbours ++ indirectNeighbours
+
+  def breakUsing(player: Player, item: Item): OptionT[IO, String]
 }

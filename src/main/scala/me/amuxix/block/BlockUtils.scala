@@ -2,8 +2,8 @@ package me.amuxix.block
 
 import cats.data.OptionT
 import cats.effect.IO
-import me.amuxix.block.Block.Location
-import me.amuxix.{Player, Vector3}
+import me.amuxix.Player
+import me.amuxix.position.{BlockPosition, Vector3}
 
 /**
   * Created by Amuxix on 24/01/2017.
@@ -15,9 +15,9 @@ object BlockUtils {
     * @param player Player who triggered the move
     * @return None if all blocks were moved successfully, a Some with a error message otherwise
     */
-  def moveSeveralTo(blockToTarget: Map[Block, Location], player: Player): OptionT[IO, String] =
+  def moveSeveralTo(blockToTarget: Map[Block, BlockPosition], player: Player): OptionT[IO, String] =
     OptionT.fromOption[IO](blockToTarget
-      .toStream
+      .to(LazyList)
       .map { case (block, location) => block.canMoveTo(location, player) }
       .collectFirst { case Some(error) => error})
       .orElse {

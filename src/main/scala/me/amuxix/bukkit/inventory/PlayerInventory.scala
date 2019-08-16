@@ -13,7 +13,7 @@ object PlayerInventory {
 private[bukkit] class PlayerInventory(inv: BukkitPlayerInventory) extends Inventory(inv) with inventory.PlayerInventory {
   override def helmet: Option[Item] = Option(inv.getHelmet).map(_.aetherize)
 
-  override def itemInMainHand: Option[Item] = Option(inv.getItemInMainHand).map(_.aetherize)
+  override def itemInMainHand: Item = inv.getItemInMainHand.aetherize
 
-  override def itemInOffHand: Option[Item] = Option(inv.getItemInOffHand).map(_.aetherize)
+  override def itemInOffHand: Item = inv.getItemInOffHand.aetherize
 }

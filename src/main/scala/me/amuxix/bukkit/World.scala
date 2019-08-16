@@ -4,8 +4,9 @@ import java.io.File
 import java.util.UUID
 
 import me.amuxix
-import me.amuxix.{Aetherizeable, Vector3}
+import me.amuxix.Aetherizeable
 import me.amuxix.bukkit.block.Block.BukkitBlockOps
+import me.amuxix.position.Vector3
 import org.bukkit.{World => BukkitWorld}
 
 import scala.collection.mutable

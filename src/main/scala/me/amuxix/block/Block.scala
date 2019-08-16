@@ -2,26 +2,30 @@ package me.amuxix.block
 
 import cats.data.OptionT
 import cats.effect.IO
-import io.circe.{Decoder, Encoder}
+import io.circe.Decoder.Result
+import io.circe.{Decoder, Encoder, HCursor}
+import io.circe.syntax._
 import me.amuxix._
-import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.block.{Block => BBlock}
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material
+import me.amuxix.material.Properties.BlockProperty
+import me.amuxix.position.{BlockPosition, Vector3}
 
 object Block {
-  type Location = Position[Int]
+  implicit val materialEncoder: Encoder[Material with BlockProperty] = a => (a: Material).asJson(implicitly[Encoder[Material]])
+  implicit val materialDecoder: Decoder[Material with BlockProperty] = (c: HCursor) => c.as[Material].asInstanceOf[Result[Material with BlockProperty]]
   implicit val encodeBlock: Encoder[Block] = Encoder.forProduct2("location", "material")(b =>
-    (b.location, b.material)
+    (b.location, b.material: Material)
   )
   implicit val decodeBlock: Decoder[Block] = Decoder.forProduct2("location", "material"){BBlock.apply}
 }
 
 trait Block extends Consumable {
-  val location: Location
-  var material: Material
+  val location: BlockPosition
+  var material: Material with BlockProperty
 
-  def setMaterial(material: Material): OptionT[IO, String]
+  def setMaterial(material: Material with BlockProperty): OptionT[IO, String]
 
   /**
     * Attempts to move this block by the displacement vector.
@@ -34,10 +38,10 @@ trait Block extends Consumable {
   /**
     * Attempts to move this block to the target location.
     *
-    * @param target Location where the block should be moved to.
+    * @param target BlockPosition where the block should be moved to.
     * @return true if the move was successful, false otherwise.
     */
-  def moveTo(target: Location, player: Player): OptionT[IO, String]
+  def moveTo(target: BlockPosition, player: Player): OptionT[IO, String]
 
   /**
     * Checks if the player can move this block to the target location, it check if the block can be destroyed at
@@ -46,13 +50,15 @@ trait Block extends Consumable {
     * @param player Player who triggered the move
     * @return true if the player can move this block, false otherwise
     */
-  def canMoveTo(target: Location, player: Player): Option[String]
+  def canMoveTo(target: BlockPosition, player: Player): Option[String]
 
-  def directNeighbours: List[Block] = location.directNeighbours.map(_.block)
+  lazy val faceNeighbours: List[Block] = location.faceNeighbours.map(_.block)
 
-  def indirectNeighbours: List[Block] = location.indirectNeighbours.map(_.block)
+  lazy val edgeNeighbours: List[Block] = location.edgeNeighbours.map(_.block)
 
-  def allNeighbours: List[Block] = directNeighbours ++ indirectNeighbours
+  lazy val vertexNeighbours: List[Block] = location.vertexNeighbours.map(_.block)
+
+  lazy val allNeighbours: List[Block] = faceNeighbours ++ edgeNeighbours ++ vertexNeighbours
 
   def breakUsing(player: Player, item: Item): OptionT[IO, String]
 }

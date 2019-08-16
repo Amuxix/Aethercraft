@@ -3,7 +3,7 @@ package me.amuxix.inventory
 trait PlayerInventory extends Inventory {
   def helmet: Option[Item]
 
-  def itemInMainHand: Option[Item]
+  def itemInMainHand: Item
 
-  def itemInOffHand: Option[Item]
+  def itemInOffHand: Item
 }

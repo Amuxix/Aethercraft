@@ -1,11 +1,12 @@
 package me.amuxix.pattern
 
 import me.amuxix._
+import me.amuxix.material.Properties.BlockProperty
 import me.amuxix.block.Block
-import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material
 import me.amuxix.pattern.matching.BoundingCube
+import me.amuxix.position.{BlockPosition, Vector3}
 import me.amuxix.runes.Rune
 
 /**
@@ -13,62 +14,10 @@ import me.amuxix.runes.Rune
   */
 sealed trait BaseLayer {
   def elements: Seq[Element]
-  def toElementsArray(width: Int): Seq[Seq[Element]] = {
-    elements.grouped(width).toSeq
-  }
+  def toElementsArray(width: Int): Seq[Seq[Element]] = elements.grouped(width).toSeq
 }
 case class Layer(elements: Element*) extends BaseLayer
 case class ActivationLayer(elements: Element*) extends BaseLayer
-
-object Pattern {
-  def isMirrored(layer: BaseLayer, width: Int): Boolean = {
-    val layerArray: Seq[Seq[Element]] = layer.toElementsArray(width)
-    val height = layerArray.size
-    (for {
-      i <- 0 until Math.ceil(width / 2).toInt
-      j <- 0 until Math.ceil(height / 2).toInt
-      w <- 0 until width
-      h <- 0 until height
-    } yield layerArray(j)(w) == layerArray(width - j - 1)(w) && layerArray(h)(i) == layerArray(h)(height - i - 1)).forall(identity)
-  }
-
-  def apply[R <: Rune](
-      runeCreator: (Location, Player, Direction, Matrix4, Pattern) => R,
-      width: Option[Int] = None,
-      verticality: Boolean = false,
-      directional: Boolean = false,
-      buildableOnCeiling: Boolean = true,
-      activatesWith: PartialFunction[Option[Item], Boolean] = {
-        case Some(item) => !item.material.isBlock
-        case None => true //Empty hand
-      })
-      (layers: BaseLayer*): Pattern = {
-    val activationLayer = layers.indexWhere(_.isInstanceOf[ActivationLayer])
-    val finalWidth = width match {
-      case None =>
-        val sqrt = Math.sqrt(layers.head.elements.size)
-        if (sqrt.isValidInt) {
-          sqrt.toInt
-        } else {
-          throw new Exception("Rune has invalid width!")
-        }
-      case Some(width) if width % 2 == 0 => throw new Exception("Rune width needs to be odd!")
-      case Some(width) => width
-    }
-
-    if (layers.exists(_.elements.size % finalWidth != 0)) {
-      throw new Exception("At least a layer in the pattern does not form a rectangle!")
-    }
-    val hasTwoMirroredAxis = layers.forall(isMirrored(_, finalWidth))
-    val elements = layers.map(_.toElementsArray(finalWidth))
-    new Pattern(activationLayer, elements, hasTwoMirroredAxis, verticality, directional, buildableOnCeiling, activatesWith) {
-      override def createRune(center: Location, creator: Player, direction: Direction, rotation: Matrix4): Rune = {
-        runeCreator(center, creator, direction, rotation, this)
-      }
-    }
-  }
-}
-
 
 /**
   * Pattern for a rune
@@ -79,8 +28,8 @@ object Pattern {
   * @param directional True when the rune has to be built in a certain direction
   * @param buildableOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
   */
-abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Element]]], hasTwoMirroredAxis: Boolean, verticality: Boolean, directional: Boolean,
-                       buildableOnCeiling: Boolean, activatesWith: PartialFunction[Option[Item], Boolean]) extends Ordered[Pattern] {
+abstract class Pattern (activationLayer: Int, elements: Seq[Seq[Seq[Element]]], hasTwoMirroredAxis: Boolean, verticality: Boolean, directional: Boolean,
+                       buildableOnCeiling: Boolean, activatesWith: Option[Item] =|> Boolean) extends Ordered[Pattern] {
 	/* IN GAME AXIS
 		 *          Y axis
 		 *          |
@@ -97,9 +46,12 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
 	private val highHeight: Int = height - activationLayer //Distance from the top layer to the activation layer EXCLUDING the activation layer
 	val largestDimension: Int = (((lowHeight max (highHeight - 1)) * 2) + 1) max width max depth
   val volume: Int = height * width * depth
-	val patternMaterials: Set[Material] = elements.flatten.flatten.collect { case m: Material => m }.toSet //Set of materials the rune contains
+	val patternMaterials: Set[Material with BlockProperty] = elements.flatten.flatten.collect {
+    case BlockElement(m) => m
+  }
+    .toSet //Set of materials the rune contains
 
-  protected[pattern] def createRune(center: Location, creator: Player, direction: Direction, rotation: Matrix4): Rune
+  protected[pattern] def createRune(center: BlockPosition, creator: Player, direction: Direction, rotation: Matrix4): Rune
 
 
   /**
@@ -107,13 +59,12 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     * @param centerMaterial Material we are matching against
     * @return true if this pattern can be made with the center of the given material
     */
-  def centerCanBe(centerMaterial: Material): Boolean = {
+  def centerCanBe(centerMaterial: Material with BlockProperty): Boolean =
     elements(activationLayer)(width / 2)(depth / 2) match {
-      case material: Material if centerMaterial != material || centerMaterial.hasNoEnergy => false
+      case BlockElement(material) if centerMaterial != material || centerMaterial.hasNoEnergy => false
       case Tier if patternMaterials.contains(centerMaterial) => false
       case _ => true
     }
-  }
 
   def canBeActivatedWith(item: Option[Item]): Boolean = activatesWith.applyOrElse(item, (_: Option[Item]) => true)
 
@@ -160,15 +111,15 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     val zero = Vector3(0, 0, 0)
     for {
       //This order ensures the first line checked is the northern most on the lowest layer
-      layer <- Stream.range(0, height) //Y
-      block <- Stream.range(0, width) //Z
-      line <- Stream.range(0, depth) //X
+      layer <- LazyList.range(0, height) //Y
+      block <- LazyList.range(0, width) //Z
+      line <- LazyList.range(0, depth) //X
       element = elements(layer)(block)(line)
       offset = rotation.rotateAbout(zero)(Vector3(line, layer, block) - center)
     } yield offset -> element
   }
 
-  private def superimposition(rotation: Matrix4, center: Vector3[Int], world: BlockAt, filter: Element => Boolean = _ => true): Stream[(Element, Block)] =
+  private def superimposition(rotation: Matrix4, center: Vector3[Int], world: BlockAt, filter: Element => Boolean = _ => true): LazyList[(Element, Block)] =
     centerOffsets(rotation).collect {
       case (offset, element) if filter(element) => element -> world.blockAt(center + offset)
     }
@@ -185,12 +136,12 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     *     meaning they must be different from all specific materials, choice for each [[MaterialChoice]] and material used for tier
     */
   private def find(boundingCube: BoundingCube, rotationMatrix: Matrix4): Option[Matrix4] = {
-    val superimposed: Stream[(Element, Material)] = superimposition(rotationMatrix, boundingCube.center, boundingCube).map {
+    val superimposed: LazyList[(Element, Material with BlockProperty)] = superimposition(rotationMatrix, boundingCube.center, boundingCube).map {
       case (element, block) => element -> block.material
     }
 
     lazy val specificMaterialsAndChoices = superimposed.collect {
-      case (_: Material, specific) => specific
+      case (_: BlockElement, specific) => specific
       case (_: MaterialChoice, choice) => choice
     }
 
@@ -199,7 +150,7 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     }
 
     val error = superimposed.collectFirst {
-      case (specific: Material, material) if specific != material =>
+      case (BlockElement(specific), material) if specific != material =>
         "Specific materials must match."
       case (MaterialChoice(possibilities @ _*), material) if possibilities.contains(material) == false =>
         "Material choice must be one of the possibilities."
@@ -214,18 +165,18 @@ abstract class Pattern private(activationLayer: Int, elements: Seq[Seq[Seq[Eleme
     error.toLeft(rotationMatrix).toOption
   }
 
-  def nonSpecialBlocks(rotation: Matrix4, center: Location): Stream[Block] = superimposition(rotation, center.coordinates, center.world, {
-    case _: Material => true
+  def nonSpecialBlocks(rotation: Matrix4, center: BlockPosition): LazyList[Block] = superimposition(rotation, center.coordinates, center.world, {
+    case _: BlockElement => true
     case _: MaterialChoice => true
     case _ => false
     }).map(_._2)
 
-  def specialBlocks(rotation: Matrix4, center: Location, element: Element): Stream[Block] = superimposition(rotation, center.coordinates, center.world, {
+  def specialBlocks(rotation: Matrix4, center: BlockPosition, element: Element): LazyList[Block] = superimposition(rotation, center.coordinates, center.world, {
     case `element` => true
     case _ => false
   }).map(_._2)
 
-  def allRuneBlocks(rotation: Matrix4, center: Location): Stream[Block] = superimposition(rotation, center.coordinates, center.world, {
+  def allRuneBlocks(rotation: Matrix4, center: BlockPosition): LazyList[Block] = superimposition(rotation, center.coordinates, center.world, {
     case `NotInRune` => false
     case _ => true
   }).map(_._2)

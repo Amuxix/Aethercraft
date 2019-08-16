@@ -35,7 +35,7 @@ trait Inventory extends Consumable {
   /**
     * @return The sum of the energy values of all items in this Inventory
     */
-  def energy: Energy = contents.toStream.flatMap(_.energy).sum
+  def energy: Energy = contents.to(LazyList).flatMap(_.energy).sum
 
   /**
     * Removes or replaces this from wherever it may be and returns its energy value

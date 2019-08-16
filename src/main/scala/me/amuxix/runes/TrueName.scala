@@ -4,21 +4,23 @@ import cats.data.EitherT
 import cats.effect.IO
 import me.amuxix._
 import me.amuxix.block.Block
-import me.amuxix.block.Block.Location
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.inventory.Item
 import me.amuxix.inventory.items.PlayerHead
 import me.amuxix.material.Material.{Fire, PlayerHead => PlayerHeadMaterial}
 import me.amuxix.pattern._
+import me.amuxix.position.BlockPosition
 import me.amuxix.runes.traits.ConsumableBlocks
 import me.amuxix.runes.traits.enchants.{BlockPlaceTrigger, Enchant}
-import me.amuxix.OptionObjectOps
 
 /**
   * Created by Amuxix on 01/02/2017.
   */
-object TrueName extends RunePattern with Enchant with BlockPlaceTrigger {
-  val pattern: Pattern = Pattern(TrueName.apply)(
+object TrueName extends RunePattern[TrueName] with Enchant with BlockPlaceTrigger {
+
+  override val runeCreator: RuneCreator = TrueName.apply
+  // format: off
+  override val layers: List[BaseLayer] = List(
     ActivationLayer(
       NotInRune, Tier, Tier,      Tier, NotInRune,
       Tier,      Fire, Tier,      Fire, Tier,
@@ -27,38 +29,54 @@ object TrueName extends RunePattern with Enchant with BlockPlaceTrigger {
       NotInRune, Tier, NotInRune, Tier, NotInRune,
     )
   )
+  // format: on
 
-  override def canEnchant(item: Item): Option[String] = Option.unless(item.material == PlayerHeadMaterial)("True name can only be applied to player's heads")
+  override def canEnchant(item: Item): Option[String] =
+    Option.unless(item.material == PlayerHeadMaterial)("True name can only be applied to player's heads")
 
   override def incompatibleEnchants: Set[Enchant] = Set.empty
 
-  def createTrueNameOf(player: Player): IO[PlayerHead] = {
+  def createTrueNameOf(player: Player): EitherT[IO, String, PlayerHead] = {
     val trueName: PlayerHead = Item(PlayerHeadMaterial).asInstanceOf[PlayerHead]
     for {
       _ <- trueName.setOwner(player)
       _ <- trueName.setDisplayName(trueNameDisplayFor(player))
-      _ <- trueName.addRuneEnchant(TrueName).value
+      _ <- trueName.addCurses()
+      _ <- trueName.addRuneEnchant(TrueName)
     } yield trueName
   }
 
-  def trueNameDisplayFor(player: Player): String = {
+  def trueNameDisplayFor(player: Player): String =
     s"${player.name}'s ${TrueName.name}"
-  }
 
   //This will cancel the block place if the item being placed is a true name of another player
   /** This should run the effect of the enchant and return whether to cancel the event or not */
-  override def onBlockPlace(player: Player, placedBlock: Block, placedAgainstBlock: Block, itemPlaced: Option[Item]): EitherT[IO, String, Boolean] =
+  override def onBlockPlace(
+    player: Player,
+    placedBlock: Block,
+    placedAgainstBlock: Block,
+    itemPlaced: Option[Item]
+  ): EitherT[IO, String, Boolean] =
     itemPlaced match {
-        //False means we do not cancel the place event.
-      case Some(head: PlayerHead) if head.isTrueNameOf(player) => EitherT.rightT(false) //Trying to place own true name, allow this.
-      case Some(head: PlayerHead) if head.hasRuneEnchant(this) => //Trying to place someone else's true name, destroy it.
+      //False means we do not cancel the place event.
+      case Some(head: PlayerHead) if head.isTrueNameOf(player) =>
+        EitherT.rightT(false) //Trying to place own true name, allow this.
+      case Some(head: PlayerHead)
+          if head.hasRuneEnchant(this) => //Trying to place someone else's true name, destroy it.
         player.notifyError(s"As you place ${head.displayName} it crumbles to dust.")
         EitherT(head.destroyAll.map[Either[String, Boolean]](_ => Right(true)))
       case _ => EitherT.rightT(false)
     }
 }
 
-case class TrueName(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with ConsumableBlocks {
+case class TrueName(
+  center: BlockPosition,
+  creator: Player,
+  direction: Direction,
+  rotation: Matrix4,
+  pattern: Pattern
+) extends Rune
+    with ConsumableBlocks {
   override val shouldUseTrueName: Boolean = false
 
   /**
@@ -70,7 +88,7 @@ case class TrueName(center: Location, creator: Player, direction: Direction, rot
     } else {
       for {
         _ <- activator.addMaximumEnergyFrom(consume)
-        trueName <- EitherT.liftF(TrueName.createTrueNameOf(activator))
+        trueName <- TrueName.createTrueNameOf(activator)
         _ <- activator.add(trueName).toLeft(())
       } yield true
     }

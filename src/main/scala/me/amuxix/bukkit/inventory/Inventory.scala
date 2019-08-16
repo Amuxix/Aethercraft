@@ -5,7 +5,7 @@ import cats.effect.IO
 import me.amuxix._
 import org.bukkit.inventory.{Inventory => BukkitInventory}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 import scala.util.Try
 
 /**

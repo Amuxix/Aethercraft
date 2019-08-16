@@ -5,44 +5,59 @@ name := "Aethercraft"
 version := "1.0"
 
 javacOptions ++= Seq("-Xlint", "-encoding", "UTF-8")
-scalaVersion := "2.12.8"
+scalaVersion := "2.13.0"
 scalacOptions ++= Seq(
-  "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
   "-encoding", "utf-8",                // Specify character encoding used by source files.
   "-explaintypes",                     // Explain type errors in more detail.
-  "-feature",                          // Emit warning and location for usages of features that should be imported explicitly.
+  "-language:higherKinds",             // Allow higher-kinded types
+  "-language:postfixOps",              // Explicitly enables the postfix ops feature
   "-language:implicitConversions",     // Explicitly enables the implicit conversions feature
-  "-language:postfixOps",     // Explicitly enables the postfix ops feature
-  "-language:higherKinds",     // Explicitly enables the higher kinded types
-  "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
+  "-Ybackend-parallelism", "4",        // Maximum worker threads for backend.
+  "-Ybackend-worker-queue", "10",      // Backend threads worker queue size.
+  "-Ymacro-annotations",               // Enable support for macro annotations, formerly in macro paradise.
   "-Xcheckinit",                       // Wrap field accessors to throw an exception on uninitialized access.
-  "-Xfatal-warnings",                  // Fail the compilation if there are any warnings.
-  "-Xfuture",                          // Turn on future language features.
-  "-Ypartial-unification",             // Enable partial unification in type constructor inference
-  "-Yno-adapted-args",                 // Do not adapt an argument list (either by inserting () or creating a tuple) to match the receiver.
-  "-Xlint",                            // Enables every warning. scala -Xlint:help for a list and explanation
-  "-Xlint:_,-unused",                  // Enables every warning except "unused". scala -Xlint:help for a list and explanation
-  "-Ywarn-dead-code",                  // Warn when dead code is identified.
-  "-Ywarn-extra-implicit",             // Warn when more than one implicit parameter section is defined.
-  "-Ywarn-unused:imports",             // Warn if an import selector is not referenced.
-  "-Ywarn-unused:privates",            // Warn if a private member is unused.
-  "-Ywarn-unused:locals",              // Warn if a local definition is unused.
-  "-Ywarn-unused:implicits",           // Warn if an implicit parameter is unused.
-  "-Ywarn-unused:patvars",             // Warn if a variable bound in a pattern is unused.
-  "-Ybackend-parallelism", "12",        // Maximum worker threads for backend
+  "-Xmigration:2.14.0",                // Warn about constructs whose behavior may have changed since version.
+  //"-Xfatal-warnings", "-Werror",       // Fail the compilation if there are any warnings.
+  "-Xlint:_",                          // Enables every warning. scalac -Xlint:help for a list and explanation
+  "-deprecation",                      // Emit warning and location for usages of deprecated APIs.
+  "-unchecked",                        // Enable additional warnings where generated code depends on assumptions.
+  "-feature",                          // Emit warning and location for usages of features that should be imported explicitly.
+  "-Wdead-code",                       // Warn when dead code is identified.
+  "-Wextra-implicit",                  // Warn when more than one implicit parameter section is defined.
+  //"-Wnumeric-widen",                   // Warn when numerics are widened.
+  "-Woctal-literal",                   // Warn on obsolete octal syntax.
+  //"-Wself-implicit",                   // Warn when an implicit resolves to an enclosing self-definition.
+  "-Wunused:_",                        // Enables every warning of unused members/definitions/etc
+  "-Wunused:patvars",                  // Warn if a variable bound in a pattern is unused.
+  "-Wunused:params",                   // Enable -Wunused:explicits,implicits. Warn if an explicit/implicit parameter is unused.
+  "-Wunused:linted",                   // -Xlint:unused <=> Enable -Wunused:imports,privates,locals,implicits.
+  //"-Wvalue-discard",                   // Warn when non-Unit expression results are unused.
 )
+// These lines ensure that in sbt console or sbt test:console the -Ywarn* and the -Xfatal-warning are not bothersome.
+// https://stackoverflow.com/questions/26940253/in-sbt-how-do-you-override-scalacoptions-for-console-in-all-configurations
+/*scalacOptions in (Compile, console) ~= (_ filterNot { option =>
+  option.startsWith("-Ywarn") || option == "-Xfatal-warnings" || option.startsWith("-Xlint")
+})*/
+//scalacOptions in (Test, console) := (scalacOptions in (Compile, console)).value
 
-resolvers += "Spigot Repo" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
-val circeVersion = "0.11.1"
+resolvers ++= Seq(
+  Opts.resolver.sonatypeSnapshots,
+  Opts.resolver.sonatypeReleases,
+  "Spigot Snapshots Repo" at "https://hub.spigotmc.org/nexus/content/repositories/snapshots/",
+  "Spigot Repo" at "https://https://hub.spigotmc.org/nexus/content/repositories/releases/",
+)
+val circeVersion = "0.12.0-RC1"
 libraryDependencies ++= Seq(
-  "org.bukkit" % "bukkit" % "1.13.2-R0.1-SNAPSHOT" % Provided,
+  //"org.bukkit" % "bukkit" % "1.14.4-R0.1-SNAPSHOT" % Provided,
+  "net.md-5" % "bungeecord-chat" % "1.13-SNAPSHOT",
+  "org.spigotmc" % "spigot-api" % "1.14.2-R0.1-SNAPSHOT" % Provided exclude("net.md-5", "bungeecord-chat"),
   "com.beachape" %% "enumeratum" % "1.5.13",
-  "com.beachape" %% "enumeratum-circe" % "1.5.13",
+  "com.beachape" %% "enumeratum-circe" % "1.5.21",
   "io.circe" %% "circe-core" % circeVersion,
   "io.circe" %% "circe-generic" % circeVersion,
   "io.circe" %% "circe-parser" % circeVersion,
-  "org.typelevel" %% "cats-core" % "1.5.0",
-  "org.typelevel" %% "cats-effect" % "1.2.0",
+  //"org.typelevel" %% "cats-core" % "1.6.0",
+  "org.typelevel" %% "cats-effect" % "2.0.0-RC1",
   //"org.scalatest" %% "scalatest" % "3.0.1" % Test,
 )
 
@@ -58,7 +73,7 @@ resourceGenerators in Compile += Def.task {
         |version: ${version.value}-$date
         |author: Amuxix
         |main: me.amuxix.bukkit.Bukkit
-        |api-version: 1.13
+        |api-version: 1.14
         |""".stripMargin
   IO.write(file, pluginYml)
   Seq(file)

@@ -1,8 +1,9 @@
 package me.amuxix
 
 import scala.math.{cos, sin}
-import io.circe.generic.semiauto.{deriveEncoder, deriveDecoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
+import me.amuxix.position.Vector3
 
 /**
   * Defines a 4x4 matrix.

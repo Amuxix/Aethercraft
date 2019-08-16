@@ -8,6 +8,7 @@ import me.amuxix.{Direction, Player}
 import me.amuxix.bukkit.Player.BukkitPlayerOps
 import me.amuxix.bukkit.block.Block
 import me.amuxix.bukkit.block.Block.BukkitBlockOps
+import me.amuxix.bukkit.events.BlockBreak
 import me.amuxix.bukkit.inventory.Item
 import me.amuxix.bukkit.inventory.Item.BukkitItemStackOps
 import me.amuxix.runes.traits.enchants.Enchant._
@@ -33,9 +34,11 @@ object EnchantListener extends BukkitListener {
   @EventHandler(priority = LOWEST)
   def onBlockBreakEvent(event: BlockBreakEvent): Unit = {
     //This will run all triggers set by enchants and cancel the event if any of them cancels the event
-    val player = event.getPlayer.aetherize
-    val enchants = blockBreakEnchants.toList.map(_.onBlockBreak(player, player.itemInMainHand, event.getBlock.aetherize))
-    runEnchantsAndCancel(enchants, event, player)
+    if (!event.isInstanceOf[BlockBreak]) { //Avoid chain reactions
+      val player = event.getPlayer.aetherize
+      val enchants = blockBreakEnchants.toList.map(_.onBlockBreak(player, player.itemInMainHand, event.getBlock.aetherize))
+      runEnchantsAndCancel(enchants, event, player)
+    }
   }
 
   @EventHandler(priority = LOWEST)

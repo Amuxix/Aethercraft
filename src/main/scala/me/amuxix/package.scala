@@ -1,14 +1,11 @@
 package me
 
 package object amuxix {
-  import scala.math.Numeric.DoubleAsIfIntegral
-  implicit val doubleAsIfIntegral = DoubleAsIfIntegral //Allows this method to be implicitly used by Tuple32Vector
+  implicit val doubleAsIfIntegral = new DoubleAsIfIntegral {}
 
   implicit class OptionObjectOps(option: Option.type) {
-    def when[T](condition: Boolean)(t: => T): Option[T] = if (condition) Some(t) else None
     def flatWhen[T](condition: Boolean)(t: => Option[T]): Option[T] = if (condition) t else None
 
-    def unless[T](condition: Boolean)(t: => T): Option[T] = when(!condition)(t)
     def flatUnless[T](condition: Boolean)(t: => Option[T]): Option[T] = flatWhen(!condition)(t)
   }
 
@@ -34,13 +31,13 @@ package object amuxix {
   }
 
   object Energy {
-    //implicit val ordering = Ordering.ordered[Energy]
     implicit val numeric: Numeric[Energy] = new Numeric[Energy] {
       override def plus(x: Energy, y: Energy): Energy = new Energy(x.value + y.value)
       override def minus(x: Energy, y: Energy): Energy = new Energy(x.value - y.value)
       override def times(x: Energy, y: Energy): Energy = new Energy(x.value * y.value)
       override def negate(x: Energy): Energy = new Energy(-x.value)
       override def fromInt(x: Int): Energy = new Energy(x)
+      override def parseString(str: String): Option[Energy] = str.toIntOption.map(new Energy(_))
       override def toInt(x: Energy): Int = x.value
       override def toLong(x: Energy): Long = x.value.toLong
       override def toFloat(x: Energy): Float = x.value.toFloat
@@ -50,4 +47,6 @@ package object amuxix {
 
     def unapply(energy: Energy): Option[Int] = Some(energy.value)
   }
+
+  type =|>[-A, +B] = PartialFunction[A, B]
 }

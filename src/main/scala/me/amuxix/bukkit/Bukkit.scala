@@ -10,7 +10,7 @@ import org.bukkit.plugin.java.JavaPlugin
 import org.bukkit.scheduler.BukkitRunnable
 import org.bukkit.{Server, Bukkit => BukkitAPI}
 
-import scala.collection.JavaConverters._
+import scala.jdk.CollectionConverters._
 
 object Bukkit {
   private[bukkit] var server: Server = _

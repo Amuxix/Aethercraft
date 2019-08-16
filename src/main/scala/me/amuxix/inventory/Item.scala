@@ -1,13 +1,14 @@
 package me.amuxix.inventory
 
-import cats.data.OptionT
+import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import me.amuxix.material.Material
+import me.amuxix.material.Properties.ItemProperty
 import me.amuxix.runes.traits.enchants.Enchant
 import me.amuxix.{Consumable, Energy}
 
 trait Item extends Consumable {
-  val material: Material
+  val material: Material with ItemProperty
 
   def amount: Int
 
@@ -17,17 +18,19 @@ trait Item extends Consumable {
 
   def destroy(amount: Int): IO[Unit]
 
+  def addCurses(): EitherT[IO, String, Unit]
+
   def enchants: Set[Enchant]
 
   def hasRuneEnchant(enchant: Enchant): Boolean
 
-  def addRuneEnchant(enchant: Enchant): OptionT[IO, String]
+  def addRuneEnchant(enchant: Enchant): EitherT[IO, String, Unit]
 
   def hasDisplayName: Boolean
 
-  def displayName: String
+  def displayName: Option[String]
 
-  def setDisplayName(name: String): IO[Unit]
+  def setDisplayName(name: String): EitherT[IO, String, Unit]
 
   /**
     * @return The value of this item or None if item has no energy

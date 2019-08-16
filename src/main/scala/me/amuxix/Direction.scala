@@ -1,7 +1,8 @@
 package me.amuxix
 
-import io.circe.generic.semiauto.{deriveEncoder, deriveDecoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.{Decoder, Encoder}
+import me.amuxix.position.Vector3
 import org.bukkit.block.BlockFace
 
 /**
@@ -22,22 +23,22 @@ object Direction {
     case West => West
     case Up => Up
     case Down => Down
-    case NorthWest => NorthWest
     case NorthEast => NorthEast
     case SouthEast => SouthEast
     case SouthWest => SouthWest
-    case UpWest => UpWest
-    case UpEast => UpEast
-    case DownEast => DownEast
-    case DownWest => DownWest
-    case UpSouth => UpSouth
+    case NorthWest => NorthWest
     case UpNorth => UpNorth
+    case UpEast => UpEast
+    case UpSouth => UpSouth
+    case UpWest => UpWest
     case DownNorth => DownNorth
+    case DownEast => DownEast
     case DownSouth => DownSouth
+    case DownWest => DownWest
     case _ => throw new Exception("Cardinal point with this vector does not exist")
   }
 
-  val directNeighbours = List(
+  val faceNeighbours = List(
     North,
     South,
     East,
@@ -45,19 +46,34 @@ object Direction {
     Up,
     Down,
   )
-  
-  val indirectNeighbours = List(
-    NorthWest,
+
+  val edgeNeighbours = List(
     NorthEast,
     SouthEast,
     SouthWest,
-    UpWest,
+    NorthWest,
+    UpNorth,
     UpEast,
+    UpSouth,
+    UpWest,
+    DownNorth,
     DownEast,
+    DownSouth,
     DownWest,
   )
 
-  val allNeighbours: List[Direction] = directNeighbours ++ indirectNeighbours
+  val vertexNeighbours = List(
+    UpNorthEast,
+    UpSouthEast,
+    UpSouthWest,
+    UpNorthWest,
+    DownNorthEast,
+    DownSouthEast,
+    DownSouthWest,
+    DownNorthWest,
+  )
+
+  val allNeighbours: List[Direction] = faceNeighbours ++ edgeNeighbours ++ vertexNeighbours
 
   implicit val encoder: Encoder[Direction] = deriveEncoder
   implicit val decoder: Decoder[Direction] = deriveDecoder
@@ -75,19 +91,27 @@ object West extends Direction(-1, 0, 0)
 object Up extends Direction(0, 1, 0)
 object Down extends Direction(0, -1, 0)
 
-object NorthWest extends Direction(North + West)
 object NorthEast extends Direction(North + East)
 object SouthEast extends Direction(South + East)
 object SouthWest extends Direction(South + West)
-object UpWest extends Direction(Up + West)
+object NorthWest extends Direction(North + West)
+object UpNorth extends Direction(Up + North)
 object UpEast extends Direction(Up + East)
+object UpSouth extends Direction(Up + South)
+object UpWest extends Direction(Up + West)
+object DownNorth extends Direction(Down + North)
 object DownEast extends Direction(Down + East)
+object DownSouth extends Direction(Down + South)
 object DownWest extends Direction(Down + West)
 
-object UpSouth extends Direction(Up + South)
-object UpNorth extends Direction(Up + North)
-object DownNorth extends Direction(Down + North)
-object DownSouth extends Direction(Down + South)
+object UpNorthEast extends Direction(Up + NorthEast)
+object UpSouthEast extends Direction(Up + SouthEast)
+object UpSouthWest extends Direction(Up + SouthWest)
+object UpNorthWest extends Direction(Up + NorthWest)
+object DownNorthEast extends Direction(Down + NorthEast)
+object DownSouthEast extends Direction(Down + SouthEast)
+object DownSouthWest extends Direction(Down + SouthWest)
+object DownNorthWest extends Direction(Down + NorthWest)
 
 /*
 To generate this follow these steps:

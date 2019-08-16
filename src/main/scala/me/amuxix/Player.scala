@@ -5,12 +5,11 @@ import java.util.UUID
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
-import me.amuxix.Player.Location
 import me.amuxix.bukkit.{Player => BPlayer}
 import me.amuxix.inventory.{Item, PlayerInventory}
+import me.amuxix.position.EntityPosition
 
 object Player {
-  type Location = Position[Double]
   implicit val encoder: Encoder[Player] = Encoder.forProduct1("uuid")(_.uuid)
   implicit val decoder: Decoder[Player] = Decoder.forProduct1("uuid")(BPlayer.apply)
 }
@@ -18,7 +17,7 @@ object Player {
 trait Player {
   def uuid: UUID
 
-  def teleportTo(target: Location, pitch: Float, yaw: Float): OptionT[IO, String]
+  def teleportTo(target: EntityPosition, pitch: Float, yaw: Float): OptionT[IO, String]
 
   def pitch: Float
 
@@ -38,7 +37,7 @@ trait Player {
     */
   def notifyError(text: String): IO[Unit]
 
-  def location: Option[Any]
+  def location: Option[EntityPosition]
 
   def name: String
 
@@ -51,6 +50,18 @@ trait Player {
   def itemInMainHand: Option[Item]
 
   def itemInOffHand: Option[Item]
+
+  /**
+    * Check if player is online and in creative mode
+    * @return True if player is online and in creative mode, false if player is offline or not in creative mode
+    */
+  def inCreativeMode: Boolean
+
+  /**
+    * Check if player is online and in survival mode
+    * @return True if player is online and in survival mode, false if player is offline or not in survival mode
+    */
+  def inSurvivalMode: Boolean
 
   private lazy val energyReservoir: EnergyReservoir = EnergyReservoir(this)
 

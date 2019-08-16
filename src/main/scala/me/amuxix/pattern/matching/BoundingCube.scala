@@ -1,18 +1,18 @@
 package me.amuxix.pattern.matching
 
 import me.amuxix.block.Block
-import me.amuxix.block.Block.Location
 import me.amuxix.logging.Logger.trace
 import me.amuxix.pattern.Pattern
-import me.amuxix.{BlockAt, Vector3}
+import me.amuxix.BlockAt
+import me.amuxix.position.{BlockPosition, Vector3}
 
 /**
   * Created by Amuxix on 21/11/2016.
   */
-case class BoundingCube(centerLocation: Location, possiblePatterns: Seq[Pattern]) extends BlockAt {
-  val dimension: Int = possiblePatterns.foldLeft(0) { case(acc, pattern) => acc max pattern.largestDimension }
+case class BoundingCube(centerLocation: BlockPosition, possiblePatterns: Seq[Pattern]) extends BlockAt {
+  val dimension: Int = possiblePatterns.foldLeft(0) { case (acc, pattern) => acc max pattern.largestDimension }
   val center: Vector3[Int] = Vector3(dimension, dimension, dimension) / 2
-  val cubeOrigin: Location = centerLocation - center
+  val cubeOrigin: BlockPosition = centerLocation - center
   trace(s"Center: $centerLocation")
   trace(s"Cube Origin: $cubeOrigin")
   trace(s"Cube size: $dimension")

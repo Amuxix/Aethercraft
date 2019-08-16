@@ -1,7 +1,7 @@
 package me.amuxix
 
 import me.amuxix.block.Block
-import me.amuxix.block.Block.Location
+import me.amuxix.position.BlockPosition
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.{Persistent, Tiered}
 
@@ -19,7 +19,7 @@ object IntegrityMonitor {
   /**
     * Lists of persistent runes that will be serialized
     */
-  var persistentRunes = HashMap.empty[Location, Persistent]
+  var persistentRunes = HashMap.empty[BlockPosition, Persistent]
 
   /**
     * Registers a persistent rune for its blocks to be monitored

@@ -2,10 +2,10 @@ package me.amuxix.runes.test
 
 import cats.data.EitherT
 import cats.effect.IO
-import me.amuxix.block.Block.Location
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{EndStone, Glass}
 import me.amuxix.pattern._
+import me.amuxix.position.BlockPosition
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits._
 import me.amuxix.{Direction, Matrix4, Player}
@@ -17,8 +17,11 @@ import me.amuxix.{Direction, Matrix4, Player}
   * Test rune, does nothing pattern might chance
   */
 
-object Test extends RunePattern {
-  val pattern: Pattern = Pattern(Test.apply, verticality = true)(
+object Test extends RunePattern[Test] {
+  override val runeCreator: RuneCreator = Test.apply
+  override val verticality = true
+  // format: off
+  override val layers = List(
     ActivationLayer(
       EndStone, NotInRune, EndStone,
       NotInRune, EndStone, NotInRune,
@@ -29,9 +32,19 @@ object Test extends RunePattern {
       Glass, Glass, Glass
     )
   )
+  // format: on
 }
 
-case class Test(center: Location, creator: Player, direction: Direction, rotation: Matrix4, pattern: Pattern) extends Rune with Tiered with ConsumableBlocks with Linkable {
+case class Test(
+  center: BlockPosition,
+  creator: Player,
+  direction: Direction,
+  rotation: Matrix4,
+  pattern: Pattern
+) extends Rune
+    with Tiered
+    with ConsumableBlocks
+    with Linkable {
   /**
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     *

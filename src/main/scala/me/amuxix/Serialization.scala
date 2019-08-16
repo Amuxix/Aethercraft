@@ -114,9 +114,9 @@ object Serialization {
   private def save[T](saveFolder: File, folderName: String, fileName: String, things: Iterable[T])(async: Boolean)(implicit encoder: Encoder[Iterable[T]]): IO[Unit] = {
     def innerSave = {
       val folder = new File(saveFolder, folderName)
+      val file = new File(folder, fileName + fileTermination)
       val saveFile = IO {
-        val bw = new BufferedWriter(
-          new FileWriter(new File(folder, fileName + fileTermination)))
+        val bw = new BufferedWriter(new FileWriter(file))
         try {
           bw.write(things.asJson.spaces2)
         } finally {

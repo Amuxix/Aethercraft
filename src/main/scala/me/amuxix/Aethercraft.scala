@@ -8,6 +8,10 @@ import cats.implicits._
 import me.amuxix.bukkit.Bukkit
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Recipe
+import me.amuxix.pattern.RunePattern
+import me.amuxix.runes._
+import me.amuxix.runes.test._
+import me.amuxix.runes.waypoints.Waypoint
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.global
@@ -15,6 +19,8 @@ import scala.concurrent.Future
 
 object Aethercraft {
   val defaultFailureMessage = "Some unknown force blocks you."
+  //val activeRunes: LazyList[RunePattern[_]] = LazyList(Test, Test2, Waypoint, Teleporter, Compass, TrueName, RunicChest, SuperTool)
+  val activeRunes: LazyList[RunePattern[_]] = LazyList(SuperTool)
 
   var logger: Logger = _
 
@@ -33,7 +39,7 @@ object Aethercraft {
     }
   }
 
-  def runTaskAsync(task: IO[Unit]): Unit = Future(task)
+  def runTaskAsync(task: IO[Unit]): Unit = Future(task.unsafeRunSync())
 
   var worlds: Map[UUID, World] = _
 
@@ -62,7 +68,7 @@ object Aethercraft {
     Serialization.reservoirsFile = reservoirsFolder
 
     val updateEnergies = IO {
-      while(Recipe.recipes.count(_.updateResultEnergy) > 0) {
+      while(Recipe.recipes.count(_.updateResultEnergy()) > 0) {
         //Keep updating energy from recipes while at least one energy value is changed.
       }
     }

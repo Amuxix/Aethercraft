@@ -5,13 +5,13 @@ import java.util.UUID
 import cats.data.OptionT
 import cats.effect.IO
 import me.amuxix
-import me.amuxix.Player.Location
 import me.amuxix._
-import me.amuxix.bukkit.Location.{BukkitDoublePositionOps, PositionDoubleOps}
+import me.amuxix.bukkit.Location.{BukkitEntityPositionOps, EntityPositionOps}
 import me.amuxix.bukkit.inventory.PlayerInventory.BukkitInventoryOps
 import me.amuxix.bukkit.inventory.{Item, PlayerInventory}
+import me.amuxix.position.EntityPosition
 import org.bukkit.entity.{Player => BPlayer}
-import org.bukkit.{ChatColor, OfflinePlayer}
+import org.bukkit.{ChatColor, GameMode, OfflinePlayer}
 
 /**
   * Created by Amuxix on 22/11/2016.
@@ -32,7 +32,7 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
     }
   }
 
-  override def teleportTo(target: Location, pitch: Float, yaw: Float): OptionT[IO, String] =
+  override def teleportTo(target: EntityPosition, pitch: Float, yaw: Float): OptionT[IO, String] =
     OptionT.fromOption(player.fold(_ => Some("Player is offline"), player => {
       val destination = target.bukkitForm
       destination.setPitch(pitch)
@@ -48,16 +48,16 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
     * Shows a message in the action bar position for the player.
     * @param text Message to be sent
     */
-  override def notify(text: String): IO[Unit] = IO(player.foreach(_.sendMessage(ChatColor.GREEN + text)))
+  override def notify(text: String): IO[Unit] = IO(player.foreach(_.sendMessage(ChatColor.GREEN.toString + text)))
 
   /**
     * Shows an error to this player
     *
     * @param text Message to be sent
     */
-  override def notifyError(text: String): IO[Unit] = notify(ChatColor.DARK_RED + text)
+  override def notifyError(text: String): IO[Unit] = notify(ChatColor.DARK_RED.toString + text)
 
-  override def location: Option[Location] = player.map(_.getLocation.aetherize).toOption
+  override def location: Option[EntityPosition] = player.map(_.getLocation.aetherize).toOption
 
   override def name: String = player.fold(_.getName, _.getName)
 
@@ -65,9 +65,23 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
 
   override def helmet: Option[Item] = inventory.flatMap(_.helmet)
 
-  override def itemInMainHand: Option[Item] = inventory.flatMap(_.itemInMainHand)
+  override def itemInMainHand: Option[Item] = inventory.map(_.itemInMainHand)
 
-  override def itemInOffHand: Option[Item] = inventory.flatMap(_.itemInOffHand)
+  override def itemInOffHand: Option[Item] = inventory.map(_.itemInOffHand)
+
+  private def gameMode: Option[GameMode] = player.toOption.map(_.getGameMode)
+
+  /**
+    * Check if player is online and in creative mode
+    * @return True if player is online and in creative mode, false if player is offline or not in creative mode
+    */
+  override def inCreativeMode: Boolean = gameMode.contains(GameMode.CREATIVE)
+
+  /**
+    * Check if player is online and in survival mode
+    * @return True if player is online and in survival mode, false if player is offline or not in survival mode
+    */
+  override def inSurvivalMode: Boolean = gameMode.contains(GameMode.SURVIVAL)
 
   override def bukkitForm: BPlayer = player.toOption.orNull
 }

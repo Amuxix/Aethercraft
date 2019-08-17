@@ -49,13 +49,14 @@ case class Disenchanter(
     * Internal activate method that should contain all code to activate a rune.
     */
   override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
-    val setRedstoneBlockToStone = (center + Down).block.setMaterial(Dirt).toLeft(())
+    val setRedstoneBlockToDirt = (center + Down).block.setMaterial(Dirt).toLeft(())
+    activationMessage = activationItem.fold(activationMessage)(_.name + " has been disenchanted")
 
     for {
       item <- EitherT.fromOption[IO](activationItem, "No activation tool.")
       _ <- EitherT.liftF(center.strikeLightningEffect)
       _ <- EitherT.liftF(activator.position.traverse(_.strikeLightningEffect))
-      _ <- setRedstoneBlockToStone
+      _ <- setRedstoneBlockToDirt
       _ <- item.disenchant
     } yield true
   }
@@ -63,6 +64,6 @@ case class Disenchanter(
   /**
     * Should this rune use a true name if the activator is wearing one?
     */
-  override val shouldUseTrueName: Boolean = false
+  override val shouldUseTrueName: Boolean = true
 }
 

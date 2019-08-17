@@ -30,6 +30,8 @@ trait Item extends Consumable {
 
   def disenchant: EitherT[IO, String, Unit]
 
+  def name: String
+
   def hasDisplayName: Boolean
 
   def displayName: Option[String]

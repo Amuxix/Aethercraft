@@ -102,12 +102,16 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
       case existingEnchant if enchant.incompatibleEnchants.contains(existingEnchant) =>
         s"${existingEnchant.name} is incompatible with ${enchant.name}"
     }
+    val enchantPresent = Option.when(enchants.contains(enchant))(s"$name already enchanted with ${enchant.name}")
     enchant.canEnchant(this)
       .orElse(incompatibleEnchant)
+      .orElse(enchantPresent)
       .fold(addToLore(enchant.name + enchantNameSuffix))(EitherT.leftT(_))
   }
 
   override def disenchant: EitherT[IO, String, Unit] = enchants.toList.traverse_(enchant => removeFromLore(enchant.name + enchantNameSuffix))
+
+  override def name: String = displayName.filter(_ => hasDisplayName).getOrElse(material.name)
 
   override def hasDisplayName: Boolean = maybeMeta.exists(_.hasDisplayName)
 

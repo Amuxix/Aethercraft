@@ -80,10 +80,11 @@ case class SuperTool(
   /**
     * Internal activate method that should contain all code to activate a rune.
     */
-  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] =
-    EitherT.fromOption[IO](activationItem, "No activation tool.")
-      .flatMap(_.addRuneEnchant(SuperTool))
-      .map(_ => true)
+  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
+    activationMessage = activationItem.fold(activationMessage)(_.name + s" has been enchanted with ${this.name}")
+
+    EitherT.fromOption[IO](activationItem, "No activation tool.").flatMap(_.addRuneEnchant(SuperTool)).map(_ => true)
+  }
 
   /**
     * Should this rune use a true name if the activator is wearing one?

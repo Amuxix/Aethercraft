@@ -1,5 +1,6 @@
 package me.amuxix.position
 
+import cats.effect.IO
 import me.amuxix.World
 
 import scala.math.{pow, sqrt}
@@ -19,6 +20,10 @@ abstract class Position[T : Numeric](world: World, coordinates: Vector3[T]) {
     import Numeric.Implicits._
     sqrt(pow((x - t.x).toDouble, 2) + pow((y - t.y).toDouble, 2) + pow((z - t.z).toDouble, 2))
   }
+
+  def strikeLightning: IO[Unit]
+
+  def strikeLightningEffect: IO[Unit]
 
   override def toString: String = {"[" + world.name + "@" + coordinates.toString + "]"}
 

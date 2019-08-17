@@ -1,5 +1,6 @@
 package me.amuxix.position
 
+import cats.effect.IO
 import me.amuxix.World
 
 case class EntityPosition(world: World, coordinates: Vector3[Double]) extends Position[Double](world, coordinates) {
@@ -11,6 +12,10 @@ case class EntityPosition(world: World, coordinates: Vector3[Double]) extends Po
   override def -(vector: Vector3[Double]): EntityPosition = EntityPosition(world, coordinates - vector)
 
   def toBlockPosition: BlockPosition = BlockPosition(world, Vector3(x.toInt, y.toInt, z.toInt))
+
+  override def strikeLightning: IO[Unit] = world.strikeLightning(this)
+
+  override def strikeLightningEffect: IO[Unit] = world.strikeLightningEffect(this)
 
   /*def canEqual(other: Any): Boolean = other.isInstanceOf[Position[T]]
 

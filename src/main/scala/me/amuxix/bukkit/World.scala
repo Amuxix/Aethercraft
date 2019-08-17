@@ -3,10 +3,12 @@ package me.amuxix.bukkit
 import java.io.File
 import java.util.UUID
 
+import cats.effect.IO
 import me.amuxix
 import me.amuxix.Aetherizeable
+import me.amuxix.bukkit.Location.EntityPositionOps
 import me.amuxix.bukkit.block.Block.BukkitBlockOps
-import me.amuxix.position.Vector3
+import me.amuxix.position.{EntityPosition, Vector3}
 import org.bukkit.{World => BukkitWorld}
 
 import scala.collection.mutable
@@ -29,6 +31,10 @@ private[bukkit] class World(val world: BukkitWorld) extends amuxix.World with Bu
   override def bukkitForm: BukkitWorld = world
 
   override def worldFolder: File = world.getWorldFolder
+
+  override def strikeLightning(position: EntityPosition): IO[Unit] = IO(world.strikeLightning(position.bukkitForm))
+
+  override def strikeLightningEffect(position: EntityPosition): IO[Unit] = IO(world.strikeLightningEffect(position.bukkitForm))
 
   override def equals(other: Any): Boolean = other match {
     case that: World => this.uuid == that.uuid

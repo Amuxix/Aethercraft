@@ -26,11 +26,11 @@ object SuperTool extends RunePattern[SuperTool] with Enchant with BlockBreakTrig
   // format: off
   override val layers: List[ActivationLayer] = List(
     ActivationLayer(
-      RedstoneWire,  NotInRune,    RedstoneTorch, NotInRune,    RedstoneWire,
-      NotInRune,     Tier,         RedstoneWire,  Tier,         NotInRune,
+      RedstoneWire,  RedstoneWire, RedstoneTorch, RedstoneWire, RedstoneWire,
+      RedstoneWire,  NotInRune,    RedstoneWire,  NotInRune,    RedstoneWire,
       RedstoneTorch, RedstoneWire, NotInRune,     RedstoneWire, RedstoneTorch,
-      NotInRune,     Tier,         RedstoneWire,  Tier,         NotInRune,
-      RedstoneWire,  NotInRune,    RedstoneTorch, NotInRune,    RedstoneWire,
+      RedstoneWire,  NotInRune,    RedstoneWire,  NotInRune,    RedstoneWire,
+      RedstoneWire,  RedstoneWire, RedstoneTorch, RedstoneWire, RedstoneWire,
     )
   )
   // format: on

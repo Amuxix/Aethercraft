@@ -4,7 +4,9 @@ import java.util.UUID
 import java.util.logging.Logger
 
 import cats.effect.IO
-import cats.implicits._
+import cats.implicits.toFoldableOps
+import cats.implicits.toTraverseOps
+import cats.implicits.catsStdInstancesForList
 import me.amuxix.bukkit.Bukkit
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Recipe
@@ -19,8 +21,7 @@ import scala.concurrent.Future
 
 object Aethercraft {
   val defaultFailureMessage = "Some unknown force blocks you."
-  //val activeRunes: LazyList[RunePattern[_]] = LazyList(Test, Test2, Waypoint, Teleporter, Compass, TrueName, RunicChest, SuperTool)
-  val activeRunes: LazyList[RunePattern[_]] = LazyList(SuperTool)
+  val activeRunes: LazyList[RunePattern[_]] = LazyList(Test, Test2, Waypoint, Teleporter, Compass, TrueName, RunicChest, SuperTool, Disenchanter)
 
   var logger: Logger = _
 

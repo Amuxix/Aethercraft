@@ -1,5 +1,6 @@
 package me.amuxix.position
 
+import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix.{Direction, Up, World}
 import me.amuxix.block.Block
@@ -30,6 +31,10 @@ case class BlockPosition(world: World, coordinates: Vector3[Int]) extends Positi
     * @return true if a player can fit
     */
   def canFitPlayer: Boolean = block.material.isSolid == false && (this + Up).block.material.isSolid == false
+
+  def strikeLightning: IO[Unit] = world.strikeLightning(this.toEntityPosition)
+
+  def strikeLightningEffect: IO[Unit] = world.strikeLightning(this.toEntityPosition)
 
 /*  def canEqual(other: Any): Boolean = other.isInstanceOf[BlockPosition]
 

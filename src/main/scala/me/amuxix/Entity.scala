@@ -9,5 +9,5 @@ object Entity {
 
 }
 abstract class Entity {
-  def location: Option[EntityPosition]
+  def position: Option[EntityPosition]
 }

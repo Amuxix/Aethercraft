@@ -57,7 +57,7 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
     */
   override def notifyError(text: String): IO[Unit] = notify(ChatColor.DARK_RED.toString + text)
 
-  override def location: Option[EntityPosition] = player.map(_.getLocation.aetherize).toOption
+  override def position: Option[EntityPosition] = player.map(_.getLocation.aetherize).toOption
 
   override def name: String = player.fold(_.getName, _.getName)
 

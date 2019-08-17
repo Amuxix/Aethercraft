@@ -3,7 +3,9 @@ package me.amuxix.bukkit.inventory
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import cats.implicits.catsStdInstancesForOption
+import cats.implicits.catsStdInstancesForList
 import cats.implicits.toTraverseOps
+import cats.implicits.toFoldableOps
 import me.amuxix.bukkit.BukkitForm
 import me.amuxix.bukkit.Material.{BukkitMaterialOps, MaterialOps}
 import me.amuxix.bukkit.inventory.items.PlayerHead
@@ -78,6 +80,8 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
 
   private def addToLore(string: String): EitherT[IO, String, Unit] = setLore(lore :+ string)
 
+  private def removeFromLore(string: String): EitherT[IO, String, Unit] = setLore(lore.filterNot(_ == string))
+
   private def loreContains(string: String): Boolean = lore.exists(_.contains(string))
 
   override def addCurses(): EitherT[IO, String, Unit] =
@@ -88,6 +92,8 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
     }).toRight("Failed to add curses.")
 
   override def enchants: Set[Enchant] = Enchant.enchants.filter(hasRuneEnchant).toSet
+
+  override def isEnchanted: Boolean = enchants.nonEmpty
 
   override def hasRuneEnchant(enchant: Enchant): Boolean = loreContains(enchant.name + enchantNameSuffix)
 
@@ -100,6 +106,8 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
       .orElse(incompatibleEnchant)
       .fold(addToLore(enchant.name + enchantNameSuffix))(EitherT.leftT(_))
   }
+
+  override def disenchant: EitherT[IO, String, Unit] = enchants.toList.traverse_(enchant => removeFromLore(enchant.name + enchantNameSuffix))
 
   override def hasDisplayName: Boolean = maybeMeta.exists(_.hasDisplayName)
 

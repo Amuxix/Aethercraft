@@ -8,7 +8,6 @@ import me.amuxix.bukkit.block.blocks.Chest
 import me.amuxix.bukkit.events._
 import me.amuxix.bukkit.{Player => _, block => _, _}
 import me.amuxix.inventory.{Inventory, Item}
-import me.amuxix.logging.Logger
 import me.amuxix.material.Material
 import me.amuxix.material.Properties.BlockProperty
 import me.amuxix.material.Material._

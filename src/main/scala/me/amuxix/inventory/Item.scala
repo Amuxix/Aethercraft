@@ -22,9 +22,13 @@ trait Item extends Consumable {
 
   def enchants: Set[Enchant]
 
+  def isEnchanted: Boolean
+
   def hasRuneEnchant(enchant: Enchant): Boolean
 
   def addRuneEnchant(enchant: Enchant): EitherT[IO, String, Unit]
+
+  def disenchant: EitherT[IO, String, Unit]
 
   def hasDisplayName: Boolean
 

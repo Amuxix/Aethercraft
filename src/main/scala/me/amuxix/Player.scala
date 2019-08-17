@@ -37,7 +37,7 @@ trait Player {
     */
   def notifyError(text: String): IO[Unit]
 
-  def location: Option[EntityPosition]
+  def position: Option[EntityPosition]
 
   def name: String
 

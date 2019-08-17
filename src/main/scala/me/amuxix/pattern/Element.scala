@@ -11,4 +11,4 @@ case object Key extends Element
 case object NotInRune extends Element
 case class BlockElement(block: Material with BlockProperty) extends Element
 
-case class MaterialChoice(possibilities: BlockProperty*) extends Element
+case class MaterialChoice(possibilities: Material with BlockProperty*) extends Element

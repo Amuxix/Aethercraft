@@ -19,10 +19,6 @@ import me.amuxix.{=|>, Direction, Matrix4, Player}
   * Created by Amuxix on 01/02/2017.
   */
 object SuperTool extends RunePattern[SuperTool] with Enchant with BlockBreakTrigger {
-  override val runeCreator: RuneCreator = SuperTool.apply
-  override val activatesWith: Option[Item] =|> Boolean = {
-    case Some(item) if item.material.isTool => true
-  }
   // format: off
   override val layers: List[ActivationLayer] = List(
     ActivationLayer(

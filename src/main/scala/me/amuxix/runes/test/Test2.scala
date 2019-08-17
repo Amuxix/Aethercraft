@@ -14,11 +14,6 @@ import me.amuxix.{=|>, Direction, Matrix4, Player}
   * Created by Amuxix on 01/12/2016.
   */
 object Test2 extends RunePattern[Test2] {
-  override val runeCreator: RuneCreator = Test2.apply
-
-  override val activatesWith: Option[Item] =|> Boolean = {
-    case Some(item) if item.material.isSword => true
-  }
   // format: off
   override val layers: List[BaseLayer] = List(
     ActivationLayer(

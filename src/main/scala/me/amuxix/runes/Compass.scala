@@ -14,7 +14,6 @@ import me.amuxix.{Player, _}
   * Created by Amuxix on 02/01/2017.
   */
 object Compass extends RunePattern[Compass] {
-  override val runeCreator: RuneCreator = Compass.apply
   // format: off
   override val layers: List[BaseLayer] = List(
     ActivationLayer(

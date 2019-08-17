@@ -18,7 +18,6 @@ import me.amuxix.runes.traits.enchants.{BlockPlaceTrigger, Enchant}
   */
 object TrueName extends RunePattern[TrueName] with Enchant with BlockPlaceTrigger {
 
-  override val runeCreator: RuneCreator = TrueName.apply
   // format: off
   override val layers: List[BaseLayer] = List(
     ActivationLayer(

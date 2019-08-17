@@ -18,8 +18,7 @@ import scala.math.log10
   * Created by Amuxix on 03/01/2017.
   */
 object Teleporter extends RunePattern[Teleporter] {
-  override val runeCreator: RuneCreator = Teleporter.apply
-  override val verticality: Boolean = true
+  override val castableVertically: Boolean = true
   // format: off
   override val layers: List[BaseLayer] = List(
     ActivationLayer(

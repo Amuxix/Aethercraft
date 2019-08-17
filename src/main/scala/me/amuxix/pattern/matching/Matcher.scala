@@ -26,11 +26,10 @@ object Matcher {
     * Looks for runes at the given location
     */
   def lookForRunesAt(location: BlockPosition, activator: Player, direction: Direction, itemInHand: Option[Item]): Option[Rune] = {
-    val possiblePatterns: LazyList[Pattern] = patterns.filter(_.canBeActivatedWith(itemInHand))
-    matchRunes(location, activator, direction, possiblePatterns)
+    matchRunes(location, activator, direction, patterns)
       .orElse {
         info("Found no runes, looking for runes with center on the adjacent block of the clicked block face")
-        matchRunes(location + direction, activator, direction, possiblePatterns)
+        matchRunes(location + direction, activator, direction, patterns)
       }
   }
 

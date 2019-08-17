@@ -10,9 +10,6 @@ import me.amuxix.position.BlockPosition
 import me.amuxix.{=|>, Direction, Energy, Matrix4, Player}
 
 object RunicChest extends RunePattern[RunicChest] {
-  override val runeCreator: RuneCreator = RunicChest.apply
-  override val activatesWith: Option[Item] =|> Boolean = { case _ => true }
-
   // format: off
   val layers: List[BaseLayer] = List(
     ActivationLayer(

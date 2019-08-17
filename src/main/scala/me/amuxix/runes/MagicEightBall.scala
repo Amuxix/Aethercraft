@@ -11,10 +11,6 @@ import me.amuxix.{=|>, Direction, Matrix4, Player}
 import scala.util.Random.nextInt
 
 object MagicEightBall extends RunePattern[MagicEightBall] {
-  override val runeCreator: RuneCreator = MagicEightBall.apply
-  override val activatesWith: Option[Item] =|> Boolean = {
-    case None => true
-  }
   // format: off
   override val layers: List[BaseLayer] = List(
     ActivationLayer(

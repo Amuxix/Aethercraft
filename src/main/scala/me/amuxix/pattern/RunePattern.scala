@@ -1,6 +1,5 @@
 package me.amuxix.pattern
 
-import me.amuxix.inventory.Item
 import me.amuxix.material.Material
 import me.amuxix.material.Properties.BlockProperty
 import me.amuxix.pattern.RunePattern.isMirrored
@@ -8,34 +7,22 @@ import me.amuxix.position.BlockPosition
 import me.amuxix.runes.Rune
 import me.amuxix.{=|>, Direction, Matrix4, Named, Player}
 
-/*import scala.reflect.runtime.currentMirror
-import scala.reflect.runtime.universe.TypeTag
-import scala.util.Try*/
-
 /**
   * Created by Amuxix on 01/12/2016.
   */
 trait RunePattern[R <: Rune] extends Named {
-  type RuneCreator = (BlockPosition, Player, Direction, Matrix4, Pattern) => R
   implicit def block2blockElement(block: Material with BlockProperty): BlockElement = BlockElement(block)
 
-  /*def companionOf[T, CT](implicit tag: TypeTag[T]): CT =
-    Try[CT] {
-      val companionModule = tag.tpe.typeSymbol.companion.asModule
-      currentMirror.reflectModule(companionModule).instance.asInstanceOf[CT]
-    }.getOrElse(throw new RuntimeException(s"Could not get companion object for type ${tag.tpe}"))*/
-
-  val runeCreator: RuneCreator
   def apply(location: BlockPosition, player: Player, direction: Direction, rotation: Matrix4, pattern: Pattern): R
 
+  /** This should be overridden when the pattern is not a square */
   val width: Option[Int] = None
-  val verticality: Boolean = false
+  /** This determines whether a rune that is not mirrored in both axis needs to be cast in a specific direction */
   val directional: Boolean = false
-  val buildableOnCeiling: Boolean = true
-  val activatesWith: Option[Item] =|> Boolean = {
-    case Some(item) => !item.material.isBlock
-    case None       => true //Empty hand
-  }
+  /** This determines whether the rune can be cast while in a upright position */
+  val castableVertically: Boolean = false
+  /** This determines whether a rune can be cast while with its layers in reverse order */
+  val castableOnCeiling: Boolean = true
 
   val layers: List[BaseLayer]
 
@@ -62,7 +49,7 @@ trait RunePattern[R <: Rune] extends Named {
   private lazy val hasTwoMirroredAxis = layers.forall(isMirrored(_, finalWidth))
   private lazy val elements = layers.map(_.toElementsArray(finalWidth))
 
-  final lazy val pattern: Pattern = new Pattern(activationLayer, elements, hasTwoMirroredAxis, verticality, directional, buildableOnCeiling, activatesWith) {
+  final lazy val pattern: Pattern = new Pattern(activationLayer, elements, hasTwoMirroredAxis, directional, castableVertically, castableOnCeiling) {
     if (layers.exists(_.elements.size % finalWidth != 0)) {
       throw new Exception(s"At least a layer in the pattern does not form a rectangle in rune $name!")
     }
@@ -71,7 +58,7 @@ trait RunePattern[R <: Rune] extends Named {
       creator: Player,
       direction: Direction,
       rotation: Matrix4
-    ): Rune = runeCreator(center, creator, direction, rotation, this)
+    ): Rune = apply(center, creator, direction, rotation, this)
   }
 }
 

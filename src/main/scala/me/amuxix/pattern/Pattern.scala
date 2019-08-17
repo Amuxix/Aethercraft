@@ -3,7 +3,6 @@ package me.amuxix.pattern
 import me.amuxix._
 import me.amuxix.material.Properties.BlockProperty
 import me.amuxix.block.Block
-import me.amuxix.inventory.Item
 import me.amuxix.material.Material
 import me.amuxix.pattern.matching.BoundingCube
 import me.amuxix.position.{BlockPosition, Vector3}
@@ -21,15 +20,21 @@ case class ActivationLayer(elements: Element*) extends BaseLayer
 
 /**
   * Pattern for a rune
-  * @param activationLayer Layer where the activation block is
+  * @param activationLayer Layer where the activation block iToos
   * @param elements The pattern itself, layer by layer
   * @param hasTwoMirroredAxis 0 - no mirroring, 1 - mirrored vertically horizontally, 2 - mirrored in both axis.
-  * @param verticality Whether the rune can be made vertically
+  * @param castableVertically Whether the rune can be made vertically
   * @param directional True when the rune has to be built in a certain direction
-  * @param buildableOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
+  * @param castableOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
   */
-abstract class Pattern (activationLayer: Int, elements: Seq[Seq[Seq[Element]]], hasTwoMirroredAxis: Boolean, verticality: Boolean, directional: Boolean,
-                       buildableOnCeiling: Boolean, activatesWith: Option[Item] =|> Boolean) extends Ordered[Pattern] {
+abstract class Pattern(
+  activationLayer: Int,
+  elements: Seq[Seq[Seq[Element]]],
+  hasTwoMirroredAxis: Boolean,
+  directional: Boolean,
+  castableVertically: Boolean,
+  castableOnCeiling: Boolean,
+) extends Ordered[Pattern] {
 	/* IN GAME AXIS
 		 *          Y axis
 		 *          |
@@ -66,9 +71,6 @@ abstract class Pattern (activationLayer: Int, elements: Seq[Seq[Seq[Element]]], 
       case _ => true
     }
 
-  def canBeActivatedWith(item: Option[Item]): Boolean = activatesWith.applyOrElse(item, (_: Option[Item]) => true)
-
-
   /**
     * Checks if this pattern exists in the given bounding cube
     * @param boundingCube Cube to look for the pattern in
@@ -80,14 +82,14 @@ abstract class Pattern (activationLayer: Int, elements: Seq[Seq[Seq[Element]]], 
     def rotateX(degrees: Int) = findMatchingHorizontalRotation(boundingCube, rotationMatrix.rotateX(degrees))
 
     findMatchingHorizontalRotation(boundingCube, rotationMatrix)
-      .orFlatWhen(verticality){
+      .orFlatWhen(castableVertically){
         rotateZ(90)
           .orElse(rotateX(90))
       }.orFlatWhen(height > 1) {
-        Option.flatWhen(verticality) {
+        Option.flatWhen(castableVertically) {
           rotateZ(-90)
             .orElse(rotateX(-90))
-        }.orFlatWhen(buildableOnCeiling) {
+        }.orFlatWhen(castableOnCeiling) {
           rotateX(180)
         }
       }

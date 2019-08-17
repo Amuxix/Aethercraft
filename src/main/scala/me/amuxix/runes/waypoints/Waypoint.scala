@@ -14,8 +14,7 @@ import me.amuxix.runes.waypoints.WaypointSize.Medium
   * Created by Amuxix on 03/01/2017.
   */
 object Waypoint extends RunePattern[Waypoint] {
-  override val runeCreator: RuneCreator = Waypoint.apply
-  override val verticality: Boolean = true
+  override val castableVertically: Boolean = true
   // format: off
   override val layers: List[BaseLayer] = List(
     ActivationLayer(

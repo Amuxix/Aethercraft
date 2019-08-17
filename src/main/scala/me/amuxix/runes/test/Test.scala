@@ -18,8 +18,7 @@ import me.amuxix.{Direction, Matrix4, Player}
   */
 
 object Test extends RunePattern[Test] {
-  override val runeCreator: RuneCreator = Test.apply
-  override val verticality = true
+  override val castableVertically = true
   // format: off
   override val layers = List(
     ActivationLayer(

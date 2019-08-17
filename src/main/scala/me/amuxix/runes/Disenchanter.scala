@@ -10,10 +10,6 @@ import me.amuxix.pattern._
 import me.amuxix.position.BlockPosition
 
 object Disenchanter extends RunePattern[Disenchanter] {
-  override val runeCreator: RuneCreator = Disenchanter.apply
-  override val activatesWith: Option[Item] =|> Boolean = {
-    case Some(item) if item.isEnchanted => true
-  }
   // format: off
   override val layers: List[BaseLayer] = List(
     ActivationLayer(

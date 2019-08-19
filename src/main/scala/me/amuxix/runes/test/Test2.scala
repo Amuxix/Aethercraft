@@ -8,7 +8,7 @@ import me.amuxix.pattern.{NotInRune, _}
 import me.amuxix.position.BlockPosition
 import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.ConsumableBlocks
-import me.amuxix.{=|>, Direction, Matrix4, Player}
+import me.amuxix.{Direction, Matrix4, Player}
 
 /**
   * Created by Amuxix on 01/12/2016.

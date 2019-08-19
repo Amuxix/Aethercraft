@@ -4,16 +4,17 @@ import cats.data.EitherT
 import cats.effect.IO
 import cats.implicits.{catsStdInstancesForList, toTraverseOps}
 import me.amuxix.block.Block
+import me.amuxix.bukkit.Configuration
 import me.amuxix.inventory.Item
-import me.amuxix.material.Material.{RedstoneTorch, RedstoneWire}
 import me.amuxix.material.Generic.{Composition, Tool => GenericTool}
 import me.amuxix.material.Material
+import me.amuxix.material.Material.{RedstoneTorch, RedstoneWire}
 import me.amuxix.material.Properties.BreakableBlockProperty
 import me.amuxix.pattern._
 import me.amuxix.position.BlockPosition
-import me.amuxix.runes.traits.enchants.{BlockBreakTrigger, Enchant}
-import me.amuxix.runes.traits.{ConsumableBlocks, Tool}
-import me.amuxix.{=|>, Direction, Matrix4, Player}
+import me.amuxix.runes.traits.Tool
+import me.amuxix.runes.traits.enchants.{BlockBreakTrigger, Enchant, RuneEnchant}
+import me.amuxix.{Direction, Matrix4, Player}
 
 /**
   * Created by Amuxix on 01/02/2017.
@@ -30,35 +31,34 @@ object SuperTool extends RunePattern[SuperTool] with Enchant with BlockBreakTrig
     )
   )
   // format: on
+  /** The validation to check if the item can be enchanted. */
+  override def itemValidation(item: Item): Boolean = item.material.isTool
 
-  override def canEnchant(item: Item): Option[String] =
-    Option.unless(item.material.isTool)("This rune can only be applied to tools.")
-
-  override def incompatibleEnchants: Set[Enchant] = Set.empty
-
+  /** The description of possible items that can be enchanted by this rune to be given as error if it fails. */
+  override val itemDescription: String = "tools"
 
   /** This should run the effect of the enchant and return whether to cancel the event or not */
   override def onBlockBreak(
     player: Player,
-    itemInHand: Option[Item],
+    itemInHand: Item,
     brokenBlock: Block
   ): EitherT[IO, String, Boolean] =
     brokenBlock.material match {
       case breakableBlockMaterial: Material with BreakableBlockProperty =>
-        itemInHand
-          .filter(_.hasRuneEnchant(SuperTool))
-          .fold(EitherT.rightT[IO, String](false)) { itemInHand =>
-            itemInHand.material match {
-              case tool: GenericTool with Composition if breakableBlockMaterial.isAppropriateTool(tool) =>
-                brokenBlock.allNeighbours
-                  .filter(_.material == breakableBlockMaterial)
-                  .traverse(_.breakUsing(player, itemInHand))
-                  .map(_.head)
-                  .toLeft(false)
+        itemInHand.material match {
+          case tool: GenericTool with Composition if breakableBlockMaterial.isAppropriateTool(tool) =>
+            brokenBlock.allNeighbours
+              .filter(_.material == breakableBlockMaterial)
+              .traverse { block =>
+                for {
+                  _ <- player.removeEnergy(Configuration.blockBreak)
+                  _ <- block.breakUsing(player, itemInHand).toLeft(())
+                } yield ()
+              }
+              .map(_ => false)
 
-              case _ => EitherT.pure(false)
-            }
-          }
+          case _ => EitherT.pure(false)
+        }
       case _ => EitherT.pure(false)
     }
 }
@@ -69,21 +69,6 @@ case class SuperTool(
   direction: Direction,
   rotation: Matrix4,
   pattern: Pattern
-) extends Rune
-    with ConsumableBlocks
-    with Tool {
-
-  /**
-    * Internal activate method that should contain all code to activate a rune.
-    */
-  override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = {
-    activationMessage = activationItem.fold(activationMessage)(_.name + s" has been enchanted with ${this.name}")
-
-    EitherT.fromOption[IO](activationItem, "No activation tool.").flatMap(_.addRuneEnchant(SuperTool)).map(_ => true)
-  }
-
-  /**
-    * Should this rune use a true name if the activator is wearing one?
-    */
-  override val shouldUseTrueName: Boolean = true
+) extends Rune with Tool with RuneEnchant {
+  override val enchant: Enchant = SuperTool
 }

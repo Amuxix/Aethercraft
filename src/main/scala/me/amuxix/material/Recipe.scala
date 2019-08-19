@@ -28,15 +28,25 @@ object Recipe {
   private val energyRecipes = Set(
     //region Ores
     Recipe(Coal, CoalOre, 1 / Configuration.oreMultiplier),
+    Recipe(IronIngot, IronOre, 1 / Configuration.oreMultiplier),
     Recipe(LapisLazuli, LapisLazuliOre, 1 / (6 * Configuration.oreMultiplier)),
-    Recipe(Diamond, DiamondOre, Configuration.oreMultiplier),
+    Recipe(GoldIngot, GoldOre, 1 / Configuration.oreMultiplier),
+    Recipe(Diamond, DiamondOre, 1 / Configuration.oreMultiplier),
     Recipe(Redstone, RedstoneOre, 1 / 4.5 * Configuration.oreMultiplier),
     Recipe(Emerald, EmeraldOre, 1 / Configuration.oreMultiplier),
     Recipe(Quartz, QuartzOre, 1 / Configuration.oreMultiplier),
+    
+    Recipe(CoalOre, Coal, Configuration.oreMultiplier),
+    Recipe(IronOre, IronIngot, Configuration.oreMultiplier),
+    Recipe(LapisLazuliOre, LapisLazuli, (6 * Configuration.oreMultiplier)),
+    Recipe(GoldOre, GoldIngot, Configuration.oreMultiplier),
+    Recipe(DiamondOre, Diamond, Configuration.oreMultiplier),
+    Recipe(RedstoneOre, Redstone, 4.5 * Configuration.oreMultiplier),
+    Recipe(EmeraldOre, Emerald, Configuration.oreMultiplier),
+    Recipe(QuartzOre, Quartz, Configuration.oreMultiplier),
     //endregion
     //region Misc
     Recipe(Redstone, RedstoneWire, 1 / Configuration.craftingMultiplier),
-    //Recipe(Sign, WallSign, 1 / Configuration.craftingMultiplier),
     Recipe(Torch, WallTorch, 1 / Configuration.craftingMultiplier),
     Recipe(RedstoneTorch, RedstoneWallTorch, 1 / Configuration.craftingMultiplier),
     Recipe(Dirt, Farmland),

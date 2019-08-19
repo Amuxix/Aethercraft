@@ -29,11 +29,11 @@ object TrueName extends RunePattern[TrueName] with Enchant with BlockPlaceTrigge
     )
   )
   // format: on
+  /** The validation to check if the item can be enchanted. */
+  override def itemValidation(item: Item): Boolean = item.material == PlayerHeadMaterial
 
-  override def canEnchant(item: Item): Option[String] =
-    Option.unless(item.material == PlayerHeadMaterial)("True name can only be applied to player's heads")
-
-  override def incompatibleEnchants: Set[Enchant] = Set.empty
+  /** The description of possible items that can be enchanted by this rune to be given as error if it fails. */
+  override val itemDescription: String = "player's heads"
 
   def createTrueNameOf(player: Player): EitherT[IO, String, PlayerHead] = {
     val trueName: PlayerHead = Item(PlayerHeadMaterial).asInstanceOf[PlayerHead]
@@ -57,13 +57,14 @@ object TrueName extends RunePattern[TrueName] with Enchant with BlockPlaceTrigge
     itemPlaced: Option[Item]
   ): EitherT[IO, String, Boolean] =
     itemPlaced match {
-      //False means we do not cancel the place event.
-      case Some(head: PlayerHead) if head.isTrueNameOf(player) =>
-        EitherT.rightT(false) //Trying to place own true name, allow this.
-      case Some(head: PlayerHead)
-          if head.hasRuneEnchant(this) => //Trying to place someone else's true name, destroy it.
+      //Trying to place own true name, allow this.
+      case Some(head: PlayerHead) if head.isTrueNameOf(player) => EitherT.rightT(false)
+
+      //Trying to place someone else's true name, destroy it.
+      case Some(head: PlayerHead) if head.hasRuneEnchant(this) =>
         player.notifyError(s"As you place ${head.displayName} it crumbles to dust.")
         EitherT(head.destroyAll.map[Either[String, Boolean]](_ => Right(true)))
+
       case _ => EitherT.rightT(false)
     }
 }

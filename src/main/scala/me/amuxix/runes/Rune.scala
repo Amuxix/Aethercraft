@@ -74,11 +74,13 @@ abstract class Rune extends Named {
   protected def validateActivationItem(activationItem: Option[Item]): Option[String] = activationItem.flatMap(_ => None)
   //This flatMap is to avoid the warning about activationItem not being used
 
-  protected var activationMessage: String = name + " activated"
+  protected var activationMessage: String = name + " activated."
 
   protected def notifyActivator: IO[Unit] = activator.notify(activationMessage)
 
-  protected def logRuneActivation: IO[Unit] = info(s"${activator.name} activated ${if ("aeiouy".contains(name.head)) "an" else "a"} $name at $center")
+  protected var activationLogMessage: String = s"${activator.name} activated ${indefiniteArticle(name)} $name at $center"
+
+  protected def logRuneActivation: IO[Unit] = info(activationLogMessage)
 
   protected def allRuneBlocks: LazyList[Block] = pattern.allRuneBlocks(rotation, center)
 

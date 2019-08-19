@@ -5,7 +5,7 @@ import me.amuxix.material.Properties.BlockProperty
 import me.amuxix.pattern.RunePattern.isMirrored
 import me.amuxix.position.BlockPosition
 import me.amuxix.runes.Rune
-import me.amuxix.{=|>, Direction, Matrix4, Named, Player}
+import me.amuxix.{Direction, Matrix4, Named, Player}
 
 /**
   * Created by Amuxix on 01/12/2016.

@@ -49,4 +49,6 @@ package object amuxix {
   }
 
   type =|>[-A, +B] = PartialFunction[A, B]
+
+  def indefiniteArticle(string: String) = if ("aeiouy".contains(string.head)) "an" else "a"
 }

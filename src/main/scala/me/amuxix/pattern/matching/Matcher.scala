@@ -1,7 +1,6 @@
 package me.amuxix.pattern.matching
 
 import me.amuxix._
-import me.amuxix.inventory.Item
 import me.amuxix.logging.Logger.{trace, info}
 import me.amuxix.pattern.{Pattern, RunePattern}
 import me.amuxix.position.BlockPosition
@@ -25,7 +24,7 @@ object Matcher {
   /**
     * Looks for runes at the given location
     */
-  def lookForRunesAt(location: BlockPosition, activator: Player, direction: Direction, itemInHand: Option[Item]): Option[Rune] = {
+  def lookForRunesAt(location: BlockPosition, activator: Player, direction: Direction): Option[Rune] = {
     matchRunes(location, activator, direction, patterns)
       .orElse {
         info("Found no runes, looking for runes with center on the adjacent block of the clicked block face")

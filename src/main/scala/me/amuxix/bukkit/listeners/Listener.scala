@@ -52,7 +52,7 @@ object Listener extends org.bukkit.event.Listener {
             IntegrityMonitor.persistentRunes(clickedBlockLocation).update(player)
           } else {
             //Look for new runes
-            Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace, itemInHand).map(_.activate(itemInHand)) match {
+            Matcher.lookForRunesAt(clickedBlockLocation, player, event.getBlockFace).map(_.activate(itemInHand)) match {
               case None => EitherT.rightT[IO, String](event.useInteractedBlock() == Result.DENY)
               case Some(rune) =>
                 lastActivatedRune += player.uuid -> clickedBlockLocation
@@ -85,14 +85,12 @@ object Listener extends org.bukkit.event.Listener {
   private def findClosestPlayerTo(where: BlockPosition, maxDistance: Double): Option[Player] =
     Bukkit.server.getOnlinePlayers.asScala
       .foldLeft(Option.empty[(Player, Double)]) { case (None, player) =>
-        val distance = player.getLocation.aetherize.distance(where)
-        Option.when(distance <= maxDistance)((player.aetherize, distance))
-      case (closest @ Some((_, closestPlayerDistance)), player) =>
-        val distance = player.getLocation.aetherize.distance(where)
-        if (distance < closestPlayerDistance) {
-          Some((player.aetherize, distance))
-        } else {
-          closest
+        player.getLocation.aetherize.distance(where).collect {
+          case distance if distance <= maxDistance => (player.aetherize, distance)
         }
+      case (closest @ Some((_, closestPlayerDistance)), player) =>
+        player.getLocation.aetherize.distance(where)
+          .filter(_ < closestPlayerDistance)
+          .fold(closest)(distance => Some((player.aetherize, distance)))
       }.map(_._1)
 }

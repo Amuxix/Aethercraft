@@ -8,7 +8,7 @@ import scala.math.{pow, sqrt}
 /**
   * Created by Amuxix on 30/12/2016.
   */
-abstract class Position[T : Numeric](world: World, coordinates: Vector3[T]) {
+abstract class Position[T : Numeric](val world: World, coordinates: Vector3[T]) {
   val x: T
   val y: T
   val z: T
@@ -16,9 +16,9 @@ abstract class Position[T : Numeric](world: World, coordinates: Vector3[T]) {
   def +(vector: Vector3[T]): Position[T]
   def -(vector: Vector3[T]): Position[T]
 
-  def distance(t: Position[T]): Double = {
+  def distance(t: Position[T]): Option[Double] = {
     import Numeric.Implicits._
-    sqrt(pow((x - t.x).toDouble, 2) + pow((y - t.y).toDouble, 2) + pow((z - t.z).toDouble, 2))
+    Option.when(world == t.world)(sqrt(pow((x - t.x).toDouble, 2) + pow((y - t.y).toDouble, 2) + pow((z - t.z).toDouble, 2)))
   }
 
   def strikeLightning: IO[Unit]

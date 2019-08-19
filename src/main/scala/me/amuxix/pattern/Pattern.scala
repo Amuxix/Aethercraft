@@ -20,11 +20,11 @@ case class ActivationLayer(elements: Element*) extends BaseLayer
 
 /**
   * Pattern for a rune
-  * @param activationLayer Layer where the activation block iToos
+  * @param activationLayer Layer where the activation block is
   * @param elements The pattern itself, layer by layer
   * @param hasTwoMirroredAxis 0 - no mirroring, 1 - mirrored vertically horizontally, 2 - mirrored in both axis.
-  * @param castableVertically Whether the rune can be made vertically
   * @param directional True when the rune has to be built in a certain direction
+  * @param castableVertically Whether the rune can be made vertically
   * @param castableOnCeiling True if this rune can have its layer order inverted to be activated looking from ground to ceiling
   */
 abstract class Pattern(
@@ -37,11 +37,14 @@ abstract class Pattern(
 ) extends Ordered[Pattern] {
 	/* IN GAME AXIS
 		 *          Y axis
-		 *          |
-		 *          |     X axis
-		 *          /----->  East
+		 *          │
+		 *          │
+		 *          │     X axis
+		 *          ●───────➜>  East
+		 *         /
 		 *        /
-		 *      /Z axis
+		 *       / Z axis
+		 *      ↙
 		 *    South
 		 */
   private val height: Int = elements.length //Distance along the Y axis in the default orientation

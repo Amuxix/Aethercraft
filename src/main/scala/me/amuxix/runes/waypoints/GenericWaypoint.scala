@@ -6,9 +6,11 @@ import me.amuxix.exceptions.DeserializationException
 import me.amuxix.runes.Rune
 import me.amuxix.Matrix4.{decoder, encoder}
 import me.amuxix.position.BlockPosition
-import me.amuxix.runes.traits.{Linkable, Tiered}
+import me.amuxix.runes.traits.{Linkable, Persistent, Tiered}
 import me.amuxix.runes.waypoints.Waypoint.pattern
 import me.amuxix.runes.waypoints.WaypointSize.Medium
+
+import scala.math.log10
 
 /**
   * Created by Amuxix on 02/01/2017.
@@ -31,6 +33,15 @@ object GenericWaypoint {
 /**
   * This represents a point that can be targeted by a waypoint.
   */
-trait GenericWaypoint extends Tiered with Linkable { this: Rune =>
+trait GenericWaypoint extends Tiered with Linkable with Persistent { this: Rune =>
   val size: WaypointSize
+
+  /**
+    * Calculates tier required to travel to this waypoint from a given BlockPosition
+    */
+  def tierRequiredToTravelHere(from: BlockPosition): Int =
+    from.distance(center).fold(5) {
+      case distance if distance >= 1000 => log10(distance / 100).toInt
+      case _ => 0
+    }
 }

@@ -14,7 +14,7 @@ object BlockPosition {
   implicit val decodePositionInt: Decoder[BlockPosition] = Decoder.forProduct2[BlockPosition, World, Vector3[Int]]("world", "coordinates")(BlockPosition.apply)
 }
 
-case class BlockPosition(world: World, coordinates: Vector3[Int]) extends Position[Int](world, coordinates) {
+case class BlockPosition(override val world: World, coordinates: Vector3[Int]) extends Position[Int](world, coordinates) {
   override val x: Int = coordinates.x
   override val y: Int = coordinates.y
   override val z: Int = coordinates.z

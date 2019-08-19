@@ -18,7 +18,6 @@ import me.amuxix.runes.Rune
 trait Linkable extends Rune {
   val signatureBlocks: Seq[Block] = filteredRuneBlocksByElement(Signature)
 
-  //This is true if the set only contains true, meaning all blocks are air
   def signatureIsEmpty: Boolean = signatureBlocks.forall(_.material == Air)
 
   /**
@@ -42,7 +41,7 @@ trait Linkable extends Rune {
     * Checks whether the signature is valid for this rune and notifies player if it is not and why
     * @return true if signature is valid, false otherwise
     */
-  def validateSignature: Option[String]
+  def validateSignature: Option[String] = Option.when(signatureIsEmpty)("Signature is empty!")
 
   /**
     * This is where the rune effects when the rune is first activated go.

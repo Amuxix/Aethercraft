@@ -32,7 +32,7 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
     }
   }
 
-  override def teleportTo(target: EntityPosition, pitch: Float, yaw: Float): OptionT[IO, String] =
+  override def teleport(target: EntityPosition, pitch: Float, yaw: Float): OptionT[IO, String] =
     OptionT.fromOption(player.fold(_ => Some("Player is offline"), player => {
       val destination = target.bukkitForm
       destination.setPitch(pitch)

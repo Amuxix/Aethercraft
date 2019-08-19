@@ -6,7 +6,7 @@ import me.amuxix.inventory.Item
 import me.amuxix.material.Material.{BlackWool, WhiteWool}
 import me.amuxix.pattern.{ActivationLayer, BaseLayer, Pattern, RunePattern}
 import me.amuxix.position.BlockPosition
-import me.amuxix.{=|>, Direction, Matrix4, Player}
+import me.amuxix.{Direction, Matrix4, Player}
 
 import scala.util.Random.nextInt
 

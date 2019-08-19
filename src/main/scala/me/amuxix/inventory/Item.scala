@@ -2,6 +2,7 @@ package me.amuxix.inventory
 
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
+import io.circe.{Decoder, Encoder}
 import me.amuxix.material.Material
 import me.amuxix.material.Properties.ItemProperty
 import me.amuxix.runes.traits.enchants.Enchant
@@ -26,7 +27,11 @@ trait Item extends Consumable {
 
   def hasRuneEnchant(enchant: Enchant): Boolean
 
+  def addRuneEnchantWithState[State : Encoder](enchant: Enchant, enchantState: State): EitherT[IO, String, Unit]
+
   def addRuneEnchant(enchant: Enchant): EitherT[IO, String, Unit]
+
+  def findEnchantState[State : Decoder](enchant: Enchant): Either[String, State]
 
   def disenchant: EitherT[IO, String, Unit]
 

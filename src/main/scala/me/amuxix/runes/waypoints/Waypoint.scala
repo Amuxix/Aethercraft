@@ -7,7 +7,6 @@ import me.amuxix.inventory.Item
 import me.amuxix.pattern._
 import me.amuxix.position.BlockPosition
 import me.amuxix.runes.Rune
-import me.amuxix.runes.traits.{Linkable, Persistent}
 import me.amuxix.runes.waypoints.WaypointSize.Medium
 
 /**
@@ -59,9 +58,7 @@ case class Waypoint(
   rotation: Matrix4,
   pattern: Pattern
 ) extends Rune
-    with GenericWaypoint
-    with Linkable
-    with Persistent {
+    with GenericWaypoint {
   override val size: WaypointSize = Medium
 
   override def validateSignature: Option[String] =

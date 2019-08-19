@@ -5,7 +5,7 @@ import java.util.UUID
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
-import me.amuxix.bukkit.{Player => BPlayer}
+import me.amuxix.bukkit.{Configuration, Player => BPlayer}
 import me.amuxix.inventory.{Item, PlayerInventory}
 import me.amuxix.position.EntityPosition
 
@@ -17,7 +17,13 @@ object Player {
 trait Player {
   def uuid: UUID
 
-  def teleportTo(target: EntityPosition, pitch: Float, yaw: Float): OptionT[IO, String]
+  protected def teleport(target: EntityPosition, pitch: Float, yaw: Float): OptionT[IO, String]
+
+  def teleportTo(target: EntityPosition, pitch: Float, yaw: Float): EitherT[IO, String, Unit] = for {
+    position <- EitherT.fromOption[IO](position, "Could not find player position.")
+    _ <- removeEnergy((position.distance(target).fold(10000D)(identity) * Configuration.move).toInt)
+    _ <- teleport(target, pitch, yaw).toLeft(())
+  } yield ()
 
   def pitch: Float
 

@@ -3,7 +3,7 @@ package me.amuxix.position
 import cats.effect.IO
 import me.amuxix.World
 
-case class EntityPosition(world: World, coordinates: Vector3[Double]) extends Position[Double](world, coordinates) {
+case class EntityPosition(override val world: World, coordinates: Vector3[Double]) extends Position[Double](world, coordinates) {
   override val x: Double = coordinates.x
   override val y: Double = coordinates.y
   override val z: Double = coordinates.z

@@ -1,9 +1,12 @@
 package me.amuxix.bukkit
 
 import cats.effect.IO
+import cats.implicits.{catsStdInstancesForList, toFoldableOps}
 import me.amuxix._
 import me.amuxix.bukkit.World.BukkitWorldOps
 import me.amuxix.bukkit.listeners._
+import me.amuxix.logging.Logger.info
+import me.amuxix.material.Recipe.recipes
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.Event
 import org.bukkit.plugin.java.JavaPlugin

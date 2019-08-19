@@ -41,15 +41,8 @@ case class Test(
   rotation: Matrix4,
   pattern: Pattern
 ) extends Rune
-    with Tiered
-    with ConsumableBlocks
-    with Linkable {
-  /**
-    * Checks whether the signature is valid for this rune and notifies player if it is not and why
-    *
-    * @return true if signature is valid, false otherwise
-    */
-  override def validateSignature: Option[String] = None
+    with LinkableTiered
+    with ConsumableBlocks {
 
   override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] = EitherT.rightT(true)
 

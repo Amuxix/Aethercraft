@@ -3,9 +3,10 @@ package me.amuxix.bukkit.inventory
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import cats.implicits.catsStdInstancesForOption
-import cats.implicits.catsStdInstancesForList
 import cats.implicits.toTraverseOps
-import cats.implicits.toFoldableOps
+import io.circe.{Decoder, Encoder}
+import io.circe.parser.parse
+import io.circe.syntax.EncoderOps
 import me.amuxix.bukkit.BukkitForm
 import me.amuxix.bukkit.Material.{BukkitMaterialOps, MaterialOps}
 import me.amuxix.bukkit.inventory.items.PlayerHead
@@ -13,7 +14,7 @@ import me.amuxix.material.Material
 import me.amuxix.material.Material.{PlayerHead => PlayerHeadMaterial}
 import me.amuxix.runes.traits.enchants.Enchant
 import me.amuxix.{Aetherizeable, inventory}
-import me.amuxix.bukkit.inventory.Item.enchantNameSuffix
+import me.amuxix.runes.traits.enchants.Enchant.{enchantPrefix, enchantStateSeparator}
 import me.amuxix.material.Properties.ItemProperty
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.inventory.ItemStack
@@ -48,8 +49,6 @@ object Item {
   def apply(itemStack: ItemStack): Item =
     materials.getOrElse(itemStack.getType.aetherize.asInstanceOf[Material with ItemProperty], new Item(_))(itemStack)
 
-  val enchantNameSuffix = "§k§r"
-
 }
 
 protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.Item with BukkitForm[ItemStack] {
@@ -80,10 +79,6 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
 
   private def addToLore(string: String): EitherT[IO, String, Unit] = setLore(lore :+ string)
 
-  private def removeFromLore(string: String): EitherT[IO, String, Unit] = setLore(lore.filterNot(_ == string))
-
-  private def loreContains(string: String): Boolean = lore.exists(_.contains(string))
-
   override def addCurses(): EitherT[IO, String, Unit] =
     OptionT(maybeMeta.traverse { meta =>
       meta.addEnchant(Enchantment.BINDING_CURSE, 1, false)
@@ -95,9 +90,9 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
 
   override def isEnchanted: Boolean = enchants.nonEmpty
 
-  override def hasRuneEnchant(enchant: Enchant): Boolean = loreContains(enchant.name + enchantNameSuffix)
+  override def hasRuneEnchant(enchant: Enchant): Boolean = lore.exists(_.startsWith(enchantPrefix + enchant.name))
 
-  override def addRuneEnchant(enchant: Enchant): EitherT[IO, String, Unit] = {
+  private def addRuneEnchantWithLoreString(enchant: Enchant, loreString: String): EitherT[IO, String, Unit] = {
     val incompatibleEnchant = enchants.collectFirst {
       case existingEnchant if enchant.incompatibleEnchants.contains(existingEnchant) =>
         s"${existingEnchant.name} is incompatible with ${enchant.name}"
@@ -106,10 +101,23 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
     enchant.canEnchant(this)
       .orElse(incompatibleEnchant)
       .orElse(enchantPresent)
-      .fold(addToLore(enchant.name + enchantNameSuffix))(EitherT.leftT(_))
+      .fold(addToLore(loreString))(EitherT.leftT(_))
   }
 
-  override def disenchant: EitherT[IO, String, Unit] = enchants.toList.traverse_(enchant => removeFromLore(enchant.name + enchantNameSuffix))
+  override def addRuneEnchant(enchant: Enchant): EitherT[IO, String, Unit] = addRuneEnchantWithLoreString(enchant, enchantPrefix + enchant.name)
+
+  override def addRuneEnchantWithState[State: Encoder](enchant: Enchant, enchantState: State): EitherT[IO, String, Unit] =
+    addRuneEnchantWithLoreString(enchant, enchantPrefix + enchant.name + enchantStateSeparator + enchantState.asJson.noSpaces)
+
+  override def findEnchantState[State : Decoder](enchant: Enchant): Either[String, State] =
+    for {
+      enchantString <- lore.find(_.startsWith(enchantPrefix + enchant.name)).toRight("Enchant not found.")
+      stateString <- enchantString.split(enchantStateSeparator).lift(1).toRight("State not found.")
+      stateJson <- parse(stateString).left.map(_ => "Error")
+      state <- stateJson.as[State].left.map(_.message)
+    } yield state
+
+  override def disenchant: EitherT[IO, String, Unit] = setLore(lore.filterNot(_.startsWith(enchantPrefix)))
 
   override def name: String = displayName.filter(_ => hasDisplayName).getOrElse(material.name)
 

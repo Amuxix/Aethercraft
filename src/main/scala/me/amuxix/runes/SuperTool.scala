@@ -47,8 +47,17 @@ object SuperTool extends RunePattern[SuperTool] with Enchant with BlockBreakTrig
       case breakableBlockMaterial: Material with BreakableBlockProperty =>
         itemInHand.material match {
           case tool: GenericTool with Composition if breakableBlockMaterial.isAppropriateTool(tool) =>
-            brokenBlock.allNeighbours
+            val possibleBlocks = brokenBlock.allNeighbours
               .filter(_.material == breakableBlockMaterial)
+            brokenBlock.faceNeighbours.collect {
+              case faceNeighbour if possibleBlocks.contains(faceNeighbour) =>
+                faceNeighbour +: faceNeighbour.faceNeighbours.collect {
+                  case edgeNeighbour if possibleBlocks.contains(edgeNeighbour) =>
+                    edgeNeighbour +: edgeNeighbour.faceNeighbours.collect {
+                    case vertexNeighbour if possibleBlocks.contains(vertexNeighbour) => vertexNeighbour
+                  }
+                }.flatten
+            }.flatten
               .traverse { block =>
                 for {
                   _ <- player.removeEnergy(Configuration.blockBreak)

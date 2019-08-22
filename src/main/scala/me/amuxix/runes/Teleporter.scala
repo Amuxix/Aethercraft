@@ -9,8 +9,8 @@ import me.amuxix.material.Material.{ChorusFlower, ChorusPlant}
 import me.amuxix.pattern._
 import me.amuxix.position.{BlockPosition, EntityPosition, Vector3}
 import me.amuxix.runes.traits._
+import me.amuxix.runes.waypoints.GenericWaypoint
 import me.amuxix.runes.waypoints.WaypointSize.Medium
-import me.amuxix.runes.waypoints.{GenericWaypoint, Waypoint}
 
 /**
   * Created by Amuxix on 03/01/2017.
@@ -72,7 +72,7 @@ object Teleporter extends RunePattern[Teleporter] {
 
   def validateAndTeleport(player: Player, from: BlockPosition, targetSignature: Int, tier: Int): EitherT[IO, String, EntityPosition] =
     for {
-      targetWaypoint <- EitherT.fromEither[IO](Waypoint.waypoints.get(targetSignature).toRight("Can't find your destination."))
+      targetWaypoint <- EitherT.fromEither[IO](GenericWaypoint.waypoints.get(targetSignature).toRight("Can't find your destination."))
       _ <- EitherT.cond[IO](targetWaypoint.size == Medium, (), "Target waypoint denied your request.")
       tierRequired = targetWaypoint.tierRequiredToTravelHere(from)
       _ <- EitherT.cond[IO](tierRequired < tier,

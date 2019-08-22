@@ -1,10 +1,11 @@
 package me.amuxix
-import java.io.File
 import java.util.UUID
 import java.util.logging.Logger
 
+import better.files.File
 import cats.effect.IO
 import cats.implicits.{catsStdInstancesForList, toFoldableOps, toTraverseOps}
+import me.amuxix.builder.Builder
 import me.amuxix.bukkit.Bukkit
 import me.amuxix.logging.Logger.info
 import me.amuxix.material.Recipe
@@ -12,21 +13,26 @@ import me.amuxix.pattern.RunePattern
 import me.amuxix.runes._
 import me.amuxix.runes.test._
 import me.amuxix.runes.waypoints.Waypoint
+import me.amuxix.serialization.Persistable
 
-import scala.collection.mutable
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
+import scala.util.Try
 
 object Aethercraft {
   val defaultFailureMessage = "Some unknown force blocks you."
-  val activeRunes: LazyList[RunePattern[_]] = LazyList(Test, Test2, Waypoint, Teleporter, Compass, TrueName, RunicChest, SuperTool, Disenchanter,
-    MagicEightBall, Divination, Portkey)
+  val approvedTesters: List[UUID] = List("a398585d-b180-457e-a018-fcd5d04a18fc").flatMap(uuid => Try(UUID.fromString(uuid)).toOption)
+  val testRunes: LazyList[RunePattern[_]] = LazyList(Test, Test2, Mover)
+  val activeRunes: LazyList[RunePattern[_]] = LazyList(Waypoint, Teleporter, Compass, TrueName, RunicChest, SuperTool,
+    Disenchanter, MagicEightBall, Divination, Portkey)
 
   var logger: Logger = _
+  var builderTaskId: Int = _
+  var dataFolder: File = _
 
   var fullVersion: String = _
   lazy val simpleVersion: String = fullVersion.split("-").head
-  val players = mutable.Map.empty[UUID, Player]
+  var players: Map[UUID, Player] = Map.empty
   implicit val ec = global
 
   def runTaskSync(task: IO[Unit]): Unit = Bukkit.runTaskSync(task)
@@ -41,6 +47,14 @@ object Aethercraft {
 
   def runTaskAsync(task: IO[Unit]): Unit = Future(task.unsafeRunSync())
 
+  /**
+    * Setups a repeating task
+    * @param task Function that generates the task to run
+    * @param period Period in server ticks of the task
+    * @return Task id number (-1 if scheduling failed)
+    */
+  def setupRepeatingTask(task: IO[Unit], period: Int): Int = Bukkit.setupRepeatingTask(task, period)
+
   var worlds: Map[UUID, World] = _
 
   def getWorld(uuid: UUID): World = worlds(uuid)
@@ -50,7 +64,7 @@ object Aethercraft {
     * @param logger Logger to use for logging.
     * @param version The version
     * @param worlds List of Worlds the server has loaded.
-    * @param reservoirsFolder Folder to store player's energy reservoirs
+    * @param dataFolder Folder to store player's energy reservoirs
     * @param saveDefaultConfig IO to generate default config.
     * @param registerEvents IO that registers all event listeners.
     */
@@ -58,14 +72,14 @@ object Aethercraft {
     logger: Logger,
     version: String,
     worlds: List[World],
-    reservoirsFolder: File,
+    dataFolder: File,
     saveDefaultConfig: IO[Unit],
     registerEvents: IO[Unit]
   ): Unit = {
     this.logger = logger
     this.fullVersion = version
     this.worlds = worlds.map(w => w.uuid -> w).toMap
-    Serialization.reservoirsFile = reservoirsFolder
+    Aethercraft.dataFolder = dataFolder
 
     val updateEnergies = IO {
       while(Recipe.recipes.count(_.updateResultEnergy()) > 0) {
@@ -73,12 +87,17 @@ object Aethercraft {
       }
     }
 
+    val startBuilder = IO {
+      builderTaskId = setupRepeatingTask(Builder.handleTasks, 1)
+    }
+
     val load: IO[Unit] = for {
       _ <- saveDefaultConfig
       _ <- updateEnergies
       _ <- checkMissingMaterialEnergy
-      _ <- Serialization.loadEverything
+      _ <- Persistable.loadEverything
       _ <- registerEvents
+      _ <- startBuilder
       _ <- info(s"Successfully loaded $version")
     } yield ()
 

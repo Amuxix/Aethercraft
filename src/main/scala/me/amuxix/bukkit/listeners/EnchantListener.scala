@@ -17,7 +17,7 @@ import org.bukkit.event.EventPriority.LOWEST
 import org.bukkit.event.block.Action._
 import org.bukkit.event.block.{BlockBreakEvent, BlockPlaceEvent}
 import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.{Event, EventHandler, Listener => BukkitListener}
+import org.bukkit.event.{EventHandler, Listener => BukkitListener}
 
 object EnchantListener extends BukkitListener {
   private def runEnchants[F[_] : Traverse](enchants: F[EitherT[IO, String, Boolean]], player: Player): Boolean = {
@@ -38,7 +38,10 @@ object EnchantListener extends BukkitListener {
     if (!event.isInstanceOf[BlockBreak]) { //Avoid chain reactions
       val player = event.getPlayer.aetherize
       player.itemInMainHand.foreach { itemInHand =>
-        val enchants = blockBreakEnchants.map(_.onBlockBreak(player, itemInHand, event.getBlock.aetherize))
+        val enchants = blockBreakEnchants.collect {
+          case enchant if itemInHand.hasRuneEnchant(enchant) =>
+            enchant.onBlockBreak(player, itemInHand, event.getBlock.aetherize)
+        }
         event.setCancelled(runEnchants(enchants, player))
       }
     }

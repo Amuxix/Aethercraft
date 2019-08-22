@@ -36,7 +36,7 @@ object Divination extends RunePattern[Divination] with Enchant with BlockInterac
     val material = clickedBlock.material
     val message = material.tier.flatMap(t => material.energy.map((t, _)))
       .fold(s"${material.name} is inert.") {
-        case (tier, energy) => s"${material.name} is tier $tier and is worth $energy energy."
+        case (tier, energy) => s"${material.name} is tier $tier and is worth $energy energy. ${if(material.isCrushable) "It's crushable." else ""}"
       }
     EitherT.liftF(player.notify(message)).map(_ => true)
   }

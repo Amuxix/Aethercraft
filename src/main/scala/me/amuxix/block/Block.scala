@@ -61,4 +61,6 @@ trait Block extends Consumable {
   lazy val allNeighbours: List[Block] = faceNeighbours ++ edgeNeighbours ++ vertexNeighbours
 
   def breakUsing(player: Player, item: Item): OptionT[IO, String]
+
+  def break(player: Player): OptionT[IO, String]
 }

@@ -58,6 +58,7 @@ libraryDependencies ++= Seq(
   "io.circe" %% "circe-parser" % circeVersion,
   //"org.typelevel" %% "cats-core" % "1.6.0",
   "org.typelevel" %% "cats-effect" % "2.0.0-RC1",
+  "com.github.pathikrit" %% "better-files"   % "3.8.0",
   //"org.scalatest" %% "scalatest" % "3.0.1" % Test,
 )
 

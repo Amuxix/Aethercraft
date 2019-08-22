@@ -35,7 +35,7 @@ object Waypoint extends RunePattern[Waypoint] {
     * @param signature Signature of the waypoint
     * @return A waypoint instance with the given parameters.
     */
-  def deserialize(
+  def apply(
     center: BlockPosition,
     creator: Player,
     direction: Direction,
@@ -46,9 +46,6 @@ object Waypoint extends RunePattern[Waypoint] {
     waypoint.signature = signature
     waypoint
   }
-
-  /** The map key is the [[me.amuxix.runes.traits.Linkable.signature]] of the waypoint */
-  var waypoints = Map.empty[Int, GenericWaypoint]
 }
 
 case class Waypoint(
@@ -67,7 +64,7 @@ case class Waypoint(
       .orWhen(signatureContains(tierMaterial))(
         s"${tierMaterial.name} can't be used on this Waypoint because it is the same as the tier used in rune."
       )
-      .orWhen(Waypoint.waypoints.contains(signature))("Signature already in use.")
+      .orWhen(GenericWaypoint.waypoints.contains(signature))("Signature already in use.")
 
   /**
     * Checks whether this rune can be activated, should warn activator about the error that occurred
@@ -100,12 +97,13 @@ case class Waypoint(
   /**
     * Destroys the rune effect. This should undo all lasting effects this rune introduced.
     */
-  override def destroyRune(): Unit = Waypoint.waypoints -= signature
+  override def destroyRune(): Unit = GenericWaypoint.waypoints -= signature
 
   override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] =
     EitherT.liftF {
-      Waypoint.waypoints += signature -> this
-      Serialization.saveWaypoints(true).map(_ => true)
+      GenericWaypoint.waypoints += signature -> this
+      GenericWaypoint.saveOneAsync(this)
+        .map(_ => true)
     }
 
   /**

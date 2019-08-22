@@ -18,7 +18,14 @@ import org.bukkit.{ChatColor, GameMode, OfflinePlayer}
   */
 object Player {
   implicit class BukkitPlayerOps(player: BPlayer) extends Aetherizeable[amuxix.Player] {
-    override def aetherize: amuxix.Player = Aethercraft.players.getOrElseUpdate(player.getUniqueId, Player(player.getUniqueId))
+    private val uuid: UUID = player.getUniqueId
+
+    override def aetherize: amuxix.Player =
+      Aethercraft.players.get(uuid).fold[amuxix.Player] {
+        val player = Player(uuid)
+        Aethercraft.players += (uuid -> player)
+        player
+      }(identity)
   }
 }
 private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player with BukkitForm[BPlayer] {
@@ -59,7 +66,7 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
 
   override def position: Option[EntityPosition] = player.map(_.getLocation.aetherize).toOption
 
-  override def name: String = player.fold(_.getName, _.getName)
+  override def name: Option[String] = Option(player.fold(_.getName, _.getName))
 
   override def inventory: Option[PlayerInventory] = player.toOption.map(_.getInventory.aetherize)
 

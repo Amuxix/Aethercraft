@@ -1,23 +1,62 @@
 package me.amuxix
 
+import java.util.UUID
+
+import better.files.File
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix.logging.Logger
+import me.amuxix.logging.Logger.info
+import me.amuxix.serialization.Persistable
 
-import scala.collection.mutable
+import scala.util.Try
 
-object EnergyReservoir {
-  implicit val encoder: Encoder[EnergyReservoir] = Encoder.forProduct3("player", "energy", "cap")(reservoir =>
+object EnergyReservoir extends Persistable[EnergyReservoir] {
+  override implicit val encoder: Encoder[EnergyReservoir] = Encoder.forProduct3("player", "energy", "cap")(reservoir =>
     (reservoir.player, reservoir.energy.value, reservoir.cap.value)
   )
-  implicit val decoder: Decoder[EnergyReservoir] = Decoder.forProduct3[EnergyReservoir, Player, Int, Int]("player", "energy", "cap"){new EnergyReservoir(_, _, _)}
+  override implicit val decoder: Decoder[EnergyReservoir] = Decoder.forProduct3[EnergyReservoir, Player, Int, Int]("player", "energy", "cap"){new EnergyReservoir(_, _, _)}
 
   val defaultCap: Energy = 100000
 
-  val energyReservoirs = mutable.Map.empty[Player, EnergyReservoir]
+  var energyReservoirs: Map[Player, EnergyReservoir] = Map.empty
 
-  def apply(player: Player): EnergyReservoir = energyReservoirs.getOrElseUpdate(player, new EnergyReservoir(player))
+  def apply(player: Player): EnergyReservoir = energyReservoirs.get(player).fold {
+    val reservoir = new EnergyReservoir(player)
+    energyReservoirs += (player -> reservoir)
+    reservoir
+  }(identity)
+
+  override protected val persistablesName = "Reservoirs"
+
+  private def persistables: Map[String, EnergyReservoir] = energyReservoirs.map {
+    case (player, reservoir) => player.uuid.toString -> reservoir
+  }
+
+  private val folder: File = Aethercraft.dataFolder.createChild(persistablesName, asDirectory = true)
+
+  override protected val extension: String = ".reservoir"
+
+  override protected def updateWithLoaded(fileName: String, thing: EnergyReservoir): Unit =
+    Try(UUID.fromString(fileName))
+      .toOption.flatMap(Aethercraft.players.get)
+      .map { player =>
+        energyReservoirs += (player -> thing)
+      }
+      .fold(Logger.severe(s"Invalid player uuid: $fileName"))(IO.pure)
+
+  val saveReservoirs: IO[Unit] =
+    for {
+      _ <- info(s"Saving all $persistablesName")
+      _ <- saveAll(persistables, folder)
+    } yield ()
+
+  val loadReservoirs: IO[Unit] =
+    for {
+      amount <- loadAll(folder, updateWithLoaded)
+      _ <- info(s"Loaded $amount $persistablesName")
+    } yield ()
 }
 
 class EnergyReservoir private(private val player: Player, private var energy: Energy = 0, private val cap: Energy = EnergyReservoir.defaultCap) {
@@ -62,14 +101,16 @@ class EnergyReservoir private(private val player: Player, private var energy: En
     } else if (energy == 0.Energy) {
       EitherT.rightT(this.energy)
     } else if (this.energy + energy > cap) {
-      EitherT.leftT(s"Adding $energy would surpasses your energy cap of $cap by ${this.energy + energy - cap}.")
+      add(cap - energy).flatMap { _ =>
+        EitherT.leftT(s"Adding $energy would surpasses your energy cap of $cap by ${this.energy + energy - cap}.")
+      }
     } else {
       this.energy += energy
       EitherT.liftF {
         for {
           _ <- Logger.info(s"${player.name} gained $energy energy.")
           _ <- player.notify(s"Added $energy energy.")
-          _ <- IO(Aethercraft.runTaskAsync(Serialization.saveReservoirs(true)))
+          _ <- EnergyReservoir.saveOneAsync(EnergyReservoir.folder, player.uuid.toString, this)
         } yield this.energy
       }
     }
@@ -84,14 +125,14 @@ class EnergyReservoir private(private val player: Player, private var energy: En
       EitherT.leftT("Cannot remove negative energy.")
     } else if (energy == 0.Energy) {
       EitherT.rightT(this.energy)
-    } else if (this.energy > energy) {
+    } else if (this.energy < energy) {
       EitherT.leftT(s"You don't have enough energy, you need at least $energy")
     } else {
       this.energy -= energy
       EitherT.liftF {
         for {
           _ <- Logger.info(s"${player.name} used $energy energy.")
-          _ <- IO(Aethercraft.runTaskAsync(Serialization.saveReservoirs(true)))
+          _ <- EnergyReservoir.saveOneAsync(EnergyReservoir.folder, player.uuid.toString, this)
         } yield this.energy
       }
     }

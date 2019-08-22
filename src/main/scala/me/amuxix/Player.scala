@@ -45,7 +45,7 @@ trait Player {
 
   def position: Option[EntityPosition]
 
-  def name: String
+  def name: Option[String]
 
   def inventory: Option[PlayerInventory]
 

@@ -96,25 +96,25 @@ private[bukkit] class Block(val location: BlockPosition, var material: Material 
     * the original location and placed at the target.
     * @param target Target of the move
     * @param player Player who triggered the move
-    * @return true if the player can move this block, false otherwise
+    * @return None if the player can move this block, Some with an error otherwise
     */
   override def canMoveTo(target: BlockPosition, player: Player): Option[String] = {
     val targetBlock = target.block.asInstanceOf[Block]
-    Option.flatWhen(targetBlock.material.isCrushable) {
-      val canBuild = new CanBuild(targetBlock, player, state.getBlockData)
-      Bukkit.callEvent(canBuild)
+    Option.unless(targetBlock.material.isCrushable)(s"Obstacle is ${targetBlock.material} at $target.")
+      .orElse {
+        val canBuild = new CanBuild(targetBlock, player, state.getBlockData)
+        Bukkit.callEvent(canBuild)
 
-      canBreak(player)
-        .orElse(targetBlock.canBreak(player))
-        .orElse(Option.unless(canBuild.isBuildable)(s"Failed to build $targetBlock"))
-    }
+        canBreak(player)
+          .orElse(targetBlock.canBreak(player))
+          .orElse(Option.unless(canBuild.isBuildable)(s"Failed to build $targetBlock"))
+      }
   }
 
   private def replacementMaterial: Option[Material with BlockProperty] = material match {
     case `Stone` => Some(Air)
-    case m if m.hasEnergy && m.isAttachable => Some(Air)
+    case m if m.hasEnergy && (m.isAttachable || !m.isSolid) => Some(Air)
     case m if m.hasEnergy && m.isSolid => Some(Stone)
-    case m if m.hasEnergy && m.isSolid == false => Some(Air)
     case _ => None
   }
 
@@ -159,16 +159,24 @@ private[bukkit] class Block(val location: BlockPosition, var material: Material 
     List((consumeInventory, consumeBlockMaterial))
   }
 
-  override def breakUsing(player: Player, item: Item): OptionT[IO, String] =
+  private def breakWith(player: Player, item: Option[Item]): OptionT[IO, String] =
     if (player.inCreativeMode)  {
       setMaterial(Air)
     } else {
       OptionT.fromOption[IO](
         canBreak(player).orElse {
-          Option.unless(bukkitForm.getBlock.breakNaturally(item.asInstanceOf[bukkit.inventory.Item].bukkitForm))(Aethercraft.defaultFailureMessage)
+          val blockBroken = item.fold(bukkitForm.getBlock.breakNaturally) { item =>
+            bukkitForm.getBlock.breakNaturally(item.asInstanceOf[bukkit.inventory.Item].bukkitForm)
+          }
+          Option.unless(blockBroken)(Aethercraft.defaultFailureMessage)
         }
       )
     }
+
+  override def breakUsing(player: Player, item: Item): OptionT[IO, String] =
+    breakWith(player, Some(item))
+
+  override def break(player: Player): OptionT[IO, String] = breakWith(player, None)
 
   override def toString: String = s"(${location.toString}, ${material.toString})"
 

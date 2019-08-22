@@ -11,11 +11,11 @@ object Logger {
     IO(Aethercraft.logger.info(text.toString))
   }
 
-  def trace(text: Any): Unit = {
+  def trace(text: Any): IO[Unit] = {
     IO(Aethercraft.logger.finest(text.toString))
   }
 
-  def severe(text: Any): Unit = {
+  def severe(text: Any): IO[Unit] = {
     IO(Aethercraft.logger.severe(text.toString))
   }
 }

@@ -1,12 +1,12 @@
 package me.amuxix.bukkit
 
+import better.files._
 import cats.effect.IO
-import cats.implicits.{catsStdInstancesForList, toFoldableOps}
 import me.amuxix._
 import me.amuxix.bukkit.World.BukkitWorldOps
 import me.amuxix.bukkit.listeners._
-import me.amuxix.logging.Logger.info
-import me.amuxix.material.Recipe.recipes
+import me.amuxix.serialization.Persistable
+import org.bukkit.Bukkit.getScheduler
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.Event
 import org.bukkit.plugin.java.JavaPlugin
@@ -35,6 +35,19 @@ object Bukkit {
       runTaskLater(self, delay)
     }
   }
+
+  /**
+    * Setups a repeating task
+    * @param task Function that generates the task to run
+    * @param period Period in server ticks of the task
+    * @return Task id number (-1 if scheduling failed)
+    */
+  def setupRepeatingTask(task: IO[Unit], period: Int): Int = {
+    val runnable: Runnable = () => task.unsafeRunSync()
+    getScheduler.scheduleSyncRepeatingTask(self, runnable, 0L, period.toLong)
+  }
+
+  def cancelRepeatingTask(taskNumber: Int) = getScheduler.cancelTask(taskNumber)
 }
 
 /**
@@ -59,7 +72,7 @@ class Bukkit extends JavaPlugin {
       logger = getLogger,
       version = getDescription.getFullName,
       worlds = getServer.getWorlds.asScala.toList.map(_.aetherize),
-      reservoirsFolder = getDataFolder,
+      dataFolder = getDataFolder.toScala,
       saveDefaultConfig = IO(saveDefaultConfig()),
       registerEvents = registerEvents
     )
@@ -67,6 +80,7 @@ class Bukkit extends JavaPlugin {
 	}
 
   override def onDisable(): Unit = {
-    Serialization.saveEverythingSync.unsafeRunSync()
+    Bukkit.cancelRepeatingTask(Aethercraft.builderTaskId)
+    Persistable.saveEverything.unsafeRunSync()
   }
 }

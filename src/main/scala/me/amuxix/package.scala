@@ -15,6 +15,8 @@ package object amuxix {
 
     def orUnless(condition: Boolean)(t: => T): Option[T] = option.orElse(Option.unless(condition)(t))
     def orFlatUnless(condition: Boolean)(t: => Option[T]): Option[T] = option.orElse(Option.flatUnless(condition)(t))
+
+    @inline def getOrDefault(default: T): T = option.getOrElse(default)
   }
 
   implicit class Energy(val value: Int) extends AnyVal with Ordered[Energy] {
@@ -50,5 +52,5 @@ package object amuxix {
 
   type =|>[-A, +B] = PartialFunction[A, B]
 
-  def indefiniteArticle(string: String) = if ("aeiouy".contains(string.head)) "an" else "a"
+  def indefiniteArticleFor(string: String) = if ("aeiouy".contains(string.head)) "an" else "a"
 }

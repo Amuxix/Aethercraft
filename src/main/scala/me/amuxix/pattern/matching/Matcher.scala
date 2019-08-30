@@ -25,8 +25,13 @@ object Matcher {
     * Looks for runes at the given location
     */
   def lookForRunesAt(location: BlockPosition, activator: Player, direction: Direction): Option[Rune] = {
-    lazy val testPatterns = Aethercraft.testRunes.map(_.pattern)
-    val possiblePatterns = patterns ++ Aethercraft.approvedTesters.find(_ == activator.uuid).fold(LazyList.empty[Pattern])(_ => testPatterns)
+    lazy val testPatterns =
+      if (activator.inCreativeMode && Aethercraft.approvedTesters.contains(activator.uuid)) {
+        Aethercraft.testRunes.map(_.pattern)
+      } else {
+        LazyList.empty
+      }
+    val possiblePatterns = patterns ++ testPatterns
     matchRunes(location, activator, direction, possiblePatterns)
       .orElse {
         info("Found no runes, looking for runes with center on the adjacent block of the clicked block face")

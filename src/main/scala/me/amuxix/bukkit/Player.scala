@@ -17,20 +17,14 @@ import org.bukkit.{ChatColor, GameMode, OfflinePlayer}
   * Created by Amuxix on 22/11/2016.
   */
 object Player {
-  implicit class BukkitPlayerOps(player: BPlayer) extends Aetherizeable[amuxix.Player] {
-    private val uuid: UUID = player.getUniqueId
-
-    override def aetherize: amuxix.Player =
-      Aethercraft.players.get(uuid).fold[amuxix.Player] {
-        val player = Player(uuid)
-        Aethercraft.players += (uuid -> player)
-        player
-      }(identity)
+  implicit class BukkitPlayerOps(player: OfflinePlayer) extends Aetherizeable[amuxix.Player] {
+    override def aetherize: amuxix.Player = amuxix.Player(player.getUniqueId)
   }
 }
-private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player with BukkitForm[BPlayer] {
 
-  private def player: Either[OfflinePlayer, BPlayer] = {
+class Player(val uuid: UUID) extends Entity with amuxix.Player with BukkitForm[BPlayer] {
+
+  private[bukkit] def player: Either[OfflinePlayer, BPlayer] = {
     val offlinePlayer = Bukkit.server.getOfflinePlayer(uuid)
     if (offlinePlayer.isOnline) {
       Right(offlinePlayer.getPlayer)
@@ -67,6 +61,10 @@ private[bukkit] case class Player(uuid: UUID) extends Entity with amuxix.Player 
   override def position: Option[EntityPosition] = player.map(_.getLocation.aetherize).toOption
 
   override def name: Option[String] = Option(player.fold(_.getName, _.getName))
+
+  override def nameOrUUID: String = name.getOrDefault(uuid.toString)
+
+  override def isOnline: Boolean = player.isRight
 
   override def inventory: Option[PlayerInventory] = player.toOption.map(_.getInventory.aetherize)
 

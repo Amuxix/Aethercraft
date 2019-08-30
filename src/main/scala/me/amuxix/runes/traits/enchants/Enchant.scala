@@ -1,7 +1,10 @@
 package me.amuxix.runes.traits.enchants
 
+import io.circe.{KeyDecoder, KeyEncoder}
 import me.amuxix.Named
 import me.amuxix.inventory.Item
+
+import scala.collection.immutable.HashMap
 
 /**
   * Created by Amuxix on 09/02/2017.
@@ -30,7 +33,24 @@ trait Enchant extends Named {
 }
 
 object Enchant {
+/*  implicit val encoder: Encoder[Enchant] = Encoder.forProduct1("name")(enchant => enchant.name)
+  implicit val decoder: Decoder[Enchant] = Decoder.forProduct1[Enchant, String]("name")(enchantName =>
+    enchantNameToEnchantMap.getOrDefault(enchantName, throw new Exception(s"Invalid enchant $enchantName"))
+  )*/
+
+  implicit val keyEncoder: KeyEncoder[Enchant] = new KeyEncoder[Enchant] {
+    override def apply(key: Enchant): String = key.name
+  }
+
+  implicit val keyDecoder: KeyDecoder[Enchant] = new KeyDecoder[Enchant] {
+    override def apply(key: String): Option[Enchant] = enchantNameToEnchantMap.get(key)
+  }
+
   var enchants: List[Enchant] = List.empty
+
+  lazy val enchantNameToEnchantMap: Map[String, Enchant] = enchants.map( enchant =>
+    enchant.name -> enchant
+  ).to(HashMap)
 
   var blockBreakEnchants: List[Enchant with BlockBreakTrigger] = List.empty
   var blockPlaceEnchants: List[Enchant with BlockPlaceTrigger] = List.empty

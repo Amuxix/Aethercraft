@@ -4,7 +4,7 @@ import cats.data.OptionT
 import cats.effect.IO
 import io.circe.Decoder.Result
 import io.circe.{Decoder, Encoder, HCursor}
-import io.circe.syntax._
+import io.circe.syntax.EncoderOps
 import me.amuxix._
 import me.amuxix.bukkit.block.{Block => BBlock}
 import me.amuxix.inventory.Item

@@ -19,7 +19,7 @@ trait Item extends Consumable {
 
   def destroy(amount: Int): IO[Unit]
 
-  def addCurses(): EitherT[IO, String, Unit]
+  def addVanillaCurses(): EitherT[IO, String, Unit]
 
   def enchants: Set[Enchant]
 

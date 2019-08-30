@@ -5,13 +5,22 @@ import java.util.UUID
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
-import me.amuxix.bukkit.{Configuration, Player => BPlayer}
+import me.amuxix.bukkit.Configuration
 import me.amuxix.inventory.{Item, PlayerInventory}
 import me.amuxix.position.EntityPosition
 
 object Player {
   implicit val encoder: Encoder[Player] = Encoder.forProduct1("uuid")(_.uuid)
-  implicit val decoder: Decoder[Player] = Decoder.forProduct1("uuid")(BPlayer.apply)
+  implicit val decoder: Decoder[Player] = Decoder.forProduct1("uuid")(Player.apply)
+
+  private var players: Map[UUID, Player] = Map.empty
+
+  def apply(uuid: UUID): Player =
+    players.get(uuid).fold[Player] {
+      val player = new bukkit.Player(uuid)
+      players += (uuid -> player)
+      player
+    }(identity)
 }
 
 trait Player {
@@ -47,6 +56,10 @@ trait Player {
 
   def name: Option[String]
 
+  def nameOrUUID: String
+
+  def isOnline: Boolean
+
   def inventory: Option[PlayerInventory]
 
   def add(item: Item): OptionT[IO, String] = OptionT.fromOption[IO](inventory).flatMap(_.add(item))
@@ -78,4 +91,6 @@ trait Player {
   def hasAtLeast(energy: Energy): Boolean = energyReservoir.hasAtLeast(energy)
 
   def removeEnergy(energy: Energy): EitherT[IO, String, Energy] = energyReservoir.remove(energy)
+
+  def energyCap: Energy = energyReservoir.cap
 }

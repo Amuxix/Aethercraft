@@ -7,7 +7,6 @@ import cats.data.{EitherT, OptionT}
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix.logging.Logger
-import me.amuxix.logging.Logger.info
 import me.amuxix.serialization.Persistable
 
 import scala.util.Try
@@ -30,36 +29,23 @@ object EnergyReservoir extends Persistable[EnergyReservoir] {
 
   override protected val persistablesName = "Reservoirs"
 
-  private def persistables: Map[String, EnergyReservoir] = energyReservoirs.map {
+  override protected def persistables: Map[String, EnergyReservoir] = energyReservoirs.map {
     case (player, reservoir) => player.uuid.toString -> reservoir
   }
 
-  private val folder: File = Aethercraft.dataFolder.createChild(persistablesName, asDirectory = true)
+  override protected val folder: File = Aethercraft.dataFolder.createChild(persistablesName, asDirectory = true)
 
   override protected val extension: String = ".reservoir"
 
   override protected def updateWithLoaded(fileName: String, thing: EnergyReservoir): Unit =
-    Try(UUID.fromString(fileName))
-      .toOption.flatMap(Aethercraft.players.get)
-      .map { player =>
-        energyReservoirs += (player -> thing)
+    Try(UUID.fromString(fileName)).toOption
+      .map { uuid =>
+        energyReservoirs += (Player(uuid) -> thing)
       }
       .fold(Logger.severe(s"Invalid player uuid: $fileName"))(IO.pure)
-
-  val saveReservoirs: IO[Unit] =
-    for {
-      _ <- info(s"Saving all $persistablesName")
-      _ <- saveAll(persistables, folder)
-    } yield ()
-
-  val loadReservoirs: IO[Unit] =
-    for {
-      amount <- loadAll(folder, updateWithLoaded)
-      _ <- info(s"Loaded $amount $persistablesName")
-    } yield ()
 }
 
-class EnergyReservoir private(private val player: Player, private var energy: Energy = 0, private val cap: Energy = EnergyReservoir.defaultCap) {
+class EnergyReservoir private(private val player: Player, private var energy: Energy = 0, private var _cap: Energy = EnergyReservoir.defaultCap) {
 
   /**
     * Adds the most energy possible starting from the left of the input list
@@ -108,7 +94,7 @@ class EnergyReservoir private(private val player: Player, private var energy: En
       this.energy += energy
       EitherT.liftF {
         for {
-          _ <- Logger.info(s"${player.name} gained $energy energy.")
+          _ <- Logger.info(s"${player.nameOrUUID} gained $energy energy.")
           _ <- player.notify(s"Added $energy energy.")
           _ <- EnergyReservoir.saveOneAsync(EnergyReservoir.folder, player.uuid.toString, this)
         } yield this.energy
@@ -131,7 +117,7 @@ class EnergyReservoir private(private val player: Player, private var energy: En
       this.energy -= energy
       EitherT.liftF {
         for {
-          _ <- Logger.info(s"${player.name} used $energy energy.")
+          _ <- Logger.info(s"${player.nameOrUUID} used $energy energy.")
           _ <- EnergyReservoir.saveOneAsync(EnergyReservoir.folder, player.uuid.toString, this)
         } yield this.energy
       }
@@ -139,4 +125,6 @@ class EnergyReservoir private(private val player: Player, private var energy: En
 
 
   def hasAtLeast(energy: Energy): Boolean = this.energy >= energy
+
+  def cap: Energy = this._cap
 }

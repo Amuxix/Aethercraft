@@ -2,38 +2,35 @@ package me.amuxix.serialization
 
 import better.files.File
 import cats.effect.IO
-import cats.implicits.{catsStdInstancesForList, toFoldableOps}
+import cats.implicits.{catsStdInstancesForLazyList, catsStdInstancesForList, toFoldableOps, toTraverseOps}
 import me.amuxix.logging.Logger.info
 import me.amuxix.runes.waypoints.GenericWaypoint
-import me.amuxix.{Aethercraft, Named, World}
+import me.amuxix.{Aethercraft, World}
 
 
 object PersistableRune {
-  val persistableRunes: List[PersistableRune[_]] = List(GenericWaypoint)
+  lazy val persistableRunes: LazyList[PersistableRune[_]] = LazyList(GenericWaypoint)
 
-  val saveAllRunes: IO[Unit] = persistableRunes.traverse_(_.saveRunes)
+  lazy val saveAllRunes: IO[Unit] = persistableRunes.traverse_(_.saveRunes)
 
-  val loadAllRunes: IO[Unit] = Aethercraft.worlds.values.toList.traverse_ { world =>
+  lazy val loadAllRunes: IO[Unit] = Aethercraft.worlds.values.toList.traverse_ { world =>
     for {
       _ <- info(s"Loading runes in ${world.name}")
-      loadMessage <- persistableRunes.traverse_(_.loadFromWorld(world))
-      _ <- info(s"  - $loadMessage")
+      loadMessage <- persistableRunes.traverse(_.loadFromWorld(world)).map(_.mkString("\n"))
+      _ <- info(loadMessage)
     } yield ()
   }
 }
 
-abstract class PersistableRune[Rune] extends Persistable[Rune] with Named {
+abstract class PersistableRune[Rune] extends GenericPersistable[Rune] {
   protected def runes: Map[World, Map[String, Rune]]
 
-  override protected val persistablesName: String = name
-
-  def runeMagicFolder(world: World): File = Persistable.worldMagicFolders(world) / (persistablesName + Persistable.fileTermination)
+  def runeMagicFolder(world: World): File = GenericPersistable.worldMagicFolders(world) / persistablesName
 
   private def loadFromWorld(world: World): IO[String] =
-    loadAll(runeMagicFolder(world), updateWithLoaded).map(size => s"Loaded $size $persistablesName.")
+    loadAll(runeMagicFolder(world), updateWithLoaded).map(size => s"  - Loaded $size $persistablesName.")
 
-
-  private val saveAll: IO[Unit] =
+  private lazy val saveAll: IO[Unit] =
     runes.toList.traverse_ {
       case (world, fileNameToRune) =>
         val magicFolder = runeMagicFolder(world)
@@ -43,7 +40,7 @@ abstract class PersistableRune[Rune] extends Persistable[Rune] with Named {
         }
     }
 
-  val saveRunes: IO[Unit] =
+  lazy val saveRunes: IO[Unit] =
     for {
       _ <- info(s"Saving all $persistablesName")
       _ <- saveAll

@@ -43,7 +43,7 @@ case class Mover(
     val startNotificationStep = NotificationStep(activator, s"$name started.")
     val endNotificationStep = NotificationStep(activator, s"$name ended.")
 
-    EitherT.fromEither[IO](Task(activator, startNotificationStep +: moveSteps :+ endNotificationStep, cubeSize * 2, s"$name task failed!"))
+    EitherT.fromEither[IO](Task(activator, startNotificationStep +: moveSteps :+ endNotificationStep, 2, s"$name task failed!"))
       .map { task =>
         Builder.addTask(activator, task)
         true

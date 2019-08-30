@@ -16,7 +16,6 @@ import me.amuxix.{Direction, Matrix4, Player}
 /**
   * Test rune, does nothing pattern might chance
   */
-
 object Test extends RunePattern[Test] {
   override val castableVertically = true
   // format: off

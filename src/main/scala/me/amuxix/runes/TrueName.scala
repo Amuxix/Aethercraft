@@ -40,13 +40,13 @@ object TrueName extends RunePattern[TrueName] with Enchant with BlockPlaceTrigge
     for {
       _ <- trueName.setOwner(player)
       _ <- trueName.setDisplayName(trueNameDisplayFor(player))
-      _ <- trueName.addCurses()
+      _ <- trueName.addVanillaCurses()
       _ <- trueName.addRuneEnchant(TrueName)
     } yield trueName
   }
 
   def trueNameDisplayFor(player: Player): String =
-    s"${player.name}'s ${TrueName.name}"
+    s"${player.name.get}'s ${TrueName.name}"
 
   //This will cancel the block place if the item being placed is a true name of another player
   /** This should run the effect of the enchant and return whether to cancel the event or not */

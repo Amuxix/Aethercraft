@@ -2,7 +2,6 @@ package me.amuxix.runes.waypoints
 
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
-import me.amuxix.Matrix4.{decoder => matrixDecoder, encoder => matrixEncoder}
 import me.amuxix.exceptions.DeserializationException
 import me.amuxix.position.BlockPosition
 import me.amuxix.runes.Rune
@@ -19,7 +18,7 @@ import scala.math.log10
 object GenericWaypoint extends PersistableRune[GenericWaypoint] {
 
   /** The map key is the [[me.amuxix.runes.traits.Linkable.signature]] of the waypoint */
-  var waypoints = Map.empty[Int, GenericWaypoint]
+  var waypoints: Map[Int, GenericWaypoint] = Map.empty
 
   implicit val encoder: Encoder[GenericWaypoint] =
     Encoder.forProduct6("center", "activator", "direction", "rotation", "signature", "size")(w => (w.center, w.activator, w.direction, w.rotation, w.signature, w.size))

@@ -29,7 +29,7 @@ sealed abstract class Material(protected[material] var _energy: Option[Energy] =
     _energy = Some(energy)
   }
 
-  override def toString: String = s"$name(${if (hasEnergy) energy.getOrElse("None") else "NoEnergy"})"
+  override def toString: String = s"$name(${if (hasEnergy) energy.fold("None")(_.toString) else "NoEnergy"})"
 
   override def hashCode(): Int = name.hashCode()
 

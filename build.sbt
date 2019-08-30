@@ -92,3 +92,13 @@ serverProperties := {
 }
 
 assemblyOutputPath in assembly := new File(serverProperties.value.getProperty("testServerPluginsLocation", assemblyOutputPath.toString)) / (assemblyJarName in assembly).value
+
+lazy val reloadServer = taskKey[Unit]("Reload the server using mcrcon")
+
+reloadServer := {
+  import scala.sys.process._
+  "mcrcon -H localhost -P 25575 -p YTLjJiAIORYCMlneyOvp reload" !
+}
+
+lazy val assemblyAndReload = taskKey[Unit]("runs assembly and then reloads the server")
+assemblyAndReload := (reloadServer dependsOn assembly).value

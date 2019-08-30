@@ -13,16 +13,16 @@ import me.amuxix.pattern.RunePattern
 import me.amuxix.runes._
 import me.amuxix.runes.test._
 import me.amuxix.runes.waypoints.Waypoint
-import me.amuxix.serialization.Persistable
+import me.amuxix.serialization.GenericPersistable
 
 import scala.concurrent.ExecutionContext.global
 import scala.concurrent.Future
 import scala.util.Try
 
-object Aethercraft {
+object Aethercraft extends Named {
   val defaultFailureMessage = "Some unknown force blocks you."
   val approvedTesters: List[UUID] = List("a398585d-b180-457e-a018-fcd5d04a18fc").flatMap(uuid => Try(UUID.fromString(uuid)).toOption)
-  val testRunes: LazyList[RunePattern[_]] = LazyList(Test, Test2, Mover)
+  val testRunes: LazyList[RunePattern[_]] = LazyList(Test, Test2, Mover, EnergyFiller)
   val activeRunes: LazyList[RunePattern[_]] = LazyList(Waypoint, Teleporter, Compass, TrueName, RunicChest, SuperTool,
     Disenchanter, MagicEightBall, Divination, Portkey)
 
@@ -32,7 +32,6 @@ object Aethercraft {
 
   var fullVersion: String = _
   lazy val simpleVersion: String = fullVersion.split("-").head
-  var players: Map[UUID, Player] = Map.empty
   implicit val ec = global
 
   def runTaskSync(task: IO[Unit]): Unit = Bukkit.runTaskSync(task)
@@ -95,7 +94,7 @@ object Aethercraft {
       _ <- saveDefaultConfig
       _ <- updateEnergies
       _ <- checkMissingMaterialEnergy
-      _ <- Persistable.loadEverything
+      _ <- GenericPersistable.loadEverything
       _ <- registerEvents
       _ <- startBuilder
       _ <- info(s"Successfully loaded $version")

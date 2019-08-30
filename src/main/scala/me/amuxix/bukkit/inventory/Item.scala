@@ -2,25 +2,27 @@ package me.amuxix.bukkit.inventory
 
 import cats.data.{EitherT, OptionT}
 import cats.effect.IO
-import cats.implicits.catsStdInstancesForOption
-import cats.implicits.toTraverseOps
-import io.circe.{Decoder, Encoder}
+import cats.implicits.{catsStdInstancesForOption, toTraverseOps}
+import io.circe.Decoder.Result
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder, HCursor}
 import me.amuxix.bukkit.BukkitForm
+import me.amuxix.OptionOps
 import me.amuxix.bukkit.Material.{BukkitMaterialOps, MaterialOps}
 import me.amuxix.bukkit.inventory.items.PlayerHead
+import me.amuxix.bukkit.inventory.meta.ItemMeta.ItemMetaOps
+import me.amuxix.bukkit.inventory.meta.{ItemMeta => BukkitItemMeta}
+import me.amuxix.inventory.meta.ItemMeta
+import me.amuxix.inventory.{Item => AetherItem}
 import me.amuxix.material.Material
 import me.amuxix.material.Material.{PlayerHead => PlayerHeadMaterial}
-import me.amuxix.runes.traits.enchants.Enchant
-import me.amuxix.{Aetherizeable, inventory}
-import me.amuxix.runes.traits.enchants.Enchant.{enchantPrefix, enchantStateSeparator}
 import me.amuxix.material.Properties.ItemProperty
-import org.bukkit.enchantments.Enchantment
+import me.amuxix.runes.traits.enchants.Enchant
+import me.amuxix.runes.traits.enchants.Enchant.{enchantPrefix, enchantStateSeparator}
+import me.amuxix.{Aetherizeable, inventory}
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.ItemMeta
 
-import scala.jdk.CollectionConverters._
 import scala.collection.immutable.HashMap
 
 /**
@@ -30,6 +32,23 @@ import scala.collection.immutable.HashMap
   * This represents an item that can be present in an inventory
   */
 object Item {
+  implicit val materialEncoder: Encoder[Material with ItemProperty] = a => (a: Material).asJson(implicitly[Encoder[Material]])
+  implicit val materialDecoder: Decoder[Material with ItemProperty] = (c: HCursor) => c.as[Material].asInstanceOf[Result[Material with ItemProperty]]
+  implicit val encodeItem: Encoder[AetherItem] =
+    Encoder.forProduct3[AetherItem, Material with ItemProperty, Int, Option[BukkitItemMeta]](
+      "material",
+      "amount",
+      "meta") { aetherItem =>
+      val item = aetherItem.asInstanceOf[Item]
+      (item.material, item.amount, item.meta.map(_.asInstanceOf[BukkitItemMeta]))
+    }
+  implicit val decodeItem: Decoder[AetherItem] = Decoder.forProduct3[AetherItem, Material with ItemProperty, Int, Option[BukkitItemMeta]]("material", "amount", "meta"){
+    case (material, amount, meta) =>
+    val item = Item(material, amount)
+    meta.foreach(item.setMeta)
+    item
+  }
+
   implicit class BukkitItemStackOps(item: ItemStack) extends Aetherizeable[Item] {
     def aetherize: Item = Item(item)
   }
@@ -54,6 +73,14 @@ object Item {
 protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.Item with BukkitForm[ItemStack] {
   override val material: Material with ItemProperty = itemStack.getType.aetherize.asInstanceOf[Material with ItemProperty]
 
+  private def bukkitMeta = Option(itemStack.getItemMeta)
+
+  lazy val meta: Option[ItemMeta] = bukkitMeta.map(bukkitItemMeta => new BukkitItemMeta(bukkitItemMeta, material))
+
+  protected def setMeta(meta: ItemMeta): IO[Unit] = IO(itemStack.setItemMeta(meta.bukkitForm))
+
+
+
   override def amount: Int = itemStack.getAmount
 
   override def setAmount(i: Int): IO[Unit] = IO(itemStack.setAmount(i))
@@ -62,29 +89,26 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
 
   override def destroy(amount: Int): IO[Unit] = setAmount(this.amount - amount)
 
-  protected lazy val maybeMeta: Option[ItemMeta] = Option(itemStack.getItemMeta)
 
-  protected def setMeta(meta: ItemMeta): IO[Unit] = IO(itemStack.setItemMeta(meta))
 
-  private lazy val lore: List[String] =
-    maybeMeta.flatMap { meta =>
-      Option(meta.getLore).map(_.asScala)
-    }.toList.flatten
+  private lazy val lore: List[String] = meta.toList.flatMap(_.lore)
 
   private def setLore(lore: List[String]): EitherT[IO, String, Unit] =
-    OptionT(maybeMeta.traverse { meta =>
-      meta.setLore(lore.asJava)
+    OptionT(meta.traverse { meta =>
+      meta.lore = lore
       setMeta(meta)
     }).toRight("Failed to set lore.")
 
   private def addToLore(string: String): EitherT[IO, String, Unit] = setLore(lore :+ string)
 
-  override def addCurses(): EitherT[IO, String, Unit] =
-    OptionT(maybeMeta.traverse { meta =>
-      meta.addEnchant(Enchantment.BINDING_CURSE, 1, false)
-      meta.addEnchant(Enchantment.VANISHING_CURSE, 1, false)
+
+  override def addVanillaCurses(): EitherT[IO, String, Unit] =
+    OptionT(meta.traverse { meta =>
+      meta.addVanillaCurses()
       setMeta(meta)
     }).toRight("Failed to add curses.")
+
+
 
   override def enchants: Set[Enchant] = Enchant.enchants.filter(hasRuneEnchant).toSet
 
@@ -119,15 +143,17 @@ protected[bukkit] class Item protected(itemStack: ItemStack) extends inventory.I
 
   override def disenchant: EitherT[IO, String, Unit] = setLore(lore.filterNot(_.startsWith(enchantPrefix)))
 
-  override def name: String = displayName.filter(_ => hasDisplayName).getOrElse(material.name)
 
-  override def hasDisplayName: Boolean = maybeMeta.exists(_.hasDisplayName)
 
-  override def displayName: Option[String] = maybeMeta.map(_.getDisplayName)
+  override def name: String = displayName.filter(_ => hasDisplayName).getOrDefault(material.name)
+
+  override def hasDisplayName: Boolean = meta.exists(_.hasDisplayName)
+
+  override def displayName: Option[String] = meta.map(_.displayName)
 
   override def setDisplayName(name: String): EitherT[IO, String, Unit] =
-    OptionT(maybeMeta.traverse { meta =>
-      meta.setDisplayName(name)
+    OptionT(meta.traverse { meta =>
+      meta.displayName = name
       setMeta(meta)
     }).toRight("Failed to set display name.")
 

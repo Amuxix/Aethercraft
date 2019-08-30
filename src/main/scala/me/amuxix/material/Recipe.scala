@@ -267,7 +267,7 @@ case class Recipe(ingredients: NonEmptyList[NonEmptyList[Material]], result: Mat
       val newEnergy: Energy = ((ingredientsEnergy / craftedAmount) * Configuration.craftingMultiplier + fuelEnergy.value).ceil.toInt
 
       result.energy.filter(newEnergy >= _).fold {
-        Logger.trace(s"${result.name}: ${result.energy.getOrElse("No Set")} -> $newEnergy")
+        Logger.trace(s"${result.name}: ${result.energy.fold("No Set")(_.toString)} -> $newEnergy")
         result.energy = newEnergy
         true
       }(_ => false)

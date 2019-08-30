@@ -49,7 +49,7 @@ abstract class Rune extends Named {
       if shouldUseTrueName && playerHead.hasRuneEnchant(TrueName)
       owner <- playerHead.owner
     } yield owner)
-      .getOrElse(creator)
+      .getOrDefault(creator)
 
   /**
     * Consumes a true name on the real activator of this rune
@@ -78,7 +78,7 @@ abstract class Rune extends Named {
 
   protected def notifyActivator: IO[Unit] = activator.notify(activationMessage)
 
-  protected var activationLogMessage: String = s"${activator.name} activated ${indefiniteArticle(name)} $name at $center"
+  protected var activationLogMessage: String = s"${activator.nameOrUUID} activated ${indefiniteArticleFor(name)} $name at $center"
 
   protected def logRuneActivation: IO[Unit] = info(activationLogMessage)
 

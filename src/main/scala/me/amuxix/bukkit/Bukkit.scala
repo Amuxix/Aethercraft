@@ -5,7 +5,7 @@ import cats.effect.IO
 import me.amuxix._
 import me.amuxix.bukkit.World.BukkitWorldOps
 import me.amuxix.bukkit.listeners._
-import me.amuxix.serialization.Persistable
+import me.amuxix.serialization.GenericPersistable
 import org.bukkit.Bukkit.getScheduler
 import org.bukkit.configuration.file.FileConfiguration
 import org.bukkit.event.Event
@@ -29,10 +29,10 @@ object Bukkit {
     }
   }
 
-  def runTaskLater(task: IO[Unit], delay: Int): Unit = {
+  def runTaskLater(task: IO[Unit], ticks: Int): Unit = {
     new BukkitRunnable {
       override def run(): Unit = task.unsafeRunSync()
-      runTaskLater(self, delay)
+      runTaskLater(self, ticks)
     }
   }
 
@@ -81,6 +81,6 @@ class Bukkit extends JavaPlugin {
 
   override def onDisable(): Unit = {
     Bukkit.cancelRepeatingTask(Aethercraft.builderTaskId)
-    Persistable.saveEverything.unsafeRunSync()
+    GenericPersistable.saveEverything.unsafeRunSync()
   }
 }

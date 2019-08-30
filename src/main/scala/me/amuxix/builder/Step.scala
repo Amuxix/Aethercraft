@@ -2,16 +2,18 @@ package me.amuxix.builder
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.implicits.toFunctorOps
+import io.circe.generic.auto._
+import io.circe.syntax.EncoderOps
+import io.circe.{Decoder, Encoder}
 import me.amuxix.Player
 import me.amuxix.block.Block
+import me.amuxix.block.Block.{materialDecoder, materialEncoder}
+import me.amuxix.bukkit.inventory.Item.{decodeItem, encodeItem}
 import me.amuxix.inventory.Item
 import me.amuxix.material.Material
 import me.amuxix.material.Properties.BlockProperty
 import me.amuxix.position.{BlockPosition, Vector3}
-/*import io.circe.{ Decoder, Encoder }
-import io.circe.generic.auto._
-import io.circe.syntax.EncoderOps
-import cats.implicits.toFunctorOps
 
 object Step {
   implicit val encodeStep: Encoder[Step] = Encoder.instance {
@@ -30,7 +32,7 @@ object Step {
       Decoder[DisplaceStep].widen,
       Decoder[NotificationStep].widen,
     ).reduceLeft(_ or _)
-}*/
+}
 
 sealed abstract class Step(val actions: Int) {
   val io: EitherT[IO, String, Unit]

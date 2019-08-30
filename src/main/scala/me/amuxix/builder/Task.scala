@@ -2,8 +2,8 @@ package me.amuxix.builder
 
 import cats.data.EitherT
 import cats.effect.IO
-//import io.circe.{Decoder, Encoder}
-//import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
+import io.circe.{Decoder, Encoder}
+import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import me.amuxix.Player
 
 
@@ -18,11 +18,17 @@ object Task {
     )
   }
 
-  //implicit val taskEncoder: Encoder[Task] = deriveEncoder
-  //implicit val taskDecoder: Decoder[Task] = deriveDecoder
+  implicit val encoder: Encoder[Task] = deriveEncoder
+
+  implicit val decoder: Decoder[Task] = deriveDecoder
 }
 
-private[builder] class Task(owner: Option[Player], val steps: LazyList[Step], val actionsPerTick: Int, failureMessage: String) {
+private[builder] case class Task(
+  owner: Option[Player],
+  steps: LazyList[Step],
+  actionsPerTick: Int,
+  failureMessage: String,
+) {
   /**
     * Combines IOs from the steps until a number of actions equal to the actionsPerTick multiplied by actionMultiplier is satisfied.
     * @param actionLimiterMultiplier Multiplier to the actions per tick, is always less or equal to 1.

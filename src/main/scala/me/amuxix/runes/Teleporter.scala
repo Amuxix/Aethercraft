@@ -48,11 +48,11 @@ object Teleporter extends RunePattern[Teleporter] {
   def bounceAndCenterTarget(target: GenericWaypoint): Either[String, EntityPosition] =
     (1 to maxBlocksBouncedByTeleporter).to(LazyList)
       .map(target.center + target.direction * _)
-      .collectFirst {
+      .collectFirst[Either[String, EntityPosition]] {
         case possibleTarget if possibleTarget.block.material.isSolid == false && possibleTarget.canFitPlayer =>
           Right(centerTeleport(possibleTarget, target))
       }
-      .getOrElse(Left("The way is barred on the other side!"))
+      .getOrDefault(Left("The way is barred on the other side!"))
 
   /**
     * Checks if the difference in tiers is high enough to support travel
@@ -97,7 +97,7 @@ case class Teleporter(
 
   override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] =
     Teleporter.validateAndTeleport(activator, center, signature, tier).map { target =>
-      activationLogMessage = s"${activator.name} teleported from $center to $target"
+      activationLogMessage = s"${activator.nameOrUUID} teleported from $center to $target"
       true
     }
 

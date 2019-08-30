@@ -17,17 +17,18 @@ object Persistable {
 
 abstract class Persistable[T] extends GenericPersistable[T] {
   protected val folder: File
-  protected def persistables: Map[String, T]
 
   lazy val save: IO[Unit] =
     for {
       _ <- info(s"Saving all $persistablesName")
-      _ <- saveAll(persistables, folder)
+      _ <- saveAll(persistables.map(thing => getFileName(thing) -> thing), folder)
     } yield ()
 
   lazy val load: IO[Unit] =
     for {
       amount <- loadAll(folder, updateWithLoaded)
-      _ <- info(s"Loaded $amount $persistablesName")
+      _ <- amount.fold(IO.unit)(amount => info(s"Loaded $amount $persistablesName"))
     } yield ()
+
+  override def getFile(thing: T): File = folder / (getFileName(thing) + extension)
 }

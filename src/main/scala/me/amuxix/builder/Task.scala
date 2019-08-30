@@ -1,5 +1,7 @@
 package me.amuxix.builder
 
+import java.util.UUID
+
 import cats.data.EitherT
 import cats.effect.IO
 import io.circe.{Decoder, Encoder}
@@ -8,7 +10,7 @@ import me.amuxix.Player
 
 
 object Task {
-  def empty: Task = new Task(None, LazyList.empty, 0, "")
+  private def empty(id: UUID): Task = new Task(None, LazyList.empty, 0, "", id, true)
 
   def apply(owner: Player, steps: LazyList[Step], actionsPerTick: Int, failureMessage: String): Either[String, Task] = {
     Either.cond(
@@ -28,6 +30,8 @@ private[builder] case class Task(
   steps: LazyList[Step],
   actionsPerTick: Int,
   failureMessage: String,
+  id: UUID = UUID.randomUUID(),
+  hasFinished: Boolean = false,
 ) {
   /**
     * Combines IOs from the steps until a number of actions equal to the actionsPerTick multiplied by actionMultiplier is satisfied.
@@ -44,21 +48,20 @@ private[builder] case class Task(
         false
       }
     }
-    tasksToExecute.foldLeft(EitherT.pure[IO, String](())) {
-      case (io, task) => io.flatMap(_ => task.io)
-    }
-      .map(_ => new Task(owner, steps.drop(tasksToExecute.size), actionsPerTick, failureMessage))
-      .recoverWith {
+    tasksToExecute
+      .foldLeft(EitherT.pure[IO, String](())) {
+        case (io, task) => io.flatMap(_ => task.io)
+      }
+      .map { _ =>
+        val remainingSteps = steps.drop(tasksToExecute.size)
+        new Task(owner, remainingSteps, actionsPerTick, failureMessage, id, remainingSteps.isEmpty)
+      }.recoverWith {
         case error =>
-          EitherT.liftF(owner.fold(IO.unit)(_.notifyError(s"$failureMessage $error")).map(_ => Task.empty))
+          EitherT.liftF(owner.fold(IO.unit)(_.notifyError(s"$failureMessage $error")).map(_ => Task.empty(id)))
       }
       .fold(
-        _ => Task.empty,
+        _ => Task.empty(id),
         identity
       )
   }
-
-  def isEmpty: Boolean = steps.isEmpty
-
-  def nonEmpty: Boolean = steps.nonEmpty
 }

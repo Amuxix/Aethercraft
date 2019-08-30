@@ -1,20 +1,13 @@
 package me.amuxix.builder
 
-import java.util.UUID
-
 import better.files.File
 import cats.effect.IO
 import cats.implicits.{catsStdInstancesForLazyList, catsStdInstancesForList, toTraverseOps}
-import io.circe.Decoder.decodeList
-import io.circe.Encoder.encodeList
-import io.circe.{Decoder, Encoder, HCursor}
-import me.amuxix.logging.Logger
+import io.circe.{Decoder, Encoder}
 import me.amuxix.serialization.Persistable
 import me.amuxix.{Aethercraft, Player}
 
-import scala.util.Try
-
-object Builder extends Persistable[List[Task]] {
+object Builder extends Persistable[Task] {
   var taskMap: Map[Player, LazyList[Task]] = Map.empty
   val totalMax: Int = 5000
   val playerMax: Int = 500
@@ -42,8 +35,15 @@ object Builder extends Persistable[List[Task]] {
       .traverse {
         case (player, tasks) =>
           handlePlayerTasks(tasks, globalActionMultiplier)
-            .map { playerTasks =>
-              (player, playerTasks.filter(_.nonEmpty))
+            .flatMap { playerTasks =>
+              playerTasks
+                .flatTraverse {
+                  case task if task.hasFinished =>
+                    deleteAsync(task).map(_ => LazyList.empty)
+                  case task =>
+                    IO(LazyList(task))
+                }
+                .map(player -> _)
             }
       }
       .map { list =>
@@ -57,9 +57,9 @@ object Builder extends Persistable[List[Task]] {
     tasks.traverse(_.combine(actionMultiplier * globalActionMultiplier))
   }
 
-  override implicit lazy val encoder: Encoder[List[Task]] = (list: List[Task]) => encodeList[Task].apply(list)
+  override implicit val encoder: Encoder[Task] = Task.encoder
 
-  override implicit lazy val decoder: Decoder[List[Task]] = (c: HCursor) => decodeList[Task].apply(c)
+  override implicit val decoder: Decoder[Task] = Task.decoder
 
   override protected val persistablesName: String = "Tasks"
 
@@ -67,15 +67,12 @@ object Builder extends Persistable[List[Task]] {
 
   override protected val folder: File = Aethercraft.dataFolder.createChild(persistablesName, asDirectory = true)
 
-  override protected def persistables: Map[String, List[Task]] = taskMap.map {
-    case (player, tasks) => player.uuid.toString -> tasks.toList
-  }
+  override protected def persistables: List[Task] = taskMap.values.toList.flatten
 
-  override protected def updateWithLoaded(fileName: String, thing: List[Task]): Unit = {
-    Try(UUID.fromString(fileName)).toOption
-      .map { uuid =>
-        taskMap += (Player(uuid) -> thing.to(LazyList))
-      }
-      .fold(Logger.severe(s"Invalid player uuid: $fileName"))(IO.pure)
+  override protected def getFileName(task: Task): String = task.id.toString
+
+  override protected def updateWithLoaded(fileName: String, task: Task): Unit = {
+    val player = task.owner.getOrElse(throw new Exception("Trying to load task without owner!"))
+    addTask(player, task)
   }
 }

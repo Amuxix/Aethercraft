@@ -1,6 +1,5 @@
 package me.amuxix.runes.waypoints
 
-import cats.effect.IO
 import io.circe.{Decoder, Encoder}
 import me.amuxix.exceptions.DeserializationException
 import me.amuxix.position.BlockPosition
@@ -8,7 +7,7 @@ import me.amuxix.runes.Rune
 import me.amuxix.runes.traits.{Linkable, Persistent, Tiered}
 import me.amuxix.runes.waypoints.WaypointSize.Medium
 import me.amuxix.serialization.PersistableRune
-import me.amuxix.{Direction, Matrix4, Player, World}
+import me.amuxix.{Direction, Matrix4, Player}
 
 import scala.math.log10
 
@@ -30,20 +29,13 @@ object GenericWaypoint extends PersistableRune[GenericWaypoint] {
       case _ => throw DeserializationException("a Waypoint")
     }
 
-  override protected def runes: Map[World, Map[String, GenericWaypoint]] = waypoints.groupBy(_._2.center.world).map {
-    case (world, map) => world -> map.map {
-      case (signature, waypoint) => signature.toString -> waypoint
-    }
-  }
+  override protected def persistables: List[GenericWaypoint] = waypoints.values.toList
+
+  override protected def getFileName(waypoint: GenericWaypoint): String = waypoint.signature.toString
 
   override protected val persistablesName: String = "Waypoints"
 
   override protected def updateWithLoaded(fileName: String, thing: GenericWaypoint): Unit = this.waypoints += fileName.toInt -> thing
-
-  def saveOneAsync(waypoint: GenericWaypoint): IO[Unit] = {
-    val folder = runeMagicFolder(waypoint.center.world)
-    saveOneAsync(folder, waypoint.signature.toString, waypoint)
-  }
 }
 
 /**

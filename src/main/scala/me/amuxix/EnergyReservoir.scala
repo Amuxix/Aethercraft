@@ -12,10 +12,10 @@ import me.amuxix.serialization.Persistable
 import scala.util.Try
 
 object EnergyReservoir extends Persistable[EnergyReservoir] {
-  override implicit val encoder: Encoder[EnergyReservoir] = Encoder.forProduct3("player", "energy", "cap")(reservoir =>
-    (reservoir.player, reservoir.energy.value, reservoir.cap.value)
+  override implicit val encoder: Encoder[EnergyReservoir] = Encoder.forProduct3("owner", "energy", "cap")(reservoir =>
+    (reservoir.owner, reservoir.energy.value, reservoir.cap.value)
   )
-  override implicit val decoder: Decoder[EnergyReservoir] = Decoder.forProduct3[EnergyReservoir, Player, Int, Int]("player", "energy", "cap"){new EnergyReservoir(_, _, _)}
+  override implicit val decoder: Decoder[EnergyReservoir] = Decoder.forProduct3[EnergyReservoir, Player, Int, Int]("owner", "energy", "cap"){new EnergyReservoir(_, _, _)}
 
   val defaultCap: Energy = 100000
 
@@ -29,9 +29,9 @@ object EnergyReservoir extends Persistable[EnergyReservoir] {
 
   override protected val persistablesName = "Reservoirs"
 
-  override protected def persistables: Map[String, EnergyReservoir] = energyReservoirs.map {
-    case (player, reservoir) => player.uuid.toString -> reservoir
-  }
+  override protected def persistables: List[EnergyReservoir] = energyReservoirs.values.toList
+
+  override protected def getFileName(reservoir: EnergyReservoir): String = reservoir.owner.uuid.toString
 
   override protected val folder: File = Aethercraft.dataFolder.createChild(persistablesName, asDirectory = true)
 
@@ -45,7 +45,7 @@ object EnergyReservoir extends Persistable[EnergyReservoir] {
       .fold(Logger.severe(s"Invalid player uuid: $fileName"))(IO.pure)
 }
 
-class EnergyReservoir private(private val player: Player, private var energy: Energy = 0, private var _cap: Energy = EnergyReservoir.defaultCap) {
+class EnergyReservoir private(private val owner: Player, private var energy: Energy = 0, private var _cap: Energy = EnergyReservoir.defaultCap) {
 
   /**
     * Adds the most energy possible starting from the left of the input list
@@ -77,7 +77,7 @@ class EnergyReservoir private(private val player: Player, private var energy: En
   }
 
   /**
-    * Attempts to add energy to a player's reservoir, notifies the player of the amount added
+    * Attempts to add energy to a player's reservoir, notifies the owner of the amount added
     * @param energy Amount of energy to add
     * @return The energy added to this reservoir
     */
@@ -94,9 +94,9 @@ class EnergyReservoir private(private val player: Player, private var energy: En
       this.energy += energy
       EitherT.liftF {
         for {
-          _ <- Logger.info(s"${player.nameOrUUID} gained $energy energy.")
-          _ <- player.notify(s"Added $energy energy.")
-          _ <- EnergyReservoir.saveOneAsync(EnergyReservoir.folder, player.uuid.toString, this)
+          _ <- Logger.info(s"${owner.nameOrUUID} gained $energy energy.")
+          _ <- owner.notify(s"Added $energy energy.")
+          _ <- EnergyReservoir.saveAsync(this)
         } yield this.energy
       }
     }
@@ -117,8 +117,8 @@ class EnergyReservoir private(private val player: Player, private var energy: En
       this.energy -= energy
       EitherT.liftF {
         for {
-          _ <- Logger.info(s"${player.nameOrUUID} used $energy energy.")
-          _ <- EnergyReservoir.saveOneAsync(EnergyReservoir.folder, player.uuid.toString, this)
+          _ <- Logger.info(s"${owner.nameOrUUID} used $energy energy.")
+          _ <- EnergyReservoir.saveAsync(this)
         } yield this.energy
       }
     }

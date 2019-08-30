@@ -5,8 +5,7 @@ import java.nio.file.StandardOpenOption
 import better.files.{File, FileExtensions}
 import cats.data.EitherT
 import cats.effect.IO
-import cats.implicits.{catsStdInstancesForList, toFlatMapOps, toFoldableOps}
-import io.circe
+import cats.implicits.{catsStdInstancesForList, catsStdInstancesForOption, toFlatMapOps, toFoldableOps, toTraverseOps}
 import io.circe.parser.decode
 import io.circe.syntax.EncoderOps
 import io.circe.{Decoder, Encoder}
@@ -40,14 +39,14 @@ abstract class GenericPersistable[T] extends {
   implicit val encoder: Encoder[T]
   implicit val decoder: Decoder[T]
 
-  protected def saveAll(persistables: Map[String, T], folder: File): IO[Unit] =
-    persistables.toList.traverse_ {
-      case (fileName, thing) => saveToFile(folder, fileName, thing)
+  protected def saveAll(persistables: List[(String, T)], folder: File): IO[Unit] =
+    persistables.traverse_ {
+      case (fileName, thing) => saveToFile(folder / (fileName + extension), thing)
   }
 
-  protected def loadAll(folder: File, updateWithLoaded: (String, T) => Unit): IO[Int] = {
-    if (folder.exists) {
-      val things: List[File] = folder
+  protected def loadAll(folder: File, updateWithLoaded: (String, T) => Unit): IO[Option[Int]] =
+    Option.when(folder.exists)(
+      folder
         //This will get all runes as well as all backups
         .list(_.extension(includeAll = true).exists(_.contains(extension)))
         .toList
@@ -56,21 +55,17 @@ abstract class GenericPersistable[T] extends {
         //This keeps the file with the shortest name, backups should always have longer names as they are appended with the backup extension
         .map(_.minBy(_.name.length))
         .toList
-
-      things.traverse_ { file =>
-        loadFromFile(file)
-          .fold(
-            error => severe(error).map(_ => None),
-            decoded => IO(Some(decoded))
-          )
-          .flatten
-          .map(_.fold(())(updateWithLoaded(file.nameWithoutExtension, _)))
-      }
-        .map(_ => things.size)
-    } else {
-      IO(0)
-    }
-  }
+        .traverse { file =>
+          loadFromFile(file)
+            .fold(
+              error => severe(error).map(_ => None),
+              decoded => IO(Some(decoded))
+            )
+            .flatten
+            .map(_.fold(())(updateWithLoaded(file.nameWithoutExtension, _)))
+        }
+        .map(_.size)
+    ).sequence
 
   private def backupFile(file: File): IO[Unit] =
     IO {
@@ -79,8 +74,7 @@ abstract class GenericPersistable[T] extends {
       }
     }
 
-  protected def saveToFile(folder: File, fileName: String, thing: T, backup: Boolean = true): IO[Unit] = {
-    val file = folder / (fileName + extension)
+  protected def saveToFile(file: File, thing: T, backup: Boolean = true): IO[Unit] = {
     (if (backup) {
       backupFile(file)
     } else {
@@ -92,30 +86,46 @@ abstract class GenericPersistable[T] extends {
       }
   }
 
-  protected def loadFromFile(file: File): EitherT[IO, circe.Error, T] =
+  protected def loadFromFile(file: File): EitherT[IO, String, T] =
     if (file.extension.contains(GenericPersistable.backupTermination)) {
       EitherT(info(s"Using backup file for ${file.name}.").map { _ =>
-        decode[T](file.sibling(file.name).contentAsString)
+        decode[T](file.sibling(file.name).contentAsString).left.map(_.getMessage)
       }).flatMapF { thing =>
-        saveToFile(file.parent, file.nameWithoutExtension(includeAll = true), thing, backup = false)
+        saveToFile(file.sibling(file.nameWithoutExtension), thing, backup = false)
           .map(_ => Right(thing))
       }
     } else {
-      EitherT.fromEither[IO](decode[T](file.contentAsString)).recoverWith {
+      EitherT.fromEither[IO](decode[T](file.contentAsString).left.map(_.getMessage)).recoverWith {
         //This will try to recover from the backup if this is not a backup
         case _ if !file.extension.contains(GenericPersistable.backupTermination) =>
-          loadFromFile(file.sibling(file.name + GenericPersistable.backupTermination))
+          val backup = file.sibling(file.name + GenericPersistable.backupTermination)
+          if (backup.exists) {
+            loadFromFile(backup)
+          } else {
+            EitherT.leftT(s"No backup file found for ${file.name}.")
+          }
       }
     }
 
+  def deleteAsync(thing: T): IO[Unit] = IO(Aethercraft.runTaskAsync(IO {
+    val file = getFile(thing)
+    file.delete(swallowIOExceptions = true)
+    file.sibling(file.name + GenericPersistable.backupTermination).delete(swallowIOExceptions = true)
+  }))
 
-  protected val persistablesName: String
+  def saveAsync(thing: T) = IO(Aethercraft.runTaskAsync(
+    saveToFile(getFile(thing), thing)
+  ))
 
   protected val extension: String = ".rune"
 
-  def saveOneAsync(folder: File, fileName: String, thing: T) = IO(Aethercraft.runTaskAsync(
-    saveToFile(folder, fileName, thing)
-  ))
+  protected val persistablesName: String
+
+  protected def persistables: List[T]
+
+  protected def getFileName(thing: T): String
+
+  def getFile(thing: T): File
 
   protected def updateWithLoaded(fileName: String, thing: T): Unit
 }

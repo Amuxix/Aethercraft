@@ -2,6 +2,7 @@ package me.amuxix.runes.waypoints
 
 import cats.data.EitherT
 import cats.effect.IO
+import cats.implicits.{catsStdInstancesForEither, toTraverseOps}
 import me.amuxix._
 import me.amuxix.inventory.Item
 import me.amuxix.pattern._
@@ -64,7 +65,7 @@ case class Waypoint(
       .orWhen(signatureContains(tierMaterial))(
         s"${tierMaterial.name} can't be used on this Waypoint because it is the same as the tier used in rune."
       )
-      .orWhen(GenericWaypoint.waypoints.contains(signature))("Signature already in use.")
+      .orWhen(GenericWaypoint.waypoints.contains(calculateSignature))("Signature already in use.")
 
   /**
     * Checks whether this rune can be activated, should warn activator about the error that occurred
@@ -83,15 +84,21 @@ case class Waypoint(
     if (signature == calculateSignature) {
       EitherT.leftT(s"This $name is already active.")
     } else {
-      EitherT.fromEither {
-        validateSignature
-          .orElse(Option.when(player.uuid != activator.uuid)(s"The signature of your $name in $center was changed!"))
-          .toLeft {
-            signature = calculateSignature
-            this.activationMessage = "Signature updated."
-            true
-          }
-      }
+      EitherT(validateSignature
+        .orElse(Option.when(player.uuid != activator.uuid)(s"The signature of your $name in $center was changed!"))
+        .toLeft(())
+        .traverse { _ =>
+          val currentFile = GenericWaypoint.getFile(this)
+          GenericWaypoint.waypoints -= signature
+          signature = calculateSignature
+          GenericWaypoint.waypoints += signature -> this
+          for {
+            _ <- activator.notify("Signature updated.")
+            _ <- GenericWaypoint.updateFileName(this, currentFile)
+          } yield ()
+        }
+      )
+        .map(_ => true)
     }
 
   /**
@@ -102,7 +109,7 @@ case class Waypoint(
   override protected def onActivate(activationItem: Option[Item]): EitherT[IO, String, Boolean] =
     EitherT.liftF {
       GenericWaypoint.waypoints += signature -> this
-      GenericWaypoint.saveOneAsync(this)
+      GenericWaypoint.saveAsync(this)
         .map(_ => true)
     }
 
